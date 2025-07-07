@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-
 /// 服务器配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
@@ -77,8 +76,6 @@ pub enum PersistenceMethod {
     StartupItem,
     /// 定时任务
     CronJob,
-    /// 注册表（Windows）
-    Registry,
     /// 无持久化
     None,
 }
