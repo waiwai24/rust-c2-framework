@@ -18,9 +18,12 @@
 ```shell
 rust-c2-framework/
 ├── src/
-│   ├── lib.rs              # 库文件
-│   ├── common.rs           # 通用模块（协议、加密、网络工具）
+│   ├── lib.rs              # 主库文件
 │   └── bin/                # 可执行文件目录
+├── common/                 # 通用库（协议、加密、网络工具）
+│   ├── src/
+│   │   └── lib.rs          # 通用库代码
+│   └── Cargo.toml          # 通用库配置
 ├── client/
 │   └── main.rs             # 客户端主程序
 ├── server/
@@ -30,7 +33,7 @@ rust-c2-framework/
 │   └── client.html         # 客户端管理页面模板
 ├── web/
 │   └── static/             # 静态文件
-└── Cargo.toml              # 项目配置
+└── Cargo.toml              # 主项目配置
 ```
 
 ## 快速开始
@@ -158,7 +161,7 @@ cargo run --bin client http://your-server-ip:8080
 
 可以通过以下方式扩展功能：
 
-1. 在 `src/common.rs` 中添加新的消息类型
+1. 在 `common/lib.rs` 中添加新的消息类型
 2. 在客户端和服务端添加相应的处理逻辑
 3. 在Web界面添加新的管理功能
 

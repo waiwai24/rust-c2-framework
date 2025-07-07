@@ -1,7 +1,7 @@
 [package]
 name = "rust-c2-framework"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [[bin]]
 name = "client"
@@ -39,6 +39,7 @@ askama_axum = "0.3"
 
 # System dependencies
 nix = "0.26"
+common = { path = "./common" }
 
 [target.'cfg(all(target_os = "linux", target_env = "musl"))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
@@ -48,4 +49,4 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
-opt-level = "z" 
+opt-level = "z"
