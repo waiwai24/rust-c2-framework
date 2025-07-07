@@ -1,8 +1,8 @@
+use crate::common::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use crate::common::*;
 
 /// Shell会话管理器
 pub struct ShellManager {
@@ -43,7 +43,8 @@ impl ShellManager {
     /// 添加Shell数据
     pub async fn add_shell_data(&self, session_id: &str, data: String) {
         let mut session_data = self.session_data.write().await;
-        session_data.entry(session_id.to_string())
+        session_data
+            .entry(session_id.to_string())
             .or_insert_with(Vec::new)
             .push(data);
     }
@@ -69,7 +70,8 @@ impl ShellManager {
         let now = chrono::Utc::now();
 
         sessions.retain(|session_id, session| {
-            let should_retain = (now.timestamp() - session.created_at.timestamp()) < timeout_seconds;
+            let should_retain =
+                (now.timestamp() - session.created_at.timestamp()) < timeout_seconds;
             if !should_retain {
                 session_data.remove(session_id);
             }
@@ -80,7 +82,8 @@ impl ShellManager {
     /// 获取客户端的所有会话
     pub async fn get_client_sessions(&self, client_id: &str) -> Vec<ShellSession> {
         let sessions = self.sessions.read().await;
-        sessions.values()
+        sessions
+            .values()
             .filter(|session| session.client_id == client_id)
             .cloned()
             .collect()

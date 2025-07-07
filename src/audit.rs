@@ -1,8 +1,8 @@
-use log::{info, warn, error};
+use crate::common::*;
+use chrono::Utc;
+use log::{error, info, warn};
 use std::fs::OpenOptions;
 use std::io::Write;
-use chrono::Utc;
-use crate::common::*;
 
 /// 审计日志管理器
 pub struct AuditLogger {
@@ -27,7 +27,7 @@ impl AuditLogger {
             client_info.ip,
             client_info.os
         );
-        
+
         info!("{}", log_entry);
         self.write_to_file(&log_entry);
     }
@@ -39,7 +39,7 @@ impl AuditLogger {
             Utc::now().format("%Y-%m-%d %H:%M:%S"),
             client_id
         );
-        
+
         info!("{}", log_entry);
         self.write_to_file(&log_entry);
     }
@@ -53,7 +53,7 @@ impl AuditLogger {
             cmd.command,
             cmd.args.join(" ")
         );
-        
+
         info!("{}", log_entry);
         self.write_to_file(&log_entry);
     }
@@ -69,7 +69,7 @@ impl AuditLogger {
             result.stdout.lines().count(),
             result.stderr.lines().count()
         );
-        
+
         info!("{}", log_entry);
         self.write_to_file(&log_entry);
     }
@@ -83,7 +83,7 @@ impl AuditLogger {
             session.session_id,
             session.is_active
         );
-        
+
         info!("{}", log_entry);
         self.write_to_file(&log_entry);
     }
@@ -95,7 +95,7 @@ impl AuditLogger {
             Utc::now().format("%Y-%m-%d %H:%M:%S"),
             error_msg
         );
-        
+
         error!("{}", log_entry);
         self.write_to_file(&log_entry);
     }

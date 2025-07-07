@@ -1,7 +1,7 @@
+use crate::common::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::common::*;
 
 /// 客户端管理器
 pub struct ClientManager {
@@ -48,7 +48,8 @@ impl ClientManager {
     /// 添加命令到队列
     pub async fn add_command(&self, client_id: &str, command: CommandRequest) {
         let mut commands = self.commands.write().await;
-        commands.entry(client_id.to_string())
+        commands
+            .entry(client_id.to_string())
             .or_insert_with(Vec::new)
             .push(command);
     }
@@ -62,7 +63,8 @@ impl ClientManager {
     /// 添加命令结果
     pub async fn add_command_result(&self, result: CommandResponse) {
         let mut results = self.command_results.write().await;
-        results.entry(result.client_id.clone())
+        results
+            .entry(result.client_id.clone())
             .or_insert_with(Vec::new)
             .push(result);
     }
@@ -77,18 +79,18 @@ impl ClientManager {
     pub async fn cleanup_offline_clients(&self, timeout_seconds: i64) {
         let mut clients = self.clients.write().await;
         let now = chrono::Utc::now();
-        
-        clients.retain(|_, client| {
-            (now.timestamp() - client.last_seen.timestamp()) < timeout_seconds
-        });
+
+        clients
+            .retain(|_, client| (now.timestamp() - client.last_seen.timestamp()) < timeout_seconds);
     }
 
     /// 获取在线客户端数量
     pub async fn get_online_count(&self) -> usize {
         let clients = self.clients.read().await;
         let now = chrono::Utc::now();
-        
-        clients.values()
+
+        clients
+            .values()
             .filter(|client| (now.timestamp() - client.last_seen.timestamp()) < 60)
             .count()
     }

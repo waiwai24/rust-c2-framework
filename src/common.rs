@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// 客户端与服务端之间的通信协议
@@ -92,8 +92,8 @@ impl Message {
 /// 加密和解密工具
 pub mod crypto {
     use aes_gcm::{
+        Aes256Gcm, Key, Nonce,
         aead::{Aead, AeadCore, KeyInit, OsRng},
-        Aes256Gcm, Nonce, Key,
     };
     use base64::{Engine as _, engine::general_purpose};
 
@@ -110,8 +110,11 @@ pub mod crypto {
 
         pub fn encrypt(&self, plaintext: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
             let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-            let ciphertext = self.cipher.encrypt(&nonce, plaintext).map_err(|e| e.to_string())?;
-            
+            let ciphertext = self
+                .cipher
+                .encrypt(&nonce, plaintext)
+                .map_err(|e| e.to_string())?;
+
             let mut result = nonce.to_vec();
             result.extend_from_slice(&ciphertext);
             Ok(general_purpose::STANDARD.encode(result))
@@ -125,7 +128,9 @@ pub mod crypto {
 
             let (nonce, ciphertext) = data.split_at(12);
             let nonce = Nonce::from_slice(nonce);
-            let plaintext = self.cipher.decrypt(nonce, ciphertext)
+            let plaintext = self
+                .cipher
+                .decrypt(nonce, ciphertext)
                 .map_err(|e| e.to_string())?;
             Ok(plaintext)
         }
@@ -138,22 +143,22 @@ pub mod network {
     use std::process::Command;
 
     pub fn get_local_ip() -> Result<IpAddr, Box<dyn std::error::Error>> {
-        let output = Command::new("hostname")
-            .arg("-I")
-            .output()?;
-        
+        let output = Command::new("hostname").arg("-I").output()?;
+
         let ip_str = String::from_utf8(output.stdout)?;
-        let ip = ip_str.trim().split_whitespace().next()
+        let ip = ip_str
+            .trim()
+            .split_whitespace()
+            .next()
             .unwrap_or("127.0.0.1")
             .parse::<Ipv4Addr>()?;
-        
+
         Ok(IpAddr::V4(ip))
     }
 
     pub fn get_hostname() -> Result<String, Box<dyn std::error::Error>> {
-        let output = Command::new("hostname")
-            .output()?;
-        
+        let output = Command::new("hostname").output()?;
+
         Ok(String::from_utf8(output.stdout)?.trim().to_string())
     }
 }

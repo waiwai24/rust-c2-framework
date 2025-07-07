@@ -150,7 +150,10 @@ impl ConfigManager {
     }
 
     /// 保存服务器配置
-    pub fn save_server_config(path: &str, config: &ServerConfig) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save_server_config(
+        path: &str,
+        config: &ServerConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let content = toml::to_string_pretty(config)?;
         std::fs::write(path, content)?;
         Ok(())
@@ -170,7 +173,10 @@ impl ConfigManager {
     }
 
     /// 保存客户端配置
-    pub fn save_client_config(path: &str, config: &ClientConfig) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save_client_config(
+        path: &str,
+        config: &ClientConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let content = toml::to_string_pretty(config)?;
         std::fs::write(path, content)?;
         Ok(())
