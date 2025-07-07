@@ -7,7 +7,6 @@ use axum::{
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::collections::HashMap;
 use std::net::TcpListener as StdTcpListener;
 use std::sync::Arc;
@@ -25,6 +24,12 @@ pub struct ServerState {
     pub commands: Arc<RwLock<HashMap<String, Vec<CommandRequest>>>>,
     pub command_results: Arc<RwLock<HashMap<String, Vec<CommandResponse>>>>,
     pub shell_sessions: Arc<RwLock<HashMap<String, ShellSession>>>,
+}
+
+impl Default for ServerState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ServerState {
@@ -164,7 +169,7 @@ async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusC
     match template.render() {
         Ok(html) => Ok(Html(html)),
         Err(e) => {
-            eprintln!("Template rendering error: {:?}", e);
+            eprintln!("Template rendering error: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

@@ -147,7 +147,6 @@ pub mod network {
 
         let ip_str = String::from_utf8(output.stdout)?;
         let ip = ip_str
-            .trim()
             .split_whitespace()
             .next()
             .unwrap_or("127.0.0.1")

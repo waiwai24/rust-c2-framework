@@ -28,7 +28,7 @@ impl AuditLogger {
             client_info.os
         );
 
-        info!("{}", log_entry);
+        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -40,7 +40,7 @@ impl AuditLogger {
             client_id
         );
 
-        info!("{}", log_entry);
+        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -54,7 +54,7 @@ impl AuditLogger {
             cmd.args.join(" ")
         );
 
-        info!("{}", log_entry);
+        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -70,7 +70,7 @@ impl AuditLogger {
             result.stderr.lines().count()
         );
 
-        info!("{}", log_entry);
+        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -84,7 +84,7 @@ impl AuditLogger {
             session.is_active
         );
 
-        info!("{}", log_entry);
+        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -96,7 +96,7 @@ impl AuditLogger {
             error_msg
         );
 
-        error!("{}", log_entry);
+        error!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -107,8 +107,8 @@ impl AuditLogger {
             .append(true)
             .open(&self.log_file)
         {
-            if let Err(e) = writeln!(file, "{}", log_entry) {
-                warn!("Failed to write to log file: {}", e);
+            if let Err(e) = writeln!(file, "{log_entry}") {
+                warn!("Failed to write to log file: {e}");
             }
         } else {
             warn!("Failed to open log file: {}", self.log_file);

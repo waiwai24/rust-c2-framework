@@ -18,11 +18,11 @@ pub enum C2Error {
 impl fmt::Display for C2Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            C2Error::Network(msg) => write!(f, "Network error: {}", msg),
-            C2Error::Crypto(msg) => write!(f, "Crypto error: {}", msg),
-            C2Error::Serialization(msg) => write!(f, "Serialization error: {}", msg),
-            C2Error::Io(err) => write!(f, "IO error: {}", err),
-            C2Error::Other(msg) => write!(f, "Other error: {}", msg),
+            C2Error::Network(msg) => write!(f, "Network error: {msg}"),
+            C2Error::Crypto(msg) => write!(f, "Crypto error: {msg}"),
+            C2Error::Serialization(msg) => write!(f, "Serialization error: {msg}"),
+            C2Error::Io(err) => write!(f, "IO error: {err}"),
+            C2Error::Other(msg) => write!(f, "Other error: {msg}"),
         }
     }
 }

@@ -10,6 +10,12 @@ pub struct ShellManager {
     session_data: Arc<RwLock<HashMap<String, Vec<String>>>>,
 }
 
+impl Default for ShellManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ShellManager {
     pub fn new() -> Self {
         Self {

