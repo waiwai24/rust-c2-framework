@@ -39,3 +39,13 @@ askama_axum = "0.3"
 
 # System dependencies
 nix = "0.26"
+
+[target.'cfg(all(target_os = "linux", target_env = "musl"))'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = "z" 

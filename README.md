@@ -46,7 +46,52 @@ cargo build --release --bin server
 cargo build --release --bin client
 ```
 
-### 2. 启动服务端
+### 2. 静态编译 (MUSL)
+
+为了生成完全静态链接的二进制文件，可以使用 `musl` 目标。这对于创建独立的可执行文件非常有用，无需依赖系统库。
+
+**先决条件**:
+安装 `musl` 工具链：
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+```
+
+**编译**:
+
+```bash
+# 编译所有组件为静态链接
+cargo build --release --target x86_64-unknown-linux-musl
+
+# 或者分别编译
+cargo build --release --bin server --target x86_64-unknown-linux-musl
+cargo build --release --bin client --target x86_64-unknown-linux-musl
+```
+
+编译后的二进制文件位于 `target/x86_64-unknown-linux-musl/release/` 目录下。
+
+### 3. 使用 UPX 压缩 (可选)
+
+UPX (Ultimate Packer for eXecutables) 可以进一步压缩静态链接的二进制文件，减小其大小。
+
+**先决条件**:
+安装 UPX：
+
+```bash
+sudo apt-get install upx
+```
+
+**压缩**:
+
+```bash
+# 压缩服务端二进制文件
+upx --best target/x86_64-unknown-linux-musl/release/server
+
+# 压缩客户端二进制文件
+upx --best target/x86_64-unknown-linux-musl/release/client
+```
+
+### 4. 启动服务端
 
 ```bash
 # 启动服务端（默认监听 0.0.0.0:8080）
