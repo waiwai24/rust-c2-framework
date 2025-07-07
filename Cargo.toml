@@ -21,6 +21,9 @@ aes-gcm = "0.10"
 rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.0", features = ["derive"] }
+log = "0.4"
+env_logger = "0.10"
+toml = "0.8"
 
 # Network dependencies
 hyper = { version = "0.14", features = ["full"] }

