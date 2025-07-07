@@ -110,7 +110,7 @@ pub mod crypto {
 
         pub fn encrypt(&self, plaintext: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
             let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-            let ciphertext = self.cipher.encrypt(&nonce, plaintext)?;
+            let ciphertext = self.cipher.encrypt(&nonce, plaintext).map_err(|e| e.to_string())?;
             
             let mut result = nonce.to_vec();
             result.extend_from_slice(&ciphertext);
@@ -125,7 +125,8 @@ pub mod crypto {
 
             let (nonce, ciphertext) = data.split_at(12);
             let nonce = Nonce::from_slice(nonce);
-            let plaintext = self.cipher.decrypt(nonce, ciphertext)?;
+            let plaintext = self.cipher.decrypt(nonce, ciphertext)
+                .map_err(|e| e.to_string())?;
             Ok(plaintext)
         }
     }

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// 服务器配置
 #[derive(Debug, Clone, Serialize, Deserialize)]

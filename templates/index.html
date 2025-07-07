@@ -171,11 +171,11 @@
                 <p>活跃客户端</p>
             </div>
             <div class="stat-card">
-                <h3>{{ clients.iter().filter(|c| (chrono::Utc::now().timestamp() - c.last_seen.timestamp()) < 60).count() }}</h3>
+                <h3>{{ online_clients_count }}</h3>
                 <p>在线客户端</p>
             </div>
             <div class="stat-card">
-                <h3>{{ clients.iter().map(|c| c.os.as_str()).collect::<std::collections::HashSet<_>>().len() }}</h3>
+                <h3>{{ os_types_count }}</h3>
                 <p>操作系统类型</p>
             </div>
         </div>
@@ -207,22 +207,22 @@
                     <tbody>
                         {% for client in clients %}
                         <tr>
-                            <td><code>{{ client.id[0..8] }}...</code></td>
-                            <td>{{ client.hostname }}</td>
-                            <td>{{ client.username }}</td>
-                            <td>{{ client.os }} ({{ client.arch }})</td>
-                            <td>{{ client.ip }}</td>
-                            <td>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
-                            <td>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td><code>{{ client.client_info.id[0..8] }}...</code></td>
+                            <td>{{ client.client_info.hostname }}</td>
+                            <td>{{ client.client_info.username }}</td>
+                            <td>{{ client.client_info.os }} ({{ client.client_info.arch }})</td>
+                            <td>{{ client.client_info.ip }}</td>
+                            <td>{{ client.client_info.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td>{{ client.client_info.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
                             <td>
-                                {% if (chrono::Utc::now().timestamp() - client.last_seen.timestamp()) < 60 %}
+                                {% if client.is_online %}
                                     <span class="status online">在线</span>
                                 {% else %}
                                     <span class="status offline">离线</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="/client/{{ client.id }}" class="btn">管理</a>
+                                <a href="/client/{{ client.client_info.id }}" class="btn">管理</a>
                             </td>
                         </tr>
                         {% endfor %}
