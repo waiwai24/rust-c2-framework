@@ -1,10 +1,10 @@
+use crate::audit::AuditLogger;
 use crate::managers::client_manager::ClientManager;
 use crate::managers::shell_manager::ShellManager;
-use crate::audit::AuditLogger;
 use common::config::ServerConfig;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
 
 /// Application state
 #[derive(Clone)]

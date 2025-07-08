@@ -1,9 +1,9 @@
+use crate::state::AppState;
 use axum::{
-    Json,
     extract::{Path, State},
     http::StatusCode,
+    Json,
 };
-use crate::state::AppState;
 use common::message::{ClientInfo, CommandRequest, CommandResponse, Message, ShellData};
 
 /// 客户端注册
@@ -16,7 +16,9 @@ pub async fn register_client(
         state.client_manager.register_client(client_info).await;
         Ok(StatusCode::OK)
     } else {
-        state.audit_logger.log_error("Failed to deserialize client info for registration");
+        state
+            .audit_logger
+            .log_error("Failed to deserialize client info for registration");
         Err(StatusCode::BAD_REQUEST)
     }
 }
@@ -31,7 +33,9 @@ pub async fn handle_heartbeat(
         state.client_manager.update_heartbeat(&client_id).await;
         Ok(StatusCode::OK)
     } else {
-        state.audit_logger.log_error("Failed to deserialize client_id for heartbeat");
+        state
+            .audit_logger
+            .log_error("Failed to deserialize client_id for heartbeat");
         Err(StatusCode::BAD_REQUEST)
     }
 }
@@ -55,7 +59,9 @@ pub async fn handle_command_result(
         state.client_manager.add_command_result(result).await;
         Ok(StatusCode::OK)
     } else {
-        state.audit_logger.log_error("Failed to deserialize command result");
+        state
+            .audit_logger
+            .log_error("Failed to deserialize command result");
         Err(StatusCode::BAD_REQUEST)
     }
 }
@@ -67,12 +73,23 @@ pub async fn handle_shell_data(
 ) -> Result<StatusCode, StatusCode> {
     if let Ok(shell_data) = serde_json::from_slice::<ShellData>(&message.payload) {
         // Here you would typically forward this to a WebSocket or other real-time channel
-        println!("Received shell data from {}: {} bytes", 
-                shell_data.session_id, shell_data.data.len());
-        state.shell_manager.add_shell_data(&shell_data.session_id, String::from_utf8_lossy(&shell_data.data).to_string()).await;
+        println!(
+            "Received shell data from {}: {} bytes",
+            shell_data.session_id,
+            shell_data.data.len()
+        );
+        state
+            .shell_manager
+            .add_shell_data(
+                &shell_data.session_id,
+                String::from_utf8_lossy(&shell_data.data).to_string(),
+            )
+            .await;
         Ok(StatusCode::OK)
     } else {
-        state.audit_logger.log_error("Failed to deserialize shell data");
+        state
+            .audit_logger
+            .log_error("Failed to deserialize shell data");
         Err(StatusCode::BAD_REQUEST)
     }
 }
@@ -123,7 +140,7 @@ pub async fn initiate_reverse_shell(
         command: "REVERSE_SHELL".to_string(),
         args: vec![session_id],
     };
-    
+
     state.audit_logger.log_command_execution(&command);
     state.client_manager.add_command(&client_id, command).await;
 

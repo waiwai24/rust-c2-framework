@@ -51,6 +51,30 @@
                         <!-- 状态将通过JavaScript动态更新 -->
                     </span>
                 </div>
+                <div class="info-item">
+                    <label>CPU 品牌</label>
+                    <span>{{ client.cpu_brand }}</span>
+                </div>
+                <div class="info-item">
+                    <label>CPU 频率</label>
+                    <span>{{ client.cpu_frequency }} MHz</span>
+                </div>
+                <div class="info-item">
+                    <label>CPU 核心数</label>
+                    <span>{{ client.cpu_cores }}</span>
+                </div>
+                <div class="info-item">
+                    <label>内存</label>
+                    <span>{{ client.memory }} GB</span>
+                </div>
+                <div class="info-item">
+                    <label>总磁盘空间</label>
+                    <span>{{ client.total_disk_space }} GB</span>
+                </div>
+                <div class="info-item">
+                    <label>可用磁盘空间</label>
+                    <span>{{ client.available_disk_space }} GB</span>
+                </div>
             </div>
         </div>
 

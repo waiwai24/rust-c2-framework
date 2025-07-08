@@ -1,84 +1,84 @@
-use serde::{Deserialize, Serialize};
 use crate::error::{C2Error, C2Result};
+use serde::{Deserialize, Serialize};
 
-/// 服务器配置
+/// Server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
-    /// 服务器监听地址
+    /// Server listening address
     pub host: String,
-    /// 服务器监听端口
+    /// Server listening port
     pub port: u16,
-    /// 加密密钥
+    /// Encryption key
     pub encryption_key: String,
-    /// 客户端超时时间（秒）
+    /// Client timeout (seconds)
     pub client_timeout: u64,
-    /// 最大客户端数量
+    /// Maximum number of clients
     pub max_clients: usize,
-    /// 日志文件路径
+    /// Log file path
     pub log_file: String,
-    /// 启用审计日志
+    /// Enable audit log
     pub enable_audit: bool,
-    /// Web界面配置
+    /// Web configuration
     pub web: WebConfig,
 }
 
-/// Web界面配置
+/// Web configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebConfig {
-    /// 启用Web界面
+    /// Enable web interface
     pub enabled: bool,
-    /// 静态文件目录
+    /// Static files directory
     pub static_dir: String,
-    /// 模板目录
+    /// Template directory
     pub template_dir: String,
-    /// 启用CORS
+    /// Enable CORS(Cross-Origin Resource Sharing)
     pub enable_cors: bool,
 }
 
-/// 客户端配置
+/// Client configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientConfig {
-    /// 服务器URL
+    /// Server URL
     pub server_url: String,
-    /// 客户端标识
+    /// Client ID
     pub client_id: Option<String>,
-    /// 加密密钥
+    /// Encryption key
     pub encryption_key: String,
-    /// 心跳间隔（秒）
+    /// Heartbeat interval (seconds)
     pub heartbeat_interval: u64,
-    /// 命令检查间隔（秒）
+    /// Command check interval (seconds)
     pub command_check_interval: u64,
-    /// 连接重试次数
+    /// Connection retry count
     pub retry_count: u32,
-    /// 连接重试间隔（秒）
+    /// Connection retry interval (seconds)
     pub retry_interval: u64,
-    /// 持久化配置
+    /// Persistence configuration
     pub persistence: PersistenceConfig,
 }
 
-/// 持久化配置
+/// Persistence configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersistenceConfig {
-    /// 启用持久化
+    /// Enable persistence
     pub enabled: bool,
-    /// 自启动方式
+    /// Startup method
     pub method: PersistenceMethod,
-    /// 安装路径
+    /// Installation path
     pub install_path: String,
-    /// 服务名称
+    /// Service name
     pub service_name: String,
 }
 
-/// 持久化方式
+/// Persistence method
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PersistenceMethod {
-    /// 系统服务
+    /// System service
     SystemService,
-    /// 启动项
+    /// Startup item
     StartupItem,
-    /// 定时任务
+    /// Cron job
     CronJob,
-    /// 无持久化
+    /// No persistence
     None,
 }
 
@@ -140,43 +140,33 @@ pub struct ConfigManager;
 impl ConfigManager {
     /// 加载服务器配置
     pub fn load_server_config(path: &str) -> C2Result<ServerConfig> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| C2Error::Io(e))?;
-        let config: ServerConfig = toml::from_str(&content)
-            .map_err(|e| C2Error::Serialization(e.to_string()))?;
+        let content = std::fs::read_to_string(path).map_err(|e| C2Error::Io(e))?;
+        let config: ServerConfig =
+            toml::from_str(&content).map_err(|e| C2Error::Serialization(e.to_string()))?;
         Ok(config)
     }
 
     /// 保存服务器配置
-    pub fn save_server_config(
-        path: &str,
-        config: &ServerConfig,
-    ) -> C2Result<()> {
-        let content = toml::to_string_pretty(config)
-            .map_err(|e| C2Error::Serialization(e.to_string()))?;
-        std::fs::write(path, content)
-            .map_err(|e| C2Error::Io(e))?;
+    pub fn save_server_config(path: &str, config: &ServerConfig) -> C2Result<()> {
+        let content =
+            toml::to_string_pretty(config).map_err(|e| C2Error::Serialization(e.to_string()))?;
+        std::fs::write(path, content).map_err(|e| C2Error::Io(e))?;
         Ok(())
     }
 
     /// 加载客户端配置
     pub fn load_client_config(path: &str) -> C2Result<ClientConfig> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| C2Error::Io(e))?;
-        let config: ClientConfig = toml::from_str(&content)
-            .map_err(|e| C2Error::Serialization(e.to_string()))?;
+        let content = std::fs::read_to_string(path).map_err(|e| C2Error::Io(e))?;
+        let config: ClientConfig =
+            toml::from_str(&content).map_err(|e| C2Error::Serialization(e.to_string()))?;
         Ok(config)
     }
 
     /// 保存客户端配置
-    pub fn save_client_config(
-        path: &str,
-        config: &ClientConfig,
-    ) -> C2Result<()> {
-        let content = toml::to_string_pretty(config)
-            .map_err(|e| C2Error::Serialization(e.to_string()))?;
-        std::fs::write(path, content)
-            .map_err(|e| C2Error::Io(e))?;
+    pub fn save_client_config(path: &str, config: &ClientConfig) -> C2Result<()> {
+        let content =
+            toml::to_string_pretty(config).map_err(|e| C2Error::Serialization(e.to_string()))?;
+        std::fs::write(path, content).map_err(|e| C2Error::Io(e))?;
         Ok(())
     }
 }

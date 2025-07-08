@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// 客户端与服务端之间的通信协议
+/// C2 framework message structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub id: String,
@@ -11,28 +11,30 @@ pub struct Message {
     pub payload: Vec<u8>,
 }
 
+/// Message types for C2 framework
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum MessageType {
-    /// 客户端注册
+    /// Client registration
     ClientRegister,
-    /// 客户端心跳
+    /// Client heartbeat
     Heartbeat,
-    /// 执行命令
+    /// Execute command
     ExecuteCommand,
-    /// 命令结果
+    /// Command result
     CommandResult,
-    /// 反弹Shell请求
+    /// Reverse shell request
     ReverseShell,
-    /// Shell数据
+    /// Shell data
     ShellData,
-    /// 文件传输
+    /// File transfer
     FileTransfer,
-    /// 系统信息
+    /// System information
     SystemInfo,
-    /// 错误消息
+    /// Error message
     Error,
 }
 
+/// Client information structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientInfo {
     pub id: String,
@@ -41,10 +43,17 @@ pub struct ClientInfo {
     pub os: String,
     pub arch: String,
     pub ip: String,
+    pub cpu_brand: String,
+    pub cpu_frequency: u64,
+    pub cpu_cores: usize,
+    pub memory: u64,
+    pub total_disk_space: u64,
+    pub available_disk_space: u64,
     pub connected_at: DateTime<Utc>,
     pub last_seen: DateTime<Utc>,
 }
 
+/// Command request and response structures
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandRequest {
     pub client_id: String,
@@ -52,6 +61,7 @@ pub struct CommandRequest {
     pub args: Vec<String>,
 }
 
+/// Command response structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandResponse {
     pub client_id: String,
@@ -62,6 +72,7 @@ pub struct CommandResponse {
     pub executed_at: DateTime<Utc>,
 }
 
+/// Reverse shell session structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShellSession {
     pub client_id: String,
@@ -70,6 +81,7 @@ pub struct ShellSession {
     pub is_active: bool,
 }
 
+/// Shell data structure for reverse shell communication
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShellData {
     pub session_id: String,
@@ -77,6 +89,7 @@ pub struct ShellData {
     pub timestamp: DateTime<Utc>,
 }
 
+/// Implementation of methods for ShellData
 impl ShellData {
     pub fn new(session_id: String, data: Vec<u8>) -> Self {
         Self {
@@ -87,6 +100,7 @@ impl ShellData {
     }
 }
 
+/// Implementation of methods for Message
 impl Message {
     pub fn new(message_type: MessageType, payload: Vec<u8>) -> Self {
         Self {

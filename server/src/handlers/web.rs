@@ -1,12 +1,12 @@
+use crate::state::AppState;
+use askama::Template;
 use axum::{
     extract::{Path, State},
-    response::Html,
     http::StatusCode,
+    response::Html,
 };
-use askama::Template;
-use serde::{Deserialize, Serialize};
-use crate::state::AppState;
 use common::message::{ClientInfo, CommandResponse};
+use serde::{Deserialize, Serialize};
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -38,7 +38,8 @@ pub async fn index(State(state): State<AppState>) -> Result<Html<String>, Status
     let display_clients: Vec<DisplayClientInfo> = clients
         .into_iter()
         .map(|c| {
-            let is_online = (current_timestamp - c.last_seen.timestamp()) < state.config.client_timeout as i64;
+            let is_online =
+                (current_timestamp - c.last_seen.timestamp()) < state.config.client_timeout as i64;
             DisplayClientInfo {
                 client_info: c,
                 is_online,
@@ -76,10 +77,7 @@ pub async fn client_detail(
     if let Some(client) = state.client_manager.get_client(&client_id).await {
         let commands = state.client_manager.get_command_results(&client_id).await;
 
-        let template = ClientTemplate {
-            client,
-            commands,
-        };
+        let template = ClientTemplate { client, commands };
 
         match template.render() {
             Ok(html) => Ok(Html(html)),

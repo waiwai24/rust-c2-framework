@@ -1,17 +1,12 @@
 use std::fmt;
 
-/// C2框架错误类型
+/// C2 framework error type
 #[derive(Debug)]
 pub enum C2Error {
-    /// 网络错误
     Network(String),
-    /// 加密错误
     Crypto(String),
-    /// 序列化错误
     Serialization(String),
-    /// IO错误
     Io(std::io::Error),
-    /// 其他错误
     Other(String),
 }
 
@@ -47,5 +42,5 @@ impl From<reqwest::Error> for C2Error {
     }
 }
 
-/// C2框架结果类型
+/// Result type for C2 framework operations
 pub type C2Result<T> = Result<T, C2Error>;

