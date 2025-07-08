@@ -1,0 +1,12 @@
+server_url = "http://38.244.6.149:8080"
+encryption_key = "default_key_change_me"
+heartbeat_interval = 30
+command_check_interval = 5
+retry_count = 3
+retry_interval = 10
+
+[persistence]
+enabled = false
+method = "None"
+install_path = ""
+service_name = "system_service"

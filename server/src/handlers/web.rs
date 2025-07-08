@@ -5,8 +5,8 @@ use axum::{
 };
 use askama::Template;
 use serde::{Deserialize, Serialize};
-use common::*;
-use crate::state::ServerState;
+use crate::state::AppState;
+use common::message::{ClientInfo, CommandResponse};
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -30,16 +30,15 @@ pub struct DisplayClientInfo {
     pub is_online: bool,
 }
 
-/// 主页面
-pub async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusCode> {
-    let clients = state.clients.read().await;
+/// Main dashboard page
+pub async fn index(State(state): State<AppState>) -> Result<Html<String>, StatusCode> {
+    let clients = state.client_manager.get_clients().await;
     let current_timestamp = chrono::Utc::now().timestamp();
 
     let display_clients: Vec<DisplayClientInfo> = clients
-        .values()
-        .cloned()
+        .into_iter()
         .map(|c| {
-            let is_online = (current_timestamp - c.last_seen.timestamp()) < 60;
+            let is_online = (current_timestamp - c.last_seen.timestamp()) < state.config.client_timeout as i64;
             DisplayClientInfo {
                 client_info: c,
                 is_online,
@@ -69,19 +68,16 @@ pub async fn index(State(state): State<ServerState>) -> Result<Html<String>, Sta
     }
 }
 
-/// 客户端详情页面
+/// Client detail page
 pub async fn client_detail(
-    State(state): State<ServerState>,
+    State(state): State<AppState>,
     Path(client_id): Path<String>,
 ) -> Result<Html<String>, StatusCode> {
-    let clients = state.clients.read().await;
-    let command_results = state.command_results.read().await;
-
-    if let Some(client) = clients.get(&client_id) {
-        let commands = command_results.get(&client_id).cloned().unwrap_or_default();
+    if let Some(client) = state.client_manager.get_client(&client_id).await {
+        let commands = state.client_manager.get_command_results(&client_id).await;
 
         let template = ClientTemplate {
-            client: client.clone(),
+            client,
             commands,
         };
 

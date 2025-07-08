@@ -7,7 +7,7 @@ use askama::Template;
 use serde::Deserialize;
 use tower_cookies::{Cookies, Cookie};
 use rand::Rng;
-use crate::state::ServerState;
+use crate::state::AppState;
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -38,12 +38,12 @@ pub async fn login_get() -> Html<String> {
 }
 
 pub async fn login_post(
-    State(state): State<ServerState>,
+    State(state): State<AppState>,
     cookies: Cookies,
     Form(credentials): Form<Credentials>,
 ) -> impl IntoResponse {
-    const USERNAME: &str = "admin";
-    const PASSWORD: &str = "password";
+    const USERNAME: &str = "Rust-Admin";
+    const PASSWORD: &str = "Passwd@RustC2";
 
     if credentials.username == USERNAME && credentials.password == PASSWORD {
         // 生成32位随机session token
@@ -71,7 +71,7 @@ pub async fn login_post(
 }
 
 pub async fn auth_middleware(
-    State(state): State<ServerState>,
+    State(state): State<AppState>,
     cookies: Cookies,
     request: Request,
     next: Next,

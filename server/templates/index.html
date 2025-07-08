@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust C2 Framework - 控制台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #21262d;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .header h1 {
+            color: #58a6ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #8b949e;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #58a6ff;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            color: #8b949e;
+        }
+
+        .clients-section {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .clients-section h2 {
+            color: #f0f6fc;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .clients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .clients-table th,
+        .clients-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .clients-table th {
+            background: #161b22;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+
+        .clients-table tr:hover {
+            background: #161b22;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .status.online {
+            background: #238636;
+            color: #fff;
+        }
+
+        .status.offline {
+            background: #da3633;
+            color: #fff;
+        }
+
+        .btn {
+            background: #238636;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            background: #2ea043;
+        }
+
+        .btn-secondary {
+            background: #21262d;
+            border: 1px solid #30363d;
+        }
+
+        .btn-secondary:hover {
+            background: #30363d;
+        }
+
+        .no-clients {
+            text-align: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+
+        .refresh-btn {
+            float: right;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h1>Rust C2 Framework</h1>
+                <p>远程控制与监控系统</p>
+            </div>
+            <img src="/static/rust-c2.png" alt="rust-c2" style="height:48px; width:auto; margin-left: 30px;"/>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>{{ clients.len() }}</h3>
+                <p>活跃客户端</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ online_clients_count }}</h3>
+                <p>在线客户端</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ os_types_count }}</h3>
+                <p>操作系统类型</p>
+            </div>
+        </div>
+
+        <div class="clients-section">
+            <h2>客户端列表</h2>
+            <button class="btn refresh-btn" onclick="location.reload()">刷新</button>
+            
+            {% if clients.is_empty() %}
+                <div class="no-clients">
+                    <h3>暂无客户端连接</h3>
+                    <p>等待客户端连接到服务器...</p>
+                </div>
+            {% else %}
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>客户端ID</th>
+                            <th>主机名</th>
+                            <th>用户名</th>
+                            <th>操作系统</th>
+                            <th>IP地址</th>
+                            <th>连接时间</th>
+                            <th>最后活动</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr>
+                            <td><code>{{ client.client_info.id[0..8] }}...</code></td>
+                            <td>{{ client.client_info.hostname }}</td>
+                            <td>{{ client.client_info.username }}</td>
+                            <td>{{ client.client_info.os }} ({{ client.client_info.arch }})</td>
+                            <td>{{ client.client_info.ip }}</td>
+                            <td>{{ client.client_info.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td>{{ client.client_info.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td>
+                                {% if client.is_online %}
+                                    <span class="status online">在线</span>
+                                {% else %}
+                                    <span class="status offline">离线</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/client/{{ client.client_info.id }}" class="btn">管理</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // 自动刷新页面
+        setInterval(() => {
+            location.reload();
+        }, 30000); // 每30秒刷新一次
+    </script>
+</body>
+</html>
