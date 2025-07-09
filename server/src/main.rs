@@ -40,7 +40,7 @@ async fn cleanup_task(state: AppState) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load configuration
     let config = ConfigManager::load_server_config("server_config.toml")
-        .map_err(|e| format!("Failed to load server config: {}", e))?;
+        .map_err(|e| format!("Failed to load server config: {e}"))?;
 
     // Initialize logger
     env_logger::init();

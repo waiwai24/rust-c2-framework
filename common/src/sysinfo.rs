@@ -18,7 +18,7 @@ pub fn get_hostname() -> Result<String, Box<dyn std::error::Error>> {
 
 pub fn get_country(ip: String) -> Result<String, Box<dyn std::error::Error>> {
     let mut result = {
-        let url = format!("https://ipapi.co/{}/json/", ip);
+        let url = format!("https://ipapi.co/{ip}/json/");
         let client = Client::new();
         let response = client
             .get(&url)

