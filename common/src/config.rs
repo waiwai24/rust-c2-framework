@@ -140,7 +140,7 @@ pub struct ConfigManager;
 impl ConfigManager {
     /// 加载服务器配置
     pub fn load_server_config(path: &str) -> C2Result<ServerConfig> {
-        let content = std::fs::read_to_string(path).map_err(|e| C2Error::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(C2Error::Io)?;
         let config: ServerConfig =
             toml::from_str(&content).map_err(|e| C2Error::Serialization(e.to_string()))?;
         Ok(config)
@@ -150,13 +150,13 @@ impl ConfigManager {
     pub fn save_server_config(path: &str, config: &ServerConfig) -> C2Result<()> {
         let content =
             toml::to_string_pretty(config).map_err(|e| C2Error::Serialization(e.to_string()))?;
-        std::fs::write(path, content).map_err(|e| C2Error::Io(e))?;
+        std::fs::write(path, content).map_err(C2Error::Io)?;
         Ok(())
     }
 
     /// 加载客户端配置
     pub fn load_client_config(path: &str) -> C2Result<ClientConfig> {
-        let content = std::fs::read_to_string(path).map_err(|e| C2Error::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(C2Error::Io)?;
         let config: ClientConfig =
             toml::from_str(&content).map_err(|e| C2Error::Serialization(e.to_string()))?;
         Ok(config)
@@ -166,7 +166,7 @@ impl ConfigManager {
     pub fn save_client_config(path: &str, config: &ClientConfig) -> C2Result<()> {
         let content =
             toml::to_string_pretty(config).map_err(|e| C2Error::Serialization(e.to_string()))?;
-        std::fs::write(path, content).map_err(|e| C2Error::Io(e))?;
+        std::fs::write(path, content).map_err(C2Error::Io)?;
         Ok(())
     }
 }

