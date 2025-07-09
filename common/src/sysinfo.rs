@@ -68,7 +68,6 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
         total_available_space += disk.available_space() / 1024 / 1024 / 1024;
     }
 
-    // 构建完整JSON
     let info = json!({
         "cpu_brand": cpu_info["brand"],
         "cpu_frequency_MHz": cpu_info["frequency"],

