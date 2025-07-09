@@ -43,6 +43,7 @@ pub struct ClientInfo {
     pub os: String,
     pub arch: String,
     pub ip: String,
+    pub country_info: Option<String>,
     pub cpu_brand: String,
     pub cpu_frequency: u64,
     pub cpu_cores: usize,

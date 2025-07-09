@@ -1,6 +1,8 @@
 # Rust C2 Framework
 
-   <img src="web/static/rust-c2.png" alt="rust-c2" width="400"/>
+<!-- markdownlint-disable MD033 -->
+<img src="web/static/rust-c2.png" alt="rust-c2" width="400"/>
+<!-- markdownlint-enable MD033 -->
 
 一个使用Rust编写的、经过重构的命令与控制(C2)框架，具有清晰的模块化结构，包含客户端、服务端和Web管理界面。
 

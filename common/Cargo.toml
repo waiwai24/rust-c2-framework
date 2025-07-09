@@ -15,6 +15,6 @@ base64 = "0.21"
 aes-gcm = "0.10"
 rand = "0.8"
 toml = "0.8"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "blocking"] }
 hostname = "0.3"
 sysinfo = "0.35.2"

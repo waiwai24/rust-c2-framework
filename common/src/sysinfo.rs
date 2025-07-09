@@ -1,5 +1,7 @@
 use hostname::get;
+use reqwest::blocking::Client;
 use serde_json::json;
+use serde_json::Value;
 use std::net::{IpAddr, UdpSocket};
 use sysinfo::{Disks, System};
 
@@ -12,6 +14,30 @@ pub fn get_local_ip() -> Result<IpAddr, Box<dyn std::error::Error>> {
 
 pub fn get_hostname() -> Result<String, Box<dyn std::error::Error>> {
     Ok(get()?.into_string().unwrap_or("localhost".to_string()))
+}
+
+pub fn get_country(ip: String) -> Result<String, Box<dyn std::error::Error>> {
+    let mut result = {
+        let url = format!("https://ipapi.co/{}/json/", ip);
+        let client = Client::new();
+        let response = client
+            .get(&url)
+            .header("Referer", "https://ipapi.co/")
+            .send()?;
+
+        let json: Value = response.json()?;
+        Ok(format!(
+            "国家: {}\n地区: {}\n城市: {}\nISP: {}",
+            json["country_name"].as_str().unwrap_or("未知"),
+            json["region"].as_str().unwrap_or("未知"),
+            json["city"].as_str().unwrap_or("未知"),
+            json["org"].as_str().unwrap_or("未知")
+        ))
+    };
+    if result.is_err() {
+        result = Ok("无法获取国家信息".to_string());
+    }
+    result
 }
 
 pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {

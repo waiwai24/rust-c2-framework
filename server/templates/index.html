@@ -19,8 +19,7 @@
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            width: 100%;
             padding: 20px;
         }
 
@@ -107,7 +106,7 @@
         .status {
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.85em;
+            font-size: 1em; /* Adjusted for consistent size */
             font-weight: 500;
         }
 
@@ -130,7 +129,7 @@
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
-            font-size: 0.9em;
+            font-size: 1em; /* Adjusted for consistent size */
         }
 
         .btn:hover {
@@ -152,9 +151,11 @@
             color: #8b949e;
         }
 
-        .refresh-btn {
-            float: right;
-            margin-bottom: 20px;
+        .clients-header { /* New class for aligning h2 and refresh button */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px; /* Add margin to separate from table */
         }
     </style>
 </head>
@@ -165,7 +166,7 @@
                 <h1>Rust C2 Framework</h1>
                 <p>远程控制与监控系统</p>
             </div>
-            <img src="/static/rust-c2.png" alt="rust-c2" style="height:48px; width:auto; margin-left: 30px;"/>
+            <img src="/static/rust-c2.png" alt="rust-c2" style="height:64px; width:auto; margin-left: 30px;"/>
         </div>
 
         <div class="stats">
@@ -184,8 +185,10 @@
         </div>
 
         <div class="clients-section">
-            <h2>客户端列表</h2>
-            <button class="btn refresh-btn" onclick="location.reload()">刷新</button>
+            <div class="clients-header">
+                <h2>客户端列表</h2>
+                <button class="btn refresh-btn" onclick="location.reload()">刷新</button>
+            </div>
             
             {% if clients.is_empty() %}
                 <div class="no-clients">
