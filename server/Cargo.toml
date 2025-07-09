@@ -21,6 +21,11 @@ askama_axum = "0.3"
 nix = "0.26"
 uuid = { version = "1.0", features = ["v4"] }
 rand = "0.8"
+dirs = "5.0"
+bytes = "1.0"
+tokio-util = { version = "0.7", features = ["io"] }
+futures = "0.3"
+tokio-stream = "0.1.17"
 
 [target.'cfg(all(target_os = "linux", target_env = "musl"))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }

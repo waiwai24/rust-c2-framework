@@ -1,12 +1,13 @@
 pub mod audit;
 pub mod auth;
+pub mod error;
 pub mod handlers;
 pub mod managers;
 pub mod state;
 
 use crate::{
     auth::{auth_middleware, login_get, login_post},
-    handlers::{api, web},
+    handlers::{api, file, web},
     state::AppState,
 };
 use axum::{
@@ -83,6 +84,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/clients/{client_id}/reverse_shell",
             post(api::initiate_reverse_shell),
         )
+        .route("/api/files/list", post(file::list_directory_handler))
+        .route("/api/files/delete", post(file::delete_path_handler))
+        .route(
+            "/api/files/download/{*path}",
+            get(file::download_file_handler),
+        )
+        .route("/api/files/upload/{*path}", post(file::upload_file_handler))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

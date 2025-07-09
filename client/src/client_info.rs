@@ -1,7 +1,7 @@
-use cryptify::encrypt_string;
 use common::error::{C2Error, C2Result};
 use common::message::ClientInfo;
 use common::sysinfo::{get_country, get_hardware_info, get_hostname, get_local_ip};
+use cryptify::encrypt_string;
 use uuid::Uuid;
 
 pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<ClientInfo> {
