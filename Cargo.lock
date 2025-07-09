@@ -420,6 +420,7 @@ dependencies = [
  "cryptify",
  "env_logger",
  "hex",
+ "libc",
  "log",
  "openssl",
  "rand 0.9.1",

@@ -23,6 +23,7 @@ base64 = "0.22.1"
 hex = "0.4.3"
 cryptify = "3.1.1"
 rand = "0.9.1"
+libc = "0.2"
 
 [target.'cfg(all(target_os = "linux", target_env = "musl"))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
