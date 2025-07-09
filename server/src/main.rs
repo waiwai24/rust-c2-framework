@@ -20,6 +20,7 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
+// Spawn a background task to periodically clean up offline clients and expired sessions
 async fn cleanup_task(state: AppState) {
     let mut interval = tokio::time::interval(Duration::from_secs(60));
     loop {
@@ -39,7 +40,9 @@ async fn cleanup_task(state: AppState) {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load configuration
-    let config = ConfigManager::load_server_config("server_config.toml")
+    let config_path = "server_config.toml";
+    println!("Attempting to load server config from: {}", config_path);
+    let config = ConfigManager::load_server_config(config_path)
         .map_err(|e| format!("Failed to load server config: {e}"))?;
 
     // Initialize logger
@@ -90,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/login", get(login_get).post(login_post))
         .merge(protected_routes)
         .merge(c2_api_routes)
-        .merge(web_api_routes) // Merge web-specific APIs directly
+        .merge(web_api_routes)
         .nest_service("/static", ServeDir::new(&config.web.static_dir))
         .layer(CorsLayer::permissive())
         .layer(CookieManagerLayer::new())

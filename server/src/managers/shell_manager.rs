@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-/// Shell会话管理器
+/// ShellManager manages shell sessions and their associated data.
 pub struct ShellManager {
     sessions: Arc<RwLock<HashMap<String, ShellSession>>>,
     session_data: Arc<RwLock<HashMap<String, Vec<String>>>>,
@@ -24,7 +24,7 @@ impl ShellManager {
         }
     }
 
-    /// 创建新的Shell会话
+    /// Create a new shell session
     pub async fn create_session(&self, client_id: &str) -> String {
         let session_id = Uuid::new_v4().to_string();
         let session = ShellSession {
@@ -40,13 +40,13 @@ impl ShellManager {
         session_id
     }
 
-    /// 获取会话
+    /// Get a specific shell session by ID
     pub async fn get_session(&self, session_id: &str) -> Option<ShellSession> {
         let sessions = self.sessions.read().await;
         sessions.get(session_id).cloned()
     }
 
-    /// 添加Shell数据
+    /// Add data to a shell session
     pub async fn add_shell_data(&self, session_id: &str, data: String) {
         let mut session_data = self.session_data.write().await;
         session_data
@@ -55,13 +55,13 @@ impl ShellManager {
             .push(data);
     }
 
-    /// 获取Shell数据
+    /// Get all data for a specific shell session
     pub async fn get_shell_data(&self, session_id: &str) -> Vec<String> {
         let session_data = self.session_data.read().await;
         session_data.get(session_id).cloned().unwrap_or_default()
     }
 
-    /// 关闭会话
+    /// Close a shell session
     pub async fn close_session(&self, session_id: &str) {
         let mut sessions = self.sessions.write().await;
         if let Some(session) = sessions.get_mut(session_id) {
@@ -69,7 +69,7 @@ impl ShellManager {
         }
     }
 
-    /// 清理过期会话
+    /// Clean up expired shell sessions based on a timeout
     pub async fn cleanup_expired_sessions(&self, timeout_seconds: i64) {
         let mut sessions = self.sessions.write().await;
         let mut session_data = self.session_data.write().await;
@@ -85,7 +85,7 @@ impl ShellManager {
         });
     }
 
-    /// 获取客户端的所有会话
+    /// Get all shell sessions for a specific client
     pub async fn get_client_sessions(&self, client_id: &str) -> Vec<ShellSession> {
         let sessions = self.sessions.read().await;
         sessions

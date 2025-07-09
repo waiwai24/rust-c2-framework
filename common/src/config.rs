@@ -20,6 +20,8 @@ pub struct ServerConfig {
     pub enable_audit: bool,
     /// Web configuration
     pub web: WebConfig,
+    /// Authentication configuration
+    pub auth: AuthConfig,
 }
 
 /// Web configuration
@@ -33,6 +35,15 @@ pub struct WebConfig {
     pub template_dir: String,
     /// Enable CORS(Cross-Origin Resource Sharing)
     pub enable_cors: bool,
+}
+
+/// Authentication configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthConfig {
+    /// Username for authentication
+    pub username: String,
+    /// Password for authentication
+    pub password: String,
 }
 
 /// Client configuration
@@ -93,6 +104,7 @@ impl Default for ServerConfig {
             log_file: "c2_server.log".to_string(),
             enable_audit: true,
             web: WebConfig::default(),
+            auth: AuthConfig::default(),
         }
     }
 }
@@ -104,6 +116,15 @@ impl Default for WebConfig {
             static_dir: "web/static".to_string(),
             template_dir: "templates".to_string(),
             enable_cors: true,
+        }
+    }
+}
+
+impl Default for AuthConfig {
+    fn default() -> Self {
+        Self {
+            username: "".to_string(),
+            password: "".to_string(),
         }
     }
 }

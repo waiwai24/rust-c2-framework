@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-/// 客户端管理器
+/// ClientManager handles client registration, command management, and command results.
 pub struct ClientManager {
     clients: Arc<RwLock<HashMap<String, ClientInfo>>>,
     commands: Arc<RwLock<HashMap<String, Vec<CommandRequest>>>>,
@@ -25,13 +25,13 @@ impl ClientManager {
         }
     }
 
-    /// 注册客户端
+    /// Register a new client
     pub async fn register_client(&self, client: ClientInfo) {
         let mut clients = self.clients.write().await;
         clients.insert(client.id.clone(), client);
     }
 
-    /// 更新客户端心跳
+    /// Update the heartbeat for a specific client
     pub async fn update_heartbeat(&self, client_id: &str) {
         let mut clients = self.clients.write().await;
         if let Some(client) = clients.get_mut(client_id) {
@@ -39,19 +39,19 @@ impl ClientManager {
         }
     }
 
-    /// 获取所有客户端
+    /// Get all clients
     pub async fn get_clients(&self) -> Vec<ClientInfo> {
         let clients = self.clients.read().await;
         clients.values().cloned().collect()
     }
 
-    /// 获取指定客户端
+    /// Get a specific client by ID
     pub async fn get_client(&self, client_id: &str) -> Option<ClientInfo> {
         let clients = self.clients.read().await;
         clients.get(client_id).cloned()
     }
 
-    /// 添加命令到队列
+    /// Add a command to a client's command queue
     pub async fn add_command(&self, client_id: &str, command: CommandRequest) {
         let mut commands = self.commands.write().await;
         commands
@@ -60,13 +60,13 @@ impl ClientManager {
             .push(command);
     }
 
-    /// 获取客户端命令队列
+    /// Get all commands for a specific client
     pub async fn get_commands(&self, client_id: &str) -> Vec<CommandRequest> {
         let mut commands = self.commands.write().await;
         commands.remove(client_id).unwrap_or_default()
     }
 
-    /// 添加命令结果
+    /// Add a command result
     pub async fn add_command_result(&self, result: CommandResponse) {
         let mut results = self.command_results.write().await;
         results
@@ -75,13 +75,13 @@ impl ClientManager {
             .push(result);
     }
 
-    /// 获取命令结果
+    /// Get all command results for a specific client
     pub async fn get_command_results(&self, client_id: &str) -> Vec<CommandResponse> {
         let results = self.command_results.read().await;
         results.get(client_id).cloned().unwrap_or_default()
     }
 
-    /// 清理离线客户端
+    /// Clean up offline clients based on a timeout
     pub async fn cleanup_offline_clients(&self, timeout_seconds: i64) {
         let mut clients = self.clients.write().await;
         let now = chrono::Utc::now();
@@ -90,7 +90,7 @@ impl ClientManager {
             .retain(|_, client| (now.timestamp() - client.last_seen.timestamp()) < timeout_seconds);
     }
 
-    /// 获取在线客户端数量
+    /// Get the number of online clients
     pub async fn get_online_count(&self) -> usize {
         let clients = self.clients.read().await;
         let now = chrono::Utc::now();

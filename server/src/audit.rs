@@ -4,7 +4,7 @@ use log::{error, info, warn};
 use std::fs::OpenOptions;
 use std::io::Write;
 
-/// 审计日志管理器
+/// Audit logger for recording client actions and system events
 pub struct AuditLogger {
     log_file: String,
 }
@@ -16,7 +16,7 @@ impl AuditLogger {
         }
     }
 
-    /// 记录客户端连接
+    /// Log client connection
     pub fn log_client_connect(&self, client_info: &ClientInfo) {
         let log_entry = format!(
             "[{}] CLIENT_CONNECT - ID: {}, Hostname: {}, User: {}, IP: {}, OS: {}",
@@ -32,7 +32,7 @@ impl AuditLogger {
         self.write_to_file(&log_entry);
     }
 
-    /// 记录客户端断开
+    /// Log client disconnection
     pub fn log_client_disconnect(&self, client_id: &str) {
         let log_entry = format!(
             "[{}] CLIENT_DISCONNECT - ID: {}",
@@ -44,7 +44,7 @@ impl AuditLogger {
         self.write_to_file(&log_entry);
     }
 
-    /// 记录命令执行
+    /// Log command execution
     pub fn log_command_execution(&self, cmd: &CommandRequest) {
         let log_entry = format!(
             "[{}] COMMAND_EXECUTE - Client: {}, Command: {} {}",
@@ -58,7 +58,7 @@ impl AuditLogger {
         self.write_to_file(&log_entry);
     }
 
-    /// 记录命令结果
+    /// Log command result
     pub fn log_command_result(&self, result: &CommandResponse) {
         let log_entry = format!(
             "[{}] COMMAND_RESULT - Client: {}, Command: {}, ExitCode: {}, StdoutLines: {}, StderrLines: {}",
@@ -74,7 +74,7 @@ impl AuditLogger {
         self.write_to_file(&log_entry);
     }
 
-    /// 记录Shell会话
+    /// Log shell session
     pub fn log_shell_session(&self, session: &ShellSession) {
         let log_entry = format!(
             "[{}] SHELL_SESSION - Client: {}, Session: {}, Active: {}",
@@ -88,7 +88,7 @@ impl AuditLogger {
         self.write_to_file(&log_entry);
     }
 
-    /// 记录错误
+    /// Log error messages
     pub fn log_error(&self, error_msg: &str) {
         let log_entry = format!(
             "[{}] ERROR - {}",
@@ -100,7 +100,7 @@ impl AuditLogger {
         self.write_to_file(&log_entry);
     }
 
-    /// 写入日志文件
+    /// Write a log entry to the file
     fn write_to_file(&self, log_entry: &str) {
         if let Ok(mut file) = OpenOptions::new()
             .create(true)
