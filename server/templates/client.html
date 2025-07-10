@@ -314,6 +314,7 @@
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #30363d;
+            position: relative; /* 添加此行 */
         }
         
         .file-manager-header {
@@ -359,14 +360,27 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+            table-layout: fixed;
         }
         
         .file-table th,
         .file-table td {
-            padding: 12px;
+            padding: 8px 12px;
             text-align: left;
             border-bottom: 1px solid #30363d;
+            vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+        
+        /* 调整列宽以适应权限和所有者列 */
+        .file-table th:nth-child(1) { width: 25%; } /* 名称 */
+        .file-table th:nth-child(2) { width: 8%; }  /* 类型 */
+        .file-table th:nth-child(3) { width: 10%; } /* 大小 */
+        .file-table th:nth-child(4) { width: 12%; } /* 权限 */
+        .file-table th:nth-child(5) { width: 12%; } /* 所有者 */
+        .file-table th:nth-child(6) { width: 15%; } /* 修改时间 */
+        .file-table th:nth-child(7) { width: 18%; } /* 操作 */
         
         .file-table th {
             background: #161b22;
@@ -378,38 +392,64 @@
             background: #161b22;
         }
         
-        .file-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .file-icon {
-            margin-right: 5px;
-        }
-        
-        .directory {
+        .permissions {
+            font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
             color: #58a6ff;
-            cursor: pointer;
+            background: rgba(88, 166, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
         }
         
-        .directory:hover {
-            text-decoration: underline;
-        }
-        
-        .loading-indicator {
-            text-align: center;
-            padding: 20px;
+        .owner-group {
+            font-size: 0.85em;
             color: #8b949e;
-            font-style: italic;
+            white-space: nowrap;
         }
-        
-        .download-link {
-            color: #58a6ff;
-            text-decoration: none;
+        /* 新增的加载指示器样式 */
+        .file-list-section {
+            /* 移除 position: relative; 和 min-height */
+            margin-top: 20px; /* 保持原有的 margin-top */
         }
-        
-        .download-link:hover {
-            text-decoration: underline;
+
+        .loading-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.8); /* 半透明背景 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* 确保在最上层 */
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column; /* 让 spinner 和文本垂直排列 */
+            align-items: center; /* 水平居中 */
+            gap: 10px; /* 间距 */
+            padding: 20px;
+            background: #21262d;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #58a6ff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -586,15 +626,14 @@
                             
                             <div class="file-list-section">
                                 <h3>目录内容</h3>
-                                <div class="loading-indicator" id="loadingFiles" style="display: none;">
-                                    加载中...
-                                </div>
                                 <table class="file-table">
                                     <thead>
                                         <tr>
                                             <th>名称</th>
                                             <th>类型</th>
                                             <th>大小</th>
+                                            <th>权限</th>
+                                            <th>所有者</th>
                                             <th>修改时间</th>
                                             <th>操作</th>
                                         </tr>
@@ -603,6 +642,12 @@
                                         <!-- 文件列表将通过JavaScript动态填充 -->
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="loading-indicator" id="loadingFiles" style="display: none;">
+                                <div class="loading-content">
+                                    <div class="loading-spinner"></div>
+                                    <span>加载中...</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -631,6 +676,8 @@
                     
                     // 如果是文件管理标签，自动列出目录
                     if (tabId === 'file') {
+                        document.querySelector('.file-upload-section').style.display = 'none';
+                        document.querySelector('.file-list-section').style.display = 'none';
                         listDirectory();
                     }
                 });
@@ -666,8 +713,8 @@
                 if (response.ok) {
                     alert('命令已发送');
                     document.getElementById('commandInput').value = '';
-                    // 3秒后刷新结果
-                    setTimeout(refreshResults, 3000);
+                    // 1秒后刷新结果
+                    setTimeout(refreshResults, 1000);
                 } else {
                     alert('发送命令失败');
                 }
@@ -724,21 +771,18 @@
         function renderFileList(data) {
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
-            
-            console.log('Rendering file list with data:', data); // Debug log
-            
-            // Handle different response formats - improved logic
+
+            console.log('Rendering file list with data:', data);
+
+            // Handle different response formats
             let entries = [];
-            
+
             if (data && typeof data === 'object') {
                 if (Array.isArray(data)) {
-                    // Direct array of entries
                     entries = data;
                 } else if (data.entries && Array.isArray(data.entries)) {
-                    // Response with entries property
                     entries = data.entries;
                 } else if (data.data) {
-                    // Response with data property
                     if (Array.isArray(data.data)) {
                         entries = data.data;
                     } else if (data.data.entries && Array.isArray(data.data.entries)) {
@@ -748,19 +792,27 @@
                     }
                 }
             }
-            
-            console.log('Extracted entries:', entries); // Debug log
-            
+
+            console.log('Extracted entries:', entries);
+
             if (!Array.isArray(entries) || entries.length === 0) {
-                fileList.innerHTML = '<tr><td colspan="5" class="no-results">目录为空或数据格式错误</td></tr>';
+                fileList.innerHTML = '<tr><td colspan="7" class="no-results">目录为空或数据格式错误</td></tr>';
                 return;
             }
-            
+
+            // 排序：先文件夹后文件，按名称字符大小排序
+            entries.sort((a, b) => {
+                if (a.is_dir !== b.is_dir) {
+                    return a.is_dir ? -1 : 1; // 文件夹排在前面
+                }
+                return a.name.localeCompare(b.name, 'zh-CN'); // 按字符大小排序
+            });
+
             entries.forEach(entry => {
-                console.log('Processing entry:', entry); // Debug log
-                
+                console.log('Processing entry:', entry);
+
                 const tr = document.createElement('tr');
-                
+
                 // 名称列，包含图标
                 const nameCell = document.createElement('td');
                 if (entry.is_dir) {
@@ -769,17 +821,17 @@
                 } else {
                     nameCell.innerHTML = `<span class="file-icon">📄</span> ${escapeHtml(entry.name)}`;
                 }
-                
+                nameCell.title = entry.path; // 添加完整路径的tooltip
+
                 // 类型列
                 const typeCell = document.createElement('td');
                 typeCell.textContent = entry.is_dir ? '目录' : '文件';
-                
-                // 大小列 - 修复文件大小处理
+
+                // 大小列
                 const sizeCell = document.createElement('td');
                 if (entry.is_dir) {
                     sizeCell.textContent = '-';
                 } else {
-                    // 处理文件大小，支持数字和null值
                     const fileSize = entry.size;
                     if (typeof fileSize === 'number') {
                         sizeCell.textContent = formatFileSize(fileSize);
@@ -787,38 +839,62 @@
                         sizeCell.textContent = '0 Bytes';
                     }
                 }
-                
-                // 修改时间列 - 修复时间戳处理
+
+                // 权限列
+                const permissionsCell = document.createElement('td');
+                if (entry.permissions) {
+                    permissionsCell.innerHTML = `<span class="permissions">${escapeHtml(entry.permissions)}</span>`;
+                } else {
+                    permissionsCell.textContent = '-';
+                }
+
+                // 所有者列
+                const ownerCell = document.createElement('td');
+                if (entry.owner && entry.group) {
+                    ownerCell.innerHTML = `<span class="owner-group">${escapeHtml(entry.owner)}:${escapeHtml(entry.group)}</span>`;
+                } else if (entry.owner) {
+                    ownerCell.innerHTML = `<span class="owner-group">${escapeHtml(entry.owner)}</span>`;
+                } else {
+                    ownerCell.innerHTML = '<span class="owner-group">-</span>';
+                }
+
+                // 修改时间列
                 const timeCell = document.createElement('td');
                 if (entry.modified) {
                     let modifiedDate;
-                    if (typeof entry.modified === 'object' && entry.modified.secs_since_epoch) {
-                        // 处理Rust的SystemTime格式
+                    if (typeof entry.modified === 'object' && entry.modified.tv_sec !== undefined) {
+                        // 处理SystemTime格式 {tv_sec: ..., tv_nsec: ...}
+                        modifiedDate = new Date(entry.modified.tv_sec * 1000);
+                    } else if (typeof entry.modified === 'object' && entry.modified.secs_since_epoch !== undefined) {
+                        // 处理其他时间格式
                         modifiedDate = new Date(entry.modified.secs_since_epoch * 1000);
                     } else if (typeof entry.modified === 'string') {
                         modifiedDate = new Date(entry.modified);
                     } else if (typeof entry.modified === 'number') {
                         modifiedDate = new Date(entry.modified);
-                    } else if (typeof entry.modified === 'object' && entry.modified.tv_sec) {
-                        // 处理包含tv_sec的格式
-                        modifiedDate = new Date(entry.modified.tv_sec * 1000);
                     } else {
                         modifiedDate = null;
                     }
-                    
+
                     if (modifiedDate && !isNaN(modifiedDate.getTime())) {
-                        timeCell.textContent = modifiedDate.toLocaleString();
+                        timeCell.textContent = modifiedDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
                     } else {
                         timeCell.textContent = '-';
                     }
                 } else {
                     timeCell.textContent = '-';
                 }
-                
+
                 // 操作列
                 const actionCell = document.createElement('td');
                 actionCell.className = 'file-actions';
-                
+
                 if (entry.is_dir) {
                     actionCell.innerHTML = `
                         <button class="btn btn-sm" onclick="navigateToDirectory('${escapeHtml(entry.path)}')">打开</button>
@@ -834,6 +910,8 @@
                 tr.appendChild(nameCell);
                 tr.appendChild(typeCell);
                 tr.appendChild(sizeCell);
+                tr.appendChild(permissionsCell);
+                tr.appendChild(ownerCell);
                 tr.appendChild(timeCell);
                 tr.appendChild(actionCell);
                 
@@ -844,10 +922,10 @@
         // 添加HTML转义函数以防止XSS
         function escapeHtml(text) {
             const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
+                '&': '&',
+                '<': '<',
+                '>': '>',
+                '"': '"',
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
@@ -862,6 +940,8 @@
             
             currentPath = path;
             document.getElementById('loadingFiles').style.display = 'block';
+            document.querySelector('.file-upload-section').style.display = 'none';
+            document.querySelector('.file-list-section').style.display = 'none';
             document.getElementById('fileList').innerHTML = '';
             
             try {
@@ -893,7 +973,7 @@
                     } else {
                         console.error('Server returned error:', data.message);
                         alert(`获取文件列表失败: ${data.message}`);
-                        document.getElementById('fileList').innerHTML = '<tr><td colspan="5" class="no-results">获取文件列表失败</td></tr>';
+                        document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">获取文件列表失败</td></tr>';
                     }
                 } else {
                     console.error('HTTP error:', response.status);
@@ -906,14 +986,16 @@
                     } catch (e) {
                         alert(`获取文件列表失败: HTTP ${response.status}`);
                     }
-                    document.getElementById('fileList').innerHTML = '<tr><td colspan="5" class="no-results">网络错误</td></tr>';
+                    document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">网络错误</td></tr>';
                 }
             } catch (error) {
                 console.error('Error fetching file list:', error);
                 alert('获取文件列表时出错: ' + error.message);
-                document.getElementById('fileList').innerHTML = '<tr><td colspan="5" class="no-results">网络连接错误</td></tr>';
+                document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">网络连接错误</td></tr>';
             } finally {
                 document.getElementById('loadingFiles').style.display = 'none';
+                document.querySelector('.file-upload-section').style.display = 'block';
+                document.querySelector('.file-list-section').style.display = 'block';
             }
         }
         

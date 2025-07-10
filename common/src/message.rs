@@ -116,6 +116,8 @@ pub struct FileEntry {
     pub size: Option<u64>,
     pub modified: Option<SystemTime>,
     pub permissions: Option<String>,
+    pub owner: Option<String>,
+    pub group: Option<String>,
 }
 
 /// Request to list directory contents on the client

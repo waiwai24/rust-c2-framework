@@ -91,6 +91,8 @@ impl ClientFileManager {
                     },
                     modified: metadata.modified().ok(),
                     permissions: Some(permissions),
+                    owner: None, // Set to None as ownership info is not easily available on all platforms
+                    group: None, // Set to None as group info is not easily available on all platforms
                 };
 
                 info!("Found entry: {:?}", file_entry);

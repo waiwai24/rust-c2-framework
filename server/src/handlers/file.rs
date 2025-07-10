@@ -8,19 +8,32 @@ use axum::{
     response::Response,
     Json,
 };
-use bytes::Bytes; // For bytes::Bytes in download stream
+use bytes::Bytes;
 use common::message::{
     CommandRequest, DeletePathRequest, DeletePathResponse, DownloadFileRequest, FileChunk,
     FileOperationCommand, ListDirRequest, ListDirResponse, Message, MessageType, UploadFileRequest,
-}; // Import new message types
+    FileEntry, // 添加 FileEntry 导入
+};
 use futures::stream::{self, StreamExt};
-use log::{error, info}; // Import error for logging
+use log::{error, info};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tokio::time::Duration; // For polling with timeout
-use uuid::Uuid; // Import Uuid // For stream::unfold and StreamExt::map
+use std::sync::OnceLock;
+use std::time::SystemTime; // 添加 SystemTime 导入
+use tokio::time::Duration;
+use uuid::Uuid;
 
-const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 60; // Timeout for client responses
+const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 60;
+
+// 编译时创建正则表达式
+static PERMISSION_REGEX: OnceLock<Regex> = OnceLock::new();
+
+fn get_permission_regex() -> &'static Regex {
+    PERMISSION_REGEX.get_or_init(|| {
+        Regex::new(r"mode: 0o(\d+) \(([d\-rwxstST]+)\)").unwrap()
+    })
+}
 
 #[derive(Debug, Deserialize)]
 pub struct ListDirectoryRequest {
@@ -52,7 +65,7 @@ async fn send_command_and_await_response_event_driven<T: Serialize>(
         client_id: client_id.to_string(),
         command: command_type.to_string(),
         args: vec![serde_json::to_string(request_data)?],
-        message_id: None, // Temporary, will be updated
+        message_id: None,
     };
 
     let message = Message::new(
@@ -66,7 +79,7 @@ async fn send_command_and_await_response_event_driven<T: Serialize>(
         client_id: client_id.to_string(),
         command: command_type.to_string(),
         args: vec![serde_json::to_string(request_data)?],
-        message_id: Some(message_id.clone()), // Include message_id for event-driven responses
+        message_id: Some(message_id.clone()),
     };
 
     // Register for event-driven response
@@ -112,6 +125,68 @@ async fn send_command_and_await_response<T: Serialize>(
     send_command_and_await_response_event_driven(state, client_id, command_type, request_data).await
 }
 
+/// Parse permissions from debug string format to clean Unix format
+fn parse_permissions(debug_str: &str) -> Option<String> {
+    let regex = get_permission_regex();
+    
+    if let Some(captures) = regex.captures(debug_str) {
+        if let Some(perm_str) = captures.get(2) {
+            return Some(perm_str.as_str().to_string());
+        }
+    }
+    
+    // 如果正则匹配失败，尝试简单的字符串匹配
+    if debug_str.contains("(") && debug_str.contains(")") {
+        if let Some(start) = debug_str.find('(') {
+            if let Some(end) = debug_str.find(')') {
+                if start < end {
+                    let perm_part = &debug_str[start + 1..end];
+                    // 检查是否看起来像权限字符串
+                    if perm_part.len() >= 9 && perm_part.chars().all(|c| "drwxstST-".contains(c)) {
+                        return Some(perm_part.to_string());
+                    }
+                }
+            }
+        }
+    }
+    
+    None
+}
+
+/// Enhanced file entry with parsed permissions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedFileEntry {
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+    pub size: Option<u64>,
+    pub modified: Option<SystemTime>,
+    pub permissions: Option<String>,
+    pub owner: Option<String>,
+    pub group: Option<String>,
+}
+
+impl From<FileEntry> for EnhancedFileEntry {
+    fn from(entry: FileEntry) -> Self {
+        // 解析权限字符串
+        let parsed_permissions = entry.permissions
+            .as_ref()
+            .and_then(|p| parse_permissions(p))
+            .or(entry.permissions);
+
+        Self {
+            name: entry.name,
+            path: entry.path.to_string_lossy().to_string(),
+            is_dir: entry.is_dir,
+            size: entry.size,
+            modified: entry.modified,
+            permissions: parsed_permissions,
+            owner: entry.owner.clone(),
+            group: entry.group.clone(),
+        }
+    }
+}
+
 /// API handler to list directory contents on a client.
 pub async fn list_directory_handler(
     State(state): State<AppState>,
@@ -149,8 +224,14 @@ pub async fn list_directory_handler(
     info!("Deserialized ListDirResponse: {:?}", list_res);
 
     if list_res.success {
-        // Ensure we return the entries array in the expected format
-        let entries_json = serde_json::to_value(&list_res.entries)?;
+        // Convert FileEntry to EnhancedFileEntry with parsed permissions
+        let enhanced_entries: Vec<EnhancedFileEntry> = list_res
+            .entries
+            .into_iter()
+            .map(EnhancedFileEntry::from)
+            .collect();
+
+        let entries_json = serde_json::to_value(&enhanced_entries)?;
         Ok(Json(ServerFileOperationResponse {
             success: true,
             message: list_res.message,
@@ -163,12 +244,111 @@ pub async fn list_directory_handler(
     }
 }
 
-/// API handler to delete a file or directory on a client.
+/// 用于Web UI的目录列表API
+pub async fn list_directory(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    Json(req): Json<ListDirRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    info!(
+        "Received list directory request for client {}: path={}, recursive={}",
+        client_id, req.path, req.recursive
+    );
+
+    // Create command request
+    let cmd = CommandRequest {
+        client_id: client_id.clone(),
+        command: "FileOperation".to_string(),
+        args: vec![serde_json::to_string(&FileOperationCommand::ListDir(req.clone()))
+            .map_err(|e| {
+                error!("Failed to serialize ListDirRequest: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to serialize request".to_string(),
+                )
+            })?],
+        message_id: Some(Uuid::new_v4().to_string()),
+    };
+
+    // Send command to client
+    state.client_manager.add_command(&client_id, cmd.clone()).await;
+    info!("Sent list directory command to client {}", client_id);
+
+    // Wait for response using register_response_notifier instead
+    let message_id = cmd.message_id.as_ref().unwrap();
+    let response_receiver = state.register_response_notifier(message_id.clone()).await;
+    
+    let response_message = match tokio::time::timeout(
+        Duration::from_secs(30),
+        response_receiver
+    ).await {
+        Ok(Ok(msg)) => {
+            info!("Received response for list directory request: message_id={}", msg.id);
+            msg
+        }
+        Ok(Err(_)) => {
+            error!("Response channel closed for list directory request from client {}", client_id);
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Response channel closed".to_string(),
+            ));
+        }
+        Err(_) => {
+            error!("Timeout waiting for list directory response from client {}", client_id);
+            return Err((
+                StatusCode::REQUEST_TIMEOUT,
+                "Timeout waiting for response from client".to_string(),
+            ));
+        }
+    };
+
+    // Parse the response
+    let payload_str = String::from_utf8(response_message.payload.clone()).map_err(|e| {
+        error!("Failed to convert response payload to string: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid response format".to_string(),
+        )
+    })?;
+
+    info!("Raw payload received for ListDir: {:?}", payload_str);
+
+    let response: ListDirResponse = serde_json::from_str(&payload_str).map_err(|e| {
+        error!("Failed to deserialize ListDirResponse: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to parse response".to_string(),
+        )
+    })?;
+
+    info!("Deserialized ListDirResponse: {:?}", response);
+
+    // Convert FileEntry to EnhancedFileEntry with parsed permissions
+    let enhanced_entries: Vec<EnhancedFileEntry> = response
+        .entries
+        .into_iter()
+        .map(EnhancedFileEntry::from)
+        .collect();
+
+    let enhanced_response = serde_json::json!({
+        "entries": enhanced_entries,
+        "success": response.success,
+        "message": response.message
+    });
+
+    info!(
+        "Successfully processed list directory request for client {}: found {} entries",
+        client_id,
+        enhanced_entries.len()
+    );
+
+    Ok(Json(enhanced_response))
+}
+
 pub async fn delete_path_handler(
     State(state): State<AppState>,
     Json(payload): Json<DeletePathPayloadWithClient>,
 ) -> Result<Json<ServerFileOperationResponse>, FileOperationError> {
-    // Changed return type
     let client_id = payload.client_id;
     info!(
         "Received request to delete path on client {}: {:?}",
@@ -183,7 +363,7 @@ pub async fn delete_path_handler(
         &state,
         &client_id,
         MessageType::DeletePath,
-        &delete_req, // Pass the struct directly
+        &delete_req,
     )
     .await?;
 
@@ -200,7 +380,6 @@ pub async fn delete_path_handler(
     }
 }
 
-/// API handler for downloading a file from a client to the server.
 pub async fn download_file_handler(
     State(state): State<AppState>,
     Path(file_path): Path<String>,
@@ -244,7 +423,6 @@ pub async fn download_file_handler(
     let stream = stream::unfold(
         (client_id.clone(), file_id.clone(), state.clone()),
         move |(client_id, file_id, state)| async move {
-            // For chunk requests, send file_id directly as the request data
             let chunk_request = serde_json::json!({"file_id": file_id});
 
             let response_message = match send_command_and_await_response(
@@ -271,7 +449,6 @@ pub async fn download_file_handler(
                     }
                 };
 
-            // Check if this is the last chunk or if download is complete
             if chunk_res["is_last"].as_bool().unwrap_or(false)
                 || chunk_res["message"]
                     .as_str()
@@ -307,33 +484,30 @@ pub async fn download_file_handler(
         .map_err(|e| FileOperationError::Other(format!("Failed to build response: {}", e)))?)
 }
 
-/// API handler for uploading a file from the server to a client.
 pub async fn upload_file_handler(
     State(state): State<AppState>,
-    Path(file_path): Path<String>,      // Extract file_path
-    Query(query): Query<ClientIdQuery>, // Extract client_id from query
-    body: axum::body::Body,             // Removed mut as it's not needed for into_data_stream
+    Path(file_path): Path<String>,
+    Query(query): Query<ClientIdQuery>,
+    body: axum::body::Body,
 ) -> Result<Json<ServerFileOperationResponse>, FileOperationError> {
     let client_id = query.client_id;
-    // Changed return type
     info!(
         "Received request to upload file {:?} to client {}",
         file_path, client_id
     );
 
-    let file_id = Uuid::new_v4().to_string(); // Generate a unique ID for this upload session
+    let file_id = Uuid::new_v4().to_string();
 
     let upload_init_req = UploadFileRequest {
         path: file_path.clone(),
         file_id: file_id.clone(),
     };
 
-    // Send initiation command to client
     let response_message = send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::UploadFileInit, // This will be UPLOAD_FILE_INIT on client
-        &upload_init_req,            // Pass the struct directly
+        MessageType::UploadFileInit,
+        &upload_init_req,
     )
     .await?;
 
@@ -346,18 +520,15 @@ pub async fn upload_file_handler(
     }
 
     let mut offset = 0;
-    let mut data_stream = body.into_data_stream(); // Get the data stream from the body
+    let mut data_stream = body.into_data_stream();
     let mut buffer = Vec::new();
-    const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for combining small chunks
+    const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer
 
     while let Some(chunk_result) = data_stream.next().await {
-        // Iterate over the stream
         let chunk_bytes = chunk_result.map_err(|e| FileOperationError::IoError(e.to_string()))?;
 
-        // Accumulate data in buffer
         buffer.extend_from_slice(&chunk_bytes);
 
-        // Send buffer when it's large enough or this is the last chunk
         if buffer.len() >= BUFFER_SIZE {
             let file_chunk = FileChunk {
                 file_id: file_id.clone(),
@@ -366,7 +537,6 @@ pub async fn upload_file_handler(
                 offset,
             };
 
-            // Send chunk command to client using new command type
             let response_message = send_command_and_await_response(
                 &state,
                 &client_id,
@@ -388,7 +558,6 @@ pub async fn upload_file_handler(
         }
     }
 
-    // Send any remaining data in buffer
     if !buffer.is_empty() {
         let chunk_len = buffer.len();
         let file_chunk = FileChunk {
@@ -417,18 +586,18 @@ pub async fn upload_file_handler(
         offset += chunk_len as u64;
     }
 
-    // Send a final chunk with is_last = true to signal end of file
+    // Send final chunk
     let final_chunk = FileChunk {
         file_id: file_id.clone(),
-        chunk: Vec::new(), // Empty chunk for signaling end
+        chunk: Vec::new(),
         is_last: true,
         offset,
     };
     send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::UploadFileChunk, // This will be UPLOAD_FILE_CHUNK on client
-        &final_chunk,                 // Pass the struct directly
+        MessageType::UploadFileChunk,
+        &final_chunk,
     )
     .await?;
 
