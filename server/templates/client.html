@@ -341,7 +341,7 @@
         
         .file-upload-section {
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 10px; /* 减小内边距 */
             background: #161b22;
             border-radius: 6px;
             border: 1px solid #30363d;
@@ -350,6 +350,16 @@
         .file-upload-section h3 {
             margin-bottom: 10px;
             color: #58a6ff;
+        }
+
+        .upload-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-controls .btn {
+            margin-bottom: 0; /* 移除按钮的默认下边距 */
         }
         
         .file-list-section {
@@ -537,6 +547,7 @@
                 <div class="tabs">
                     <div class="tab-header">
                         <div class="tab-item active" data-tab="command">命令执行</div>
+                        <div class="tab-item" data-tab="reverse-shell">反弹Shell</div>
                         <div class="tab-item" data-tab="file">文件管理</div>
                     </div>
                     
@@ -557,7 +568,6 @@
                             <div class="command-form">
                                 <input type="text" id="commandInput" class="command-input" placeholder="输入要执行的命令..." />
                                 <button class="btn btn-primary" onclick="executeCommand()">执行</button>
-                                <button class="btn btn-danger" onclick="startReverseShell()">反弹Shell</button>
                             </div>
                         </div>
 
@@ -604,6 +614,18 @@
                             {% endif %}
                         </div>
                     </div>
+
+                    <div class="tab-content" id="reverse-shell-tab">
+                        <div class="command-section">
+                            <h2>反弹Shell</h2>
+                            <p>点击下方按钮启动反弹Shell。请确保您的监听器已准备就绪。</p>
+                            <button class="btn btn-danger" onclick="startReverseShell()">启动反弹Shell</button>
+                            <div class="result-output" style="margin-top: 20px;">
+                                <p>反弹Shell状态: <span id="reverseShellStatus">未启动</span></p>
+                                <p>请在您的监听器上查看连接。</p>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="tab-content" id="file-tab">
                         <div class="file-manager">
@@ -618,10 +640,12 @@
                             
                             <div class="file-upload-section">
                                 <h3>文件上传</h3>
-                                <form id="uploadForm" enctype="multipart/form-data">
-                                    <input type="file" id="fileUpload" />
-                                    <button type="button" class="btn" onclick="uploadFile()">上传</button>
-                                </form>
+                                <div class="upload-controls">
+                                    <label for="fileUpload" class="btn btn-sm">选择文件</label>
+                                    <input type="file" id="fileUpload" style="display: none;" onchange="updateFileName(this)" />
+                                    <span id="fileNameDisplay" style="margin-left: 10px; color: #8b949e;">未选择任何文件</span>
+                                    <button type="button" class="btn btn-sm" onclick="uploadFile()">上传</button>
+                                </div>
                             </div>
                             
                             <div class="file-list-section">
@@ -679,6 +703,9 @@
                         document.querySelector('.file-upload-section').style.display = 'none';
                         document.querySelector('.file-list-section').style.display = 'none';
                         listDirectory();
+                    } else if (tabId === 'reverse-shell') {
+                        // 反弹Shell标签页不需要特殊处理，但可以更新状态
+                        document.getElementById('reverseShellStatus').textContent = '等待启动...';
                     }
                 });
             });
@@ -737,11 +764,14 @@
 
                     if (response.ok) {
                         alert('反弹Shell请求已发送');
+                        document.getElementById('reverseShellStatus').textContent = '请求已发送，请检查您的监听器';
                     } else {
                         alert('发送反弹Shell请求失败');
+                        document.getElementById('reverseShellStatus').textContent = '启动失败';
                     }
                 } catch (error) {
                     alert('发送请求时出错: ' + error.message);
+                    document.getElementById('reverseShellStatus').textContent = '启动失败: ' + error.message;
                 }
             }
         }
@@ -1114,6 +1144,16 @@
 
         // 页面加载时更新状态
         updateClientStatus();
+
+        // 更新文件名称显示
+        function updateFileName(input) {
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            if (input.files && input.files.length > 0) {
+                fileNameDisplay.textContent = input.files[0].name;
+            } else {
+                fileNameDisplay.textContent = '未选择任何文件';
+            }
+        }
     </script>
 </body>
 </html>
