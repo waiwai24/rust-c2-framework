@@ -11,17 +11,13 @@ use common::error::{C2Error, C2Result};
 use common::message::{
     CommandRequest,
     CommandResponse,
-    DeletePathRequest,
     DeletePathResponse,
-    DownloadFileRequest,
-    FileChunk,
     FileOperationCommand,
     ListDirRequest,
     ListDirResponse,
     Message,
     MessageType,
-    ShellData,
-    UploadFileRequest, // UploadFileRequest is now used
+    ShellData, // UploadFileRequest is now used
 };
 
 pub async fn execute_command(
