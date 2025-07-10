@@ -35,6 +35,8 @@ pub struct WebConfig {
     pub template_dir: String,
     /// Enable CORS(Cross-Origin Resource Sharing)
     pub enable_cors: bool,
+    /// Auto refresh interval for web UI (seconds)
+    pub refresh_interval: u64,
 }
 
 /// Authentication configuration
@@ -116,6 +118,7 @@ impl Default for WebConfig {
             static_dir: "web/static".to_string(),
             template_dir: "templates".to_string(),
             enable_cors: true,
+            refresh_interval: 30, // 30 seconds default
         }
     }
 }

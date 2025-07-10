@@ -27,6 +27,7 @@ libc = "0.2"
 tokio-stream = "0.1"
 futures = "0.3"
 bytes = "1.0"
+tracing = "0.1.41"
 
 [target.'cfg(all(target_os = "linux", target_env = "musl"))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }

@@ -157,7 +157,7 @@
             color: #c9d1d9;
         }
 
-        .btn {
+        .btn, .quick-cmd {
             background: #238636;
             color: #fff;
             padding: 10px 16px;
@@ -170,8 +170,17 @@
             font-size: 1em;
         }
 
-        .btn:hover {
+        .btn:hover, .quick-cmd:hover {
             background: #2ea043;
+        }
+
+        .quick-cmd {
+            padding: 8px 16px; /* Slightly smaller for quick commands */
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.9em;
         }
 
         .btn-danger {
@@ -182,26 +191,30 @@
             background: #e34a47;
         }
 
-        .results-table {
+        .results-table, .file-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
 
         .results-table th,
-        .results-table td {
+        .results-table td,
+        .file-table th,
+        .file-table td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #30363d;
         }
 
-        .results-table th {
+        .results-table th,
+        .file-table th {
             background: #161b22;
             color: #f0f6fc;
             font-weight: 600;
         }
 
-        .results-table tr:hover {
+        .results-table tr:hover,
+        .file-table tr:hover {
             background: #161b22;
         }
 
@@ -642,6 +655,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         client_id: '{{ client.id }}',
                         command: command,
@@ -670,6 +684,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({}) // No body needed for this request
                     });
 
@@ -706,76 +721,99 @@
         // 文件管理功能
         let currentPath = '/';
         
-        async function listDirectory() {
-            const path = document.getElementById('currentPath').value.trim();
-            if (!path) {
-                alert('请输入有效路径');
-                return;
-            }
-            
-            currentPath = path;
-            document.getElementById('loadingFiles').style.display = 'block';
-            document.getElementById('fileList').innerHTML = '';
-            
-            try {
-                const response = await fetch(`/api/files/list`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        client_id: '{{ client.id }}',
-                        path: path,
-                        recursive: false
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    renderFileList(data.entries);
-                } else {
-                    const error = await response.json();
-                    alert(`获取文件列表失败: ${error.message}`);
-                }
-            } catch (error) {
-                alert('获取文件列表时出错: ' + error.message);
-            } finally {
-                document.getElementById('loadingFiles').style.display = 'none';
-            }
-        }
-        
-        function renderFileList(entries) {
+        function renderFileList(data) {
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
             
-            if (entries.length === 0) {
-                fileList.innerHTML = '<tr><td colspan="5" class="no-results">目录为空</td></tr>';
+            console.log('Rendering file list with data:', data); // Debug log
+            
+            // Handle different response formats - improved logic
+            let entries = [];
+            
+            if (data && typeof data === 'object') {
+                if (Array.isArray(data)) {
+                    // Direct array of entries
+                    entries = data;
+                } else if (data.entries && Array.isArray(data.entries)) {
+                    // Response with entries property
+                    entries = data.entries;
+                } else if (data.data) {
+                    // Response with data property
+                    if (Array.isArray(data.data)) {
+                        entries = data.data;
+                    } else if (data.data.entries && Array.isArray(data.data.entries)) {
+                        entries = data.data.entries;
+                    } else if (typeof data.data === 'object' && data.data.entries) {
+                        entries = data.data.entries;
+                    }
+                }
+            }
+            
+            console.log('Extracted entries:', entries); // Debug log
+            
+            if (!Array.isArray(entries) || entries.length === 0) {
+                fileList.innerHTML = '<tr><td colspan="5" class="no-results">目录为空或数据格式错误</td></tr>';
                 return;
             }
             
             entries.forEach(entry => {
+                console.log('Processing entry:', entry); // Debug log
+                
                 const tr = document.createElement('tr');
                 
                 // 名称列，包含图标
                 const nameCell = document.createElement('td');
                 if (entry.is_dir) {
                     nameCell.innerHTML = `<span class="file-icon">📁</span>
-                                        <span class="directory" onclick="navigateToDirectory('${entry.path}')">${entry.name}</span>`;
+                                        <span class="directory" onclick="navigateToDirectory('${escapeHtml(entry.path)}')">${escapeHtml(entry.name)}</span>`;
                 } else {
-                    nameCell.innerHTML = `<span class="file-icon">📄</span> ${entry.name}`;
+                    nameCell.innerHTML = `<span class="file-icon">📄</span> ${escapeHtml(entry.name)}`;
                 }
                 
                 // 类型列
                 const typeCell = document.createElement('td');
                 typeCell.textContent = entry.is_dir ? '目录' : '文件';
                 
-                // 大小列
+                // 大小列 - 修复文件大小处理
                 const sizeCell = document.createElement('td');
-                sizeCell.textContent = entry.is_dir ? '-' : formatFileSize(entry.size || 0);
+                if (entry.is_dir) {
+                    sizeCell.textContent = '-';
+                } else {
+                    // 处理文件大小，支持数字和null值
+                    const fileSize = entry.size;
+                    if (typeof fileSize === 'number') {
+                        sizeCell.textContent = formatFileSize(fileSize);
+                    } else {
+                        sizeCell.textContent = '0 Bytes';
+                    }
+                }
                 
-                // 修改时间列
+                // 修改时间列 - 修复时间戳处理
                 const timeCell = document.createElement('td');
-                timeCell.textContent = entry.modified ? new Date(entry.modified).toLocaleString() : '-';
+                if (entry.modified) {
+                    let modifiedDate;
+                    if (typeof entry.modified === 'object' && entry.modified.secs_since_epoch) {
+                        // 处理Rust的SystemTime格式
+                        modifiedDate = new Date(entry.modified.secs_since_epoch * 1000);
+                    } else if (typeof entry.modified === 'string') {
+                        modifiedDate = new Date(entry.modified);
+                    } else if (typeof entry.modified === 'number') {
+                        modifiedDate = new Date(entry.modified);
+                    } else if (typeof entry.modified === 'object' && entry.modified.tv_sec) {
+                        // 处理包含tv_sec的格式
+                        modifiedDate = new Date(entry.modified.tv_sec * 1000);
+                    } else {
+                        modifiedDate = null;
+                    }
+                    
+                    if (modifiedDate && !isNaN(modifiedDate.getTime())) {
+                        timeCell.textContent = modifiedDate.toLocaleString();
+                    } else {
+                        timeCell.textContent = '-';
+                    }
+                } else {
+                    timeCell.textContent = '-';
+                }
                 
                 // 操作列
                 const actionCell = document.createElement('td');
@@ -783,13 +821,13 @@
                 
                 if (entry.is_dir) {
                     actionCell.innerHTML = `
-                        <button class="btn btn-sm" onclick="navigateToDirectory('${entry.path}')">打开</button>
-                        <button class="btn btn-sm btn-danger" onclick="deletePath('${entry.path}')">删除</button>
+                        <button class="btn btn-sm" onclick="navigateToDirectory('${escapeHtml(entry.path)}')">打开</button>
+                        <button class="btn btn-sm btn-danger" onclick="deletePath('${escapeHtml(entry.path)}')">删除</button>
                     `;
                 } else {
                     actionCell.innerHTML = `
                         <a href="/api/files/download/${encodeURIComponent(entry.path)}?client_id={{ client.id }}" class="btn btn-sm">下载</a>
-                        <button class="btn btn-sm btn-danger" onclick="deletePath('${entry.path}')">删除</button>
+                        <button class="btn btn-sm btn-danger" onclick="deletePath('${escapeHtml(entry.path)}')">删除</button>
                     `;
                 }
                 
@@ -803,8 +841,85 @@
             });
         }
         
+        // 添加HTML转义函数以防止XSS
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+        
+        async function listDirectory() {
+            const path = document.getElementById('currentPath').value.trim();
+            if (!path) {
+                alert('请输入有效路径');
+                return;
+            }
+            
+            currentPath = path;
+            document.getElementById('loadingFiles').style.display = 'block';
+            document.getElementById('fileList').innerHTML = '';
+            
+            try {
+                console.log('Sending request to list directory:', path); // Debug log
+                
+                const response = await fetch(`/api/files/list`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        path: path,
+                        recursive: false
+                    })
+                });
+                
+                console.log('Response status:', response.status); // Debug log
+                console.log('Response headers:', Object.fromEntries(response.headers.entries())); // Debug log
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Full response data:', data); // Debug log
+                    
+                    if (data.success) {
+                        // 直接传递整个data对象到renderFileList
+                        renderFileList(data);
+                    } else {
+                        console.error('Server returned error:', data.message);
+                        alert(`获取文件列表失败: ${data.message}`);
+                        document.getElementById('fileList').innerHTML = '<tr><td colspan="5" class="no-results">获取文件列表失败</td></tr>';
+                    }
+                } else {
+                    console.error('HTTP error:', response.status);
+                    const errorText = await response.text();
+                    console.error('Error response body:', errorText);
+                    
+                    try {
+                        const error = JSON.parse(errorText);
+                        alert(`获取文件列表失败: ${error.message || 'Unknown error'}`);
+                    } catch (e) {
+                        alert(`获取文件列表失败: HTTP ${response.status}`);
+                    }
+                    document.getElementById('fileList').innerHTML = '<tr><td colspan="5" class="no-results">网络错误</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error fetching file list:', error);
+                alert('获取文件列表时出错: ' + error.message);
+                document.getElementById('fileList').innerHTML = '<tr><td colspan="5" class="no-results">网络连接错误</td></tr>';
+            } finally {
+                document.getElementById('loadingFiles').style.display = 'none';
+            }
+        }
+        
         function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
+            if (bytes === 0 || bytes === null || bytes === undefined) return '0 Bytes';
+            if (typeof bytes !== 'number') return '0 Bytes';
             
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -843,6 +958,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         client_id: '{{ client.id }}',
                         path: path
@@ -873,13 +989,11 @@
             const file = fileInput.files[0];
             const targetPath = `${currentPath}/${file.name}`.replace(/\/\//g, '/');
             
-            const formData = new FormData();
-            formData.append('file', file);
-            
             try {
                 const response = await fetch(`/api/files/upload/${encodeURIComponent(targetPath)}?client_id={{ client.id }}`, {
                     method: 'POST',
-                    body: formData
+                    credentials: 'same-origin',
+                    body: file  // 直接发送文件，不用FormData
                 });
                 
                 if (response.ok) {

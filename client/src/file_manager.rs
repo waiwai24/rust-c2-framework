@@ -43,12 +43,23 @@ impl ClientFileManager {
 
     /// Lists files and directories in a given path, with optional recursion.
     pub async fn list_directory(path: &Path, recursive: bool) -> C2Result<Vec<FileEntry>> {
-        info!("Attempting to list directory on client: {:?}", path);
+        info!(
+            "Attempting to list directory on client: {:?}, recursive: {}",
+            path, recursive
+        );
         let mut entries = Vec::new();
         let mut stack = vec![path.to_path_buf()];
 
         while let Some(current_path) = stack.pop() {
-            let mut read_dir = tokio_fs::read_dir(&current_path).await?;
+            info!("Reading directory: {:?}", current_path);
+
+            let mut read_dir = match tokio_fs::read_dir(&current_path).await {
+                Ok(dir) => dir,
+                Err(e) => {
+                    error!("Failed to read directory {:?}: {}", current_path, e);
+                    return Err(e.into());
+                }
+            };
 
             while let Some(entry) = read_dir.next_entry().await? {
                 let entry_path = entry.path();
@@ -65,7 +76,7 @@ impl ClientFileManager {
 
                 let permissions = format!("{:?}", metadata.permissions());
 
-                entries.push(FileEntry {
+                let file_entry = FileEntry {
                     name: entry_path
                         .file_name()
                         .unwrap_or_default()
@@ -80,14 +91,22 @@ impl ClientFileManager {
                     },
                     modified: metadata.modified().ok(),
                     permissions: Some(permissions),
-                });
+                };
+
+                info!("Found entry: {:?}", file_entry);
+                entries.push(file_entry);
 
                 if recursive && is_dir {
                     stack.push(entry_path);
                 }
             }
         }
-        info!("Successfully listed directory on client: {:?}", path);
+
+        info!(
+            "Successfully listed directory on client: {:?}, found {} entries",
+            path,
+            entries.len()
+        );
         Ok(entries)
     }
 

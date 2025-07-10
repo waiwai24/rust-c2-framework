@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误 {{ error_code }} - Rust C2 Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-container {
+            background: #21262d;
+            padding: 40px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        .error-code {
+            font-size: 6em;
+            font-weight: bold;
+            color: #f85149;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            font-size: 1.5em;
+            color: #f0f6fc;
+            margin-bottom: 20px;
+        }
+
+        .error-detail {
+            color: #8b949e;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .back-btn {
+            background: #238636;
+            color: #fff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #2ea043;
+        }
+
+        .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="icon">⚠️</div>
+        <div class="error-code">{{ error_code }}</div>
+        <div class="error-message">{{ error_message }}</div>
+        {% if error_detail.is_some() %}
+        <div class="error-detail">{{ error_detail.as_ref().unwrap() }}</div>
+        {% endif %}
+        <a href="/" class="back-btn">返回首页</a>
+    </div>
+</body>
+</html>

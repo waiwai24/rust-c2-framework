@@ -36,10 +36,14 @@ pub enum MessageType {
     ListDir,
     /// Delete file or directory
     DeletePath,
-    /// Upload file
-    UploadFile,
-    /// Download file
-    DownloadFile,
+    /// Upload file initialization
+    UploadFileInit,
+    /// Upload file chunk
+    UploadFileChunk,
+    /// Download file initialization
+    DownloadFileInit,
+    /// Download file chunk
+    DownloadFileChunk,
     /// Error message
     Error,
     /// Response to a file operation
@@ -72,6 +76,7 @@ pub struct CommandRequest {
     pub client_id: String,
     pub command: String,
     pub args: Vec<String>,
+    pub message_id: Option<String>, // Add message_id for event-driven responses
 }
 
 /// Command response structure
@@ -161,6 +166,23 @@ pub struct FileChunk {
 pub struct UploadFileRequest {
     pub path: String,
     pub file_id: String,
+}
+
+/// Request to get next chunk for download
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadChunkRequest {
+    pub file_id: String,
+}
+
+/// Unified file operation command
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FileOperationCommand {
+    ListDir(ListDirRequest),
+    DeletePath(DeletePathRequest),
+    DownloadInit(DownloadFileRequest),
+    DownloadChunk(DownloadChunkRequest),
+    UploadInit(UploadFileRequest),
+    UploadChunk(FileChunk),
 }
 
 /// Implementation of methods for ShellData

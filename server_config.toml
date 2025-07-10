@@ -11,6 +11,7 @@ enabled = true
 static_dir = "web/static"
 template_dir = "templates"
 enable_cors = true
+refresh_interval = 30
 
 [auth]
 username = "Rust-Admin"

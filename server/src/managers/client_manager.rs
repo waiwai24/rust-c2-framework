@@ -2,6 +2,7 @@ use common::message::{ClientInfo, CommandRequest, CommandResponse, Message}; // 
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tracing::info;
 
 /// ClientManager handles client registration, command management, and command results.
 pub struct ClientManager {
@@ -86,6 +87,10 @@ impl ClientManager {
 
     /// Add a file operation response
     pub async fn add_file_operation_response(&self, client_id: &str, message: Message) {
+        info!(
+            "Storing file operation response: client_id={}, message_id={}",
+            client_id, message.id
+        );
         let mut responses = self.file_operation_responses.write().await;
         responses
             .entry(client_id.to_string())
@@ -99,9 +104,11 @@ impl ClientManager {
         client_id: &str,
         message_id: &str,
     ) -> Option<Message> {
-        let mut responses = self.file_operation_responses.write().await; // Use write lock to remove after retrieval
+        let mut responses = self.file_operation_responses.write().await;
         if let Some(client_responses) = responses.get_mut(client_id) {
-            client_responses.remove(message_id)
+            let result = client_responses.remove(message_id);
+            info!("result: {:?}", result);
+            result
         } else {
             None
         }

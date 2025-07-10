@@ -213,13 +213,13 @@
                     <tbody>
                         {% for client in clients %}
                         <tr>
-                            <td><code>{{ client.client_info.id[0..8] }}...</code></td>
-                            <td>{{ client.client_info.hostname }}</td>
-                            <td>{{ client.client_info.username }}</td>
-                            <td>{{ client.client_info.os }} ({{ client.client_info.arch }})</td>
-                            <td>{{ client.client_info.ip }}</td>
-                            <td>{{ client.client_info.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
-                            <td>{{ client.client_info.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td><code>{{ client.id[0..8] }}...</code></td>
+                            <td>{{ client.hostname }}</td>
+                            <td>{{ client.username }}</td>
+                            <td>{{ client.os }} ({{ client.arch }})</td>
+                            <td>{{ client.ip }}</td>
+                            <td>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                            <td>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
                             <td>
                                 {% if client.is_online %}
                                     <span class="status online">在线</span>
@@ -228,7 +228,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="/client/{{ client.client_info.id }}" class="btn">管理</a>
+                                <a href="/client/{{ client.id }}" class="btn">管理</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -239,10 +239,133 @@
     </div>
 
     <script>
-        // 自动刷新页面
-        setInterval(() => {
-            location.reload();
-        }, 30000); // 每30秒刷新一次
+        let isUpdating = false;
+        
+        // 更新客户端数据的函数
+        async function updateClientData() {
+            if (isUpdating) return;
+            isUpdating = true;
+            
+            try {
+                const response = await fetch('/api/clients/display', {
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDashboard(data);
+                } else {
+                    console.error('Failed to fetch client data:', response.status);
+                }
+            } catch (error) {
+                console.error('Error updating client data:', error);
+            } finally {
+                isUpdating = false;
+            }
+        }
+        
+        // 更新仪表板数据
+        function updateDashboard(data) {
+            // 更新统计数据
+            const statCards = document.querySelectorAll('.stat-card h3');
+            if (statCards.length >= 3) {
+                statCards[0].textContent = data.total_clients;
+                statCards[1].textContent = data.online_clients_count;
+                statCards[2].textContent = data.os_types_count;
+            }
+            
+            // 更新客户端表格
+            updateClientTable(data.clients);
+        }
+        
+        // 更新客户端表格
+        function updateClientTable(clients) {
+            const tbody = document.querySelector('.clients-table tbody');
+            if (!tbody) return;
+            
+            if (clients.length === 0) {
+                // 显示无客户端消息
+                const clientsSection = document.querySelector('.clients-section');
+                const table = clientsSection.querySelector('.clients-table');
+                if (table) {
+                    table.style.display = 'none';
+                }
+                
+                let noClientsDiv = clientsSection.querySelector('.no-clients');
+                if (!noClientsDiv) {
+                    noClientsDiv = document.createElement('div');
+                    noClientsDiv.className = 'no-clients';
+                    noClientsDiv.innerHTML = '<h3>暂无客户端连接</h3><p>等待客户端连接到服务器...</p>';
+                    clientsSection.appendChild(noClientsDiv);
+                }
+                noClientsDiv.style.display = 'block';
+            } else {
+                // 隐藏无客户端消息，显示表格
+                const noClientsDiv = document.querySelector('.no-clients');
+                if (noClientsDiv) {
+                    noClientsDiv.style.display = 'none';
+                }
+                
+                const table = document.querySelector('.clients-table');
+                if (table) {
+                    table.style.display = 'table';
+                }
+                
+                // 更新表格内容
+                tbody.innerHTML = clients.map(client => `
+                    <tr>
+                        <td><code>${client.id.substring(0, 8)}...</code></td>
+                        <td>${escapeHtml(client.hostname)}</td>
+                        <td>${escapeHtml(client.username)}</td>
+                        <td>${escapeHtml(client.os)} (${escapeHtml(client.arch)})</td>
+                        <td>${escapeHtml(client.ip)}</td>
+                        <td>${formatDateTime(client.connected_at)}</td>
+                        <td>${formatDateTime(client.last_seen)}</td>
+                        <td>
+                            <span class="status ${client.is_online ? 'online' : 'offline'}">
+                                ${client.is_online ? '在线' : '离线'}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="/client/${client.id}" class="btn">管理</a>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        // HTML转义函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 刷新按钮点击事件
+        document.querySelector('.refresh-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            updateClientData();
+        });
+        
+        // 设置定时更新 (从服务器配置读取间隔)
+        setInterval(updateClientData, {{ refresh_interval }} * 1000);
+        
+        // 页面加载完成后立即更新一次
+        document.addEventListener('DOMContentLoaded', function() {
+            updateClientData();
+        });
     </script>
 </body>
 </html>

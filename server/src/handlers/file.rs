@@ -11,7 +11,7 @@ use axum::{
 use bytes::Bytes; // For bytes::Bytes in download stream
 use common::message::{
     CommandRequest, DeletePathRequest, DeletePathResponse, DownloadFileRequest, FileChunk,
-    ListDirRequest, ListDirResponse, Message, MessageType, UploadFileRequest,
+    FileOperationCommand, ListDirRequest, ListDirResponse, Message, MessageType, UploadFileRequest,
 }; // Import new message types
 use futures::stream::{self, StreamExt};
 use log::{error, info}; // Import error for logging
@@ -40,54 +40,76 @@ pub struct ClientIdQuery {
     pub client_id: String,
 }
 
-/// Helper function to send a command and await a response from the client
-async fn send_command_and_await_response<T: Serialize>(
+/// Helper function to send a command and await a response from the client using event-driven mechanism
+async fn send_command_and_await_response_event_driven<T: Serialize>(
     state: &AppState,
     client_id: &str,
     command_type: MessageType,
-    request_data: &T, // Changed to generic serializable type
+    request_data: &T,
 ) -> Result<Message, FileOperationError> {
-    let command_request = CommandRequest {
+    // First create the message to get the ID
+    let temp_command_request = CommandRequest {
         client_id: client_id.to_string(),
-        command: command_type.to_string(), // Use MessageType as command string
-        args: vec![serde_json::to_string(request_data)?], // Serialize request_data into args
+        command: command_type.to_string(),
+        args: vec![serde_json::to_string(request_data)?],
+        message_id: None, // Temporary, will be updated
     };
 
     let message = Message::new(
         MessageType::ExecuteCommand,
-        serde_json::to_vec(&command_request)?,
+        serde_json::to_vec(&temp_command_request)?,
     );
     let message_id = message.id.clone();
 
+    // Now create the final command request with the message_id
+    let command_request = CommandRequest {
+        client_id: client_id.to_string(),
+        command: command_type.to_string(),
+        args: vec![serde_json::to_string(request_data)?],
+        message_id: Some(message_id.clone()), // Include message_id for event-driven responses
+    };
+
+    // Register for event-driven response
+    let response_receiver = state.register_response_notifier(message_id.clone()).await;
+
+    // Send command to client
     state
         .client_manager
         .add_command(client_id, command_request)
         .await;
 
-    // Poll for the response with a timeout
-    let response_message =
-        tokio::time::timeout(Duration::from_secs(CLIENT_RESPONSE_TIMEOUT_SEC), async {
-            loop {
-                if let Some(response) = state
-                    .client_manager
-                    .get_file_operation_response(client_id, &message_id)
-                    .await
-                {
-                    return Ok::<Message, FileOperationError>(response);
-                }
-                tokio::time::sleep(Duration::from_millis(100)).await;
-            }
-        })
-        .await
-        .map_err(|_| {
-            error!(
-                "Client response timed out for client_id: {}, message_id: {}",
-                client_id, message_id
-            );
-            FileOperationError::Other("Client response timed out".to_string())
-        })??; // Double ?? for Result<Result<T, E>, E>
+    // Wait for event-driven response with timeout
+    let response_message = tokio::time::timeout(
+        Duration::from_secs(CLIENT_RESPONSE_TIMEOUT_SEC),
+        response_receiver,
+    )
+    .await
+    .map_err(|_| {
+        error!(
+            "Client response timed out for client_id: {}, message_id: {}",
+            client_id, message_id
+        );
+        FileOperationError::Other("Client response timed out".to_string())
+    })?
+    .map_err(|_| {
+        error!(
+            "Response channel closed for client_id: {}, message_id: {}",
+            client_id, message_id
+        );
+        FileOperationError::Other("Response channel closed".to_string())
+    })?;
 
     Ok(response_message)
+}
+
+/// Alias for backward compatibility - now uses event-driven mechanism
+async fn send_command_and_await_response<T: Serialize>(
+    state: &AppState,
+    client_id: &str,
+    command_type: MessageType,
+    request_data: &T,
+) -> Result<Message, FileOperationError> {
+    send_command_and_await_response_event_driven(state, client_id, command_type, request_data).await
 }
 
 /// API handler to list directory contents on a client.
@@ -96,7 +118,7 @@ pub async fn list_directory_handler(
     Json(payload): Json<ListDirectoryRequest>,
 ) -> Result<Json<ServerFileOperationResponse>, FileOperationError> {
     let client_id = payload.client_id;
-    let path_str = payload.path.unwrap_or_else(|| "/".to_string()); // Default to root for client
+    let path_str = payload.path.unwrap_or_else(|| "/".to_string());
     let recursive = payload.recursive.unwrap_or(false);
 
     info!(
@@ -109,21 +131,32 @@ pub async fn list_directory_handler(
         recursive,
     };
 
-    let response_message = send_command_and_await_response(
-        &state,
-        &client_id,
-        MessageType::ListDir,
-        &list_req, // Pass the struct directly
-    )
-    .await?;
+    let response_message =
+        send_command_and_await_response(&state, &client_id, MessageType::ListDir, &list_req)
+            .await?;
 
-    let list_res: ListDirResponse = serde_json::from_slice(&response_message.payload)?;
+    info!(
+        "Raw payload received for ListDir: {:?}",
+        String::from_utf8_lossy(&response_message.payload)
+    );
+
+    let list_res: ListDirResponse =
+        serde_json::from_slice(&response_message.payload).map_err(|e| {
+            error!("Failed to deserialize ListDirResponse: {}", e);
+            FileOperationError::SerializationError(e.to_string())
+        })?;
+
+    info!("Deserialized ListDirResponse: {:?}", list_res);
 
     if list_res.success {
+        // Ensure we return the entries array in the expected format
+        let entries_json = serde_json::to_value(&list_res.entries)?;
         Ok(Json(ServerFileOperationResponse {
             success: true,
             message: list_res.message,
-            data: Some(serde_json::to_value(list_res.entries)?),
+            data: Some(serde_json::json!({
+                "entries": entries_json
+            })),
         }))
     } else {
         Err(FileOperationError::Other(list_res.message))
@@ -170,8 +203,8 @@ pub async fn delete_path_handler(
 /// API handler for downloading a file from a client to the server.
 pub async fn download_file_handler(
     State(state): State<AppState>,
-    Path(file_path): Path<String>,      // Extract file_path
-    Query(query): Query<ClientIdQuery>, // Extract client_id from query
+    Path(file_path): Path<String>,
+    Query(query): Query<ClientIdQuery>,
 ) -> Result<Response, FileOperationError> {
     let client_id = query.client_id;
     info!(
@@ -186,8 +219,8 @@ pub async fn download_file_handler(
     let response_message = send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::DownloadFile, // This will be DOWNLOAD_FILE_INIT on client
-        &download_init_req,        // Pass the struct directly
+        MessageType::DownloadFileInit,
+        &download_init_req,
     )
     .await?;
 
@@ -209,13 +242,16 @@ pub async fn download_file_handler(
 
     // Create a stream to pull chunks from the client
     let stream = stream::unfold(
-        (client_id.clone(), file_id.clone(), state.clone()), // Initial state for the unfold stream
+        (client_id.clone(), file_id.clone(), state.clone()),
         move |(client_id, file_id, state)| async move {
+            // For chunk requests, send file_id directly as the request data
+            let chunk_request = serde_json::json!({"file_id": file_id});
+
             let response_message = match send_command_and_await_response(
                 &state,
                 &client_id,
-                MessageType::DownloadFile, // This will be DOWNLOAD_FILE_CHUNK on client
-                &file_id,                  // Pass the file_id string directly
+                MessageType::DownloadFileChunk,
+                &chunk_request,
             )
             .await
             {
@@ -223,28 +259,43 @@ pub async fn download_file_handler(
                 Err(e) => return Some((Err(e), (client_id, file_id, state))),
             };
 
-            let file_chunk: FileChunk = match serde_json::from_slice(&response_message.payload) {
-                Ok(chunk) => chunk,
-                Err(e) => {
-                    error!("Failed to deserialize FileChunk: {}", e);
-                    return Some((
-                        Err(FileOperationError::SerializationError(e.to_string())),
-                        (client_id, file_id, state),
-                    ));
-                }
-            };
+            let chunk_res: serde_json::Value =
+                match serde_json::from_slice(&response_message.payload) {
+                    Ok(res) => res,
+                    Err(e) => {
+                        error!("Failed to deserialize chunk response: {}", e);
+                        return Some((
+                            Err(FileOperationError::SerializationError(e.to_string())),
+                            (client_id, file_id, state),
+                        ));
+                    }
+                };
 
-            if file_chunk.is_last {
+            // Check if this is the last chunk or if download is complete
+            if chunk_res["is_last"].as_bool().unwrap_or(false)
+                || chunk_res["message"]
+                    .as_str()
+                    .unwrap_or("")
+                    .contains("complete")
+            {
                 None
-            } else {
+            } else if let Ok(file_chunk) = serde_json::from_value::<FileChunk>(chunk_res) {
                 Some((
                     Ok(Bytes::from(file_chunk.chunk)),
+                    (client_id, file_id, state),
+                ))
+            } else {
+                error!("Invalid chunk response format");
+                Some((
+                    Err(FileOperationError::Other(
+                        "Invalid chunk response".to_string(),
+                    )),
                     (client_id, file_id, state),
                 ))
             }
         },
     )
-    .map(|res| res.map_err(|e| axum::Error::new(e))); // Convert FileOperationError to axum::Error
+    .map(|res| res.map_err(|e| axum::Error::new(e)));
 
     let body = axum::body::Body::from_stream(stream);
 
@@ -281,8 +332,8 @@ pub async fn upload_file_handler(
     let response_message = send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::UploadFile, // This will be UPLOAD_FILE_INIT on client
-        &upload_init_req,        // Pass the struct directly
+        MessageType::UploadFileInit, // This will be UPLOAD_FILE_INIT on client
+        &upload_init_req,            // Pass the struct directly
     )
     .await?;
 
@@ -296,23 +347,62 @@ pub async fn upload_file_handler(
 
     let mut offset = 0;
     let mut data_stream = body.into_data_stream(); // Get the data stream from the body
+    let mut buffer = Vec::new();
+    const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for combining small chunks
+
     while let Some(chunk_result) = data_stream.next().await {
         // Iterate over the stream
         let chunk_bytes = chunk_result.map_err(|e| FileOperationError::IoError(e.to_string()))?;
 
+        // Accumulate data in buffer
+        buffer.extend_from_slice(&chunk_bytes);
+
+        // Send buffer when it's large enough or this is the last chunk
+        if buffer.len() >= BUFFER_SIZE {
+            let file_chunk = FileChunk {
+                file_id: file_id.clone(),
+                chunk: buffer.clone(),
+                is_last: false,
+                offset,
+            };
+
+            // Send chunk command to client using new command type
+            let response_message = send_command_and_await_response(
+                &state,
+                &client_id,
+                MessageType::UploadFileChunk,
+                &FileOperationCommand::UploadChunk(file_chunk),
+            )
+            .await?;
+
+            let chunk_res: serde_json::Value = serde_json::from_slice(&response_message.payload)?;
+            if !chunk_res["success"].as_bool().unwrap_or(false) {
+                return Err(FileOperationError::Other(format!(
+                    "Client failed to upload chunk: {}",
+                    chunk_res["message"].as_str().unwrap_or("unknown error")
+                )));
+            }
+
+            offset += buffer.len() as u64;
+            buffer.clear();
+        }
+    }
+
+    // Send any remaining data in buffer
+    if !buffer.is_empty() {
+        let chunk_len = buffer.len();
         let file_chunk = FileChunk {
             file_id: file_id.clone(),
-            chunk: chunk_bytes.to_vec(),
-            is_last: false, // Will be set to true for the last chunk
+            chunk: buffer,
+            is_last: false,
             offset,
         };
 
-        // Send chunk command to client
         let response_message = send_command_and_await_response(
             &state,
             &client_id,
-            MessageType::UploadFile, // This will be UPLOAD_FILE_CHUNK on client
-            &file_chunk,             // Pass the struct directly
+            MessageType::UploadFileChunk,
+            &FileOperationCommand::UploadChunk(file_chunk),
         )
         .await?;
 
@@ -324,7 +414,7 @@ pub async fn upload_file_handler(
             )));
         }
 
-        offset += chunk_bytes.len() as u64;
+        offset += chunk_len as u64;
     }
 
     // Send a final chunk with is_last = true to signal end of file
@@ -337,8 +427,8 @@ pub async fn upload_file_handler(
     send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::UploadFile, // This will be UPLOAD_FILE_CHUNK on client
-        &final_chunk,            // Pass the struct directly
+        MessageType::UploadFileChunk, // This will be UPLOAD_FILE_CHUNK on client
+        &final_chunk,                 // Pass the struct directly
     )
     .await?;
 
