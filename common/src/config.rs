@@ -8,6 +8,8 @@ pub struct ServerConfig {
     pub host: String,
     /// Server listening port
     pub port: u16,
+    /// Port for reverse shell connections
+    pub reverse_shell_port: u16,
     /// Encryption key
     pub encryption_key: String,
     /// Client timeout (seconds)
@@ -100,6 +102,7 @@ impl Default for ServerConfig {
         Self {
             host: "0.0.0.0".to_string(),
             port: 8080,
+            reverse_shell_port:31229 , // Default for reverse shell
             encryption_key: "default_key_change_me".to_string(),
             client_timeout: 300,
             max_clients: 1000,

@@ -1,5 +1,6 @@
 host = "0.0.0.0"
 port = 8080
+reverse_shell_port = 31229
 encryption_key = "default_key_change_me"
 client_timeout = 300
 max_clients = 1000

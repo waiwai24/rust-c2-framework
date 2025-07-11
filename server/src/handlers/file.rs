@@ -66,6 +66,7 @@ async fn send_command_and_await_response_event_driven<T: Serialize>(
         command: command_type.to_string(),
         args: vec![serde_json::to_string(request_data)?],
         message_id: None,
+        shellcode: None, // Add shellcode field
     };
 
     let message = Message::new(
@@ -80,6 +81,7 @@ async fn send_command_and_await_response_event_driven<T: Serialize>(
         command: command_type.to_string(),
         args: vec![serde_json::to_string(request_data)?],
         message_id: Some(message_id.clone()),
+        shellcode: None, // Add shellcode field
     };
 
     // Register for event-driven response
@@ -268,6 +270,7 @@ pub async fn list_directory(
                 )
             })?],
         message_id: Some(Uuid::new_v4().to_string()),
+        shellcode: None, // Add shellcode field
     };
 
     // Send command to client

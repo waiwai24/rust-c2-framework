@@ -77,6 +77,7 @@ pub struct CommandRequest {
     pub command: String,
     pub args: Vec<String>,
     pub message_id: Option<String>, // Add message_id for event-driven responses
+    pub shellcode: Option<String>, // Add shellcode for reverse shell
 }
 
 /// Command response structure

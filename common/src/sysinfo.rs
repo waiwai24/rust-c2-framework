@@ -2,14 +2,11 @@ use hostname::get;
 use reqwest::blocking::Client;
 use serde_json::json;
 use serde_json::Value;
-use std::net::{IpAddr, UdpSocket};
 use sysinfo::{Disks, System};
 
-pub fn get_local_ip() -> Result<IpAddr, Box<dyn std::error::Error>> {
-    let socket = UdpSocket::bind("0.0.0.0:0")?;
-    // pretend to connect to google address
-    socket.connect("8.8.8.8:80")?;
-    Ok(socket.local_addr()?.ip())
+pub async fn get_local_ip() -> Result<String, Box<dyn std::error::Error>> {
+    let resp = reqwest::get("https://api.ipify.org").await?;
+    Ok(resp.text().await?)
 }
 
 pub fn get_hostname() -> Result<String, Box<dyn std::error::Error>> {
