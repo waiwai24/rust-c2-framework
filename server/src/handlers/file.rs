@@ -20,13 +20,13 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::OnceLock;
-use std::time::SystemTime; // 添加 SystemTime 导入
+use std::time::SystemTime;
 use tokio::time::Duration;
 use uuid::Uuid;
 
 const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 60;
 
-// 编译时创建正则表达式
+// Static regex for permission parsing
 static PERMISSION_REGEX: OnceLock<Regex> = OnceLock::new();
 
 fn get_permission_regex() -> &'static Regex {

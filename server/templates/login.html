@@ -9,9 +9,12 @@
 <body class="login-page">
     <div class="login-card">
         <div class="login-logo" style="text-align:center; margin-bottom: 20px;">
-            <img src="/static/rust-c2.png" alt="rust-c2" width="180"/>
+            <picture>
+                <source srcset="/static/rust-c2.svg" type="image/svg+xml">
+            </picture>
         </div>
-        <h1>Login</h1>
+        <h1 style="text-align: center;">Login</h1>
+        <h1 class="login-title"></h1>
         <form action="/login" method="post" class="login-form">
             <div class="form-group">
                 <label for="username">Username</label>
