@@ -5,6 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rust C2 Framework - 客户端管理</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .shell-cursor {
+            animation: blink 1s infinite;
+        }
+        
+        .shell-terminal {
+            position: relative;
+        }
+        
+        .shell-input-line {
+            display: flex;
+            align-items: center;
+        }
+        
+        .shell-prompt {
+            color: #00ff00;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        #shellInput {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: inherit;
+            line-height: inherit;
+        }
+        
+        #shellInput:focus {
+            outline: none;
+        }
+        
+        /* 布局调整 - 确保左右两侧高度一致 */
+        .main-content-wrapper {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        
+        /* 调整shell终端高度 */
+        .shell-terminal {
+            height: 600px !important;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -168,12 +218,12 @@
                                 <p>会话ID: <span id="reverseShellSessionId">无</span></p>
                                 <p>请在您的监听器上查看连接。</p>
                             </div>
-                            <div class="shell-terminal" style="margin-top: 20px; background-color: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; height: 300px; overflow-y: scroll;">
-                                <pre id="shellOutput"></pre>
-                            </div>
-                            <div class="shell-input-area" style="display: flex; margin-top: 10px;">
-                                <input type="text" id="shellInput" class="command-input" placeholder="输入Shell命令..." style="flex-grow: 1; margin-right: 10px;" disabled />
-                                <button class="btn btn-primary" id="sendShellCommand" onclick="sendShellCommand()" disabled>发送</button>
+                            <div class="shell-terminal" id="shellTerminal" tabindex="0" style="margin-top: 20px; background-color: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 5px; font-family: 'Courier New', monospace; overflow-y: scroll; border: 1px solid #333; outline: none; white-space: pre-wrap; word-wrap: break-word; cursor: text;">
+                                <div id="shellOutput"></div>
+                                <div class="shell-input-line" id="shellInputLine" style="display: none;">
+                                    <span class="shell-prompt">$ </span>
+                                    <span id="shellInput" contenteditable="true" style="outline: none; display: inline-block; min-width: 10px; background: transparent; border: none; color: #00ff00; font-family: 'Courier New', monospace;"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -383,44 +433,151 @@
 
             const shellOutput = document.getElementById('shellOutput');
             const shellInput = document.getElementById('shellInput');
-            const sendButton = document.getElementById('sendShellCommand');
+            const shellInputLine = document.getElementById('shellInputLine');
+            const shellTerminal = document.getElementById('shellTerminal');
+
+            // 命令历史
+            let commandHistory = [];
+            let historyIndex = -1;
 
             shellWebSocket.onopen = () => {
                 document.getElementById('reverseShellStatus').textContent = '已连接';
-                shellInput.disabled = false;
-                sendButton.disabled = false;
-                shellOutput.textContent = '连接成功，等待Shell输出...\n';
+                shellOutput.textContent = '连接成功，等待Shell输出...\n$ ';
+                shellInputLine.style.display = 'flex';
                 shellInput.focus();
+                
+                // 终端获得焦点
+                shellTerminal.focus();
             };
 
             shellWebSocket.onmessage = (event) => {
-                shellOutput.textContent += event.data;
-                shellOutput.scrollTop = shellOutput.scrollHeight; // 滚动到底部
+                const data = event.data;
+                shellOutput.textContent += data;
+                scrollToBottom();
+                
+                // 简化逻辑：收到任何数据后显示输入行
+                // 这样用户就可以继续输入下一个命令
+                if (!shellInputLine.style.display || shellInputLine.style.display === 'none') {
+                    setTimeout(() => {
+                        shellInputLine.style.display = 'flex';
+                        shellInput.focus();
+                    }, 100); // 稍微延迟确保输出完成
+                }
             };
 
             shellWebSocket.onclose = () => {
                 document.getElementById('reverseShellStatus').textContent = '已断开';
-                shellInput.disabled = true;
-                sendButton.disabled = true;
+                shellInputLine.style.display = 'none';
                 shellOutput.textContent += '\nShell连接已断开。';
+                scrollToBottom();
             };
 
             shellWebSocket.onerror = (error) => {
                 console.error('WebSocket Error:', error);
                 document.getElementById('reverseShellStatus').textContent = '连接错误';
                 shellOutput.textContent += `\n连接错误: ${error.message || '未知错误'}`;
+                scrollToBottom();
             };
+
+            // 键盘事件处理
+            function handleKeyDown(e) {
+                if (!shellWebSocket || shellWebSocket.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        const command = shellInput.textContent;
+                        if (command.trim()) {
+                            // 添加到历史
+                            commandHistory.push(command);
+                            historyIndex = commandHistory.length;
+                            
+                            // 发送命令
+                            shellWebSocket.send(command + '\n');
+                            
+                            // 在输出中显示命令
+                            shellOutput.textContent += command + '\n';
+                            
+                            // 清空输入
+                            shellInput.textContent = '';
+                            
+                            // 隐藏输入行，等待响应
+                            shellInputLine.style.display = 'none';
+                        }
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (historyIndex > 0) {
+                            historyIndex--;
+                            shellInput.textContent = commandHistory[historyIndex];
+                            // 将光标移到末尾
+                            moveCaretToEnd(shellInput);
+                        }
+                        break;
+                        
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (historyIndex < commandHistory.length - 1) {
+                            historyIndex++;
+                            shellInput.textContent = commandHistory[historyIndex];
+                            moveCaretToEnd(shellInput);
+                        } else {
+                            historyIndex = commandHistory.length;
+                            shellInput.textContent = '';
+                        }
+                        break;
+                        
+                    case 'Tab':
+                        e.preventDefault();
+                        // 可以在这里实现自动补全
+                        break;
+                        
+                    case 'c':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            // Ctrl+C 发送中断信号
+                            shellWebSocket.send('\x03');
+                            shellOutput.textContent += '^C\n$ ';
+                            shellInput.textContent = '';
+                            shellInputLine.style.display = 'flex';
+                        }
+                        break;
+                }
+            }
+
+            function moveCaretToEnd(el) {
+                if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }
+
+            function scrollToBottom() {
+                shellTerminal.scrollTop = shellTerminal.scrollHeight;
+            }
+
+            // 添加事件监听器
+            shellInput.addEventListener('keydown', handleKeyDown);
+            shellTerminal.addEventListener('click', () => {
+                shellInput.focus();
+            });
+            
+            // 保持焦点
+            setInterval(() => {
+                if (shellInputLine.style.display !== 'none' && document.activeElement !== shellInput) {
+                    shellInput.focus();
+                }
+            }, 100);
         }
 
-        function sendShellCommand() {
-            const command = document.getElementById('shellInput').value;
-            if (shellWebSocket && shellWebSocket.readyState === WebSocket.OPEN) {
-                shellWebSocket.send(command + '\n'); // 发送命令，加上换行符
-                document.getElementById('shellInput').value = ''; // 清空输入框
-            } else {
-                alert('Shell未连接或连接已关闭。');
-            }
-        }
+        // 移除旧的sendShellCommand函数，现在通过回车键发送
 
         function refreshResults() {
             location.reload();

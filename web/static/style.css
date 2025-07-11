@@ -178,8 +178,8 @@ body {
 }
 
 .client-info-section {
-    flex: 1; /* Takes 1 part of the available space */
-    max-width: 20%; /* Adjust the width as needed */
+    flex: 0 0 400px; /* Fixed width instead of flex: 1 */
+    min-height: 700px; /* Ensure consistent height */
     background: #21262d;
     padding: 20px;
     border-radius: 8px;
@@ -187,10 +187,61 @@ body {
 }
 
 .command-and-results {
-    flex: 4; /* Takes 4 parts of the available space */
+    flex: 1; /* Takes remaining space */
+    min-height: 700px; /* Ensure consistent height */
     display: flex;
     flex-direction: column;
     margin-left: 20px; /* Add some spacing between left and right sections */
+}
+
+/* 标签页样式 */
+.tabs {
+    min-height: 650px; /* Ensure tab container has enough height */
+}
+
+.tab-content {
+    min-height: 600px; /* Ensure tab content has enough height */
+    background: #21262d;
+    padding: 20px;
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #30363d;
+    border-top: none;
+}
+
+.tab-header {
+    display: flex;
+    background: #161b22;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #30363d;
+}
+
+.tab-item {
+    padding: 12px 20px;
+    background: #21262d;
+    color: #8b949e;
+    cursor: pointer;
+    border-right: 1px solid #30363d;
+    transition: background-color 0.3s ease;
+}
+
+.tab-item:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.tab-item:last-child {
+    border-right: none;
+    border-radius: 0 8px 0 0;
+}
+
+.tab-item.active {
+    background: #21262d;
+    color: #58a6ff;
+    border-bottom: 2px solid #58a6ff;
+}
+
+.tab-item:hover {
+    background: #30363d;
+    color: #c9d1d9;
 }
 
 .command-section {
