@@ -16,7 +16,12 @@ use tokio::{
 };
 use uuid::Uuid; // Required for Pin
 
-const CHUNK_SIZE: usize = 8192; // 8KB chunks for file transfer
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
+#[cfg(unix)]
+use nix::unistd::{User, Group};
+
+const CHUNK_SIZE: usize = 65536; // 64KB chunks for faster file transfer
 
 pub struct ClientFileManager {
     // Store ongoing download streams, keyed by a unique file_id
@@ -31,6 +36,29 @@ pub struct ClientFileManager {
     >,
     // Store ongoing upload files, keyed by a unique file_id
     ongoing_uploads: Arc<Mutex<HashMap<String, TokioFile>>>,
+}
+
+/// Helper function to get owner and group information from file metadata
+#[cfg(unix)]
+fn get_owner_group_info(metadata: &std::fs::Metadata) -> (Option<String>, Option<String>) {
+    let uid = metadata.uid();
+    let gid = metadata.gid();
+    
+    let owner = User::from_uid(nix::unistd::Uid::from_raw(uid))
+        .unwrap_or(None)
+        .map(|user| user.name);
+    
+    let group = Group::from_gid(nix::unistd::Gid::from_raw(gid))
+        .unwrap_or(None)
+        .map(|group| group.name);
+    
+    (owner, group)
+}
+
+/// Helper function for non-Unix platforms
+#[cfg(not(unix))]
+fn get_owner_group_info(_metadata: &std::fs::Metadata) -> (Option<String>, Option<String>) {
+    (None, None)
 }
 
 impl ClientFileManager {
@@ -75,6 +103,13 @@ impl ClientFileManager {
                 let is_dir = file_type.is_dir();
 
                 let permissions = format!("{:?}", metadata.permissions());
+                
+                // Get owner and group information using platform-specific helper
+                let std_metadata = std::fs::metadata(&entry_path).map_err(|e| {
+                    error!("Failed to get std::fs metadata for {:?}: {}", entry_path, e);
+                    e
+                })?;
+                let (owner, group) = get_owner_group_info(&std_metadata);
 
                 let file_entry = FileEntry {
                     name: entry_path
@@ -91,8 +126,8 @@ impl ClientFileManager {
                     },
                     modified: metadata.modified().ok(),
                     permissions: Some(permissions),
-                    owner: None, // Set to None as ownership info is not easily available on all platforms
-                    group: None, // Set to None as group info is not easily available on all platforms
+                    owner,
+                    group,
                 };
 
                 info!("Found entry: {:?}", file_entry);

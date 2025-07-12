@@ -10,7 +10,7 @@ use axum::{
 };
 use bytes::Bytes;
 use common::message::{
-    CommandRequest, DeletePathRequest, DeletePathResponse, DownloadFileRequest, FileChunk,
+    CommandRequest, DeletePathRequest, DeletePathResponse, DownloadFileRequest, DownloadChunkRequest, FileChunk,
     FileOperationCommand, ListDirRequest, ListDirResponse, Message, MessageType, UploadFileRequest,
     FileEntry, // 添加 FileEntry 导入
 };
@@ -24,7 +24,7 @@ use std::time::SystemTime;
 use tokio::time::Duration;
 use uuid::Uuid;
 
-const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 60;
+const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 15; // Reduced timeout for faster failure detection
 
 // Static regex for permission parsing
 static PERMISSION_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -218,7 +218,7 @@ pub async fn list_directory_handler(
     };
 
     let response_message =
-        send_command_and_await_response(&state, &client_id, MessageType::ListDir, &list_req)
+        send_command_and_await_response(&state, &client_id, MessageType::ExecuteCommand, &FileOperationCommand::ListDir(list_req))
             .await?;
 
     info!(
@@ -409,8 +409,8 @@ pub async fn delete_path_handler(
     let response_message = send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::DeletePath,
-        &delete_req,
+        MessageType::ExecuteCommand,
+        &FileOperationCommand::DeletePath(delete_req),
     )
     .await
     .map_err(|e| {
@@ -513,8 +513,8 @@ pub async fn download_file_handler(
     let response_message = send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::DownloadFileInit,
-        &download_init_req,
+        MessageType::ExecuteCommand,
+        &FileOperationCommand::DownloadInit(download_init_req),
     )
     .await
     .map_err(|e| {
@@ -585,13 +585,15 @@ pub async fn download_file_handler(
         (client_id.clone(), file_id.clone(), state.clone(), chunk_count, total_bytes, file_path.clone()),
         move |(client_id, file_id, state, mut chunk_count, mut total_bytes, file_path)| async move {
             chunk_count += 1;
-            let chunk_request = serde_json::json!({"file_id": file_id});
+            let chunk_request = DownloadChunkRequest { 
+                file_id: file_id.clone() 
+            };
 
             let response_message = match send_command_and_await_response(
                 &state,
                 &client_id,
-                MessageType::DownloadFileChunk,
-                &chunk_request,
+                MessageType::ExecuteCommand,
+                &FileOperationCommand::DownloadChunk(chunk_request),
             )
             .await
             {
@@ -790,8 +792,8 @@ pub async fn upload_file_handler(
     let response_message = send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::UploadFileInit,
-        &upload_init_req,
+        MessageType::ExecuteCommand,
+        &FileOperationCommand::UploadInit(upload_init_req),
     )
     .await
     .map_err(|e| {
@@ -921,7 +923,7 @@ pub async fn upload_file_handler(
             let response_message = send_command_and_await_response(
                 &state,
                 &client_id,
-                MessageType::UploadFileChunk,
+                MessageType::ExecuteCommand,
                 &FileOperationCommand::UploadChunk(file_chunk),
             )
             .await
@@ -1036,7 +1038,7 @@ pub async fn upload_file_handler(
         let response_message = send_command_and_await_response(
             &state,
             &client_id,
-            MessageType::UploadFileChunk,
+            MessageType::ExecuteCommand,
             &FileOperationCommand::UploadChunk(file_chunk),
         )
         .await
@@ -1133,8 +1135,8 @@ pub async fn upload_file_handler(
     send_command_and_await_response(
         &state,
         &client_id,
-        MessageType::UploadFileChunk,
-        &final_chunk,
+        MessageType::ExecuteCommand,
+        &FileOperationCommand::UploadChunk(final_chunk),
     )
     .await
     .map_err(|e| {

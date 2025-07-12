@@ -142,7 +142,7 @@ impl Default for ClientConfig {
             client_id: None,
             encryption_key: "default_key_change_me".to_string(),
             heartbeat_interval: 30,
-            command_check_interval: 5,
+            command_check_interval: 2, // Reduced from 5 to 2 seconds for faster response
             retry_count: 3,
             retry_interval: 10,
             persistence: PersistenceConfig::default(),

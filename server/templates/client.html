@@ -215,16 +215,34 @@
                             <h2>反弹Shell</h2>
                             <p>点击下方按钮启动反弹Shell。请确保您的监听器已准备就绪。</p>
                             <button class="btn btn-danger" onclick="startReverseShell()">启动反弹Shell</button>
-                            <div class="result-output" style="margin-top: 20px;">
+                            
+                            <!-- 会话信息 -->
+                            <div class="session-info">
+                                <h3>连接信息</h3>
                                 <p>反弹Shell状态: <span id="reverseShellStatus">未启动</span></p>
                                 <p>会话ID: <span id="reverseShellSessionId">无</span></p>
-                                <p>请在您的监听器上查看连接。</p>
+                                <p>监听端口: <span>31229</span></p>
                             </div>
-                            <div class="shell-terminal" id="shellTerminal" tabindex="0" style="margin-top: 20px; background-color: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 5px; font-family: 'Courier New', monospace; overflow-y: scroll; border: 1px solid #333; outline: none; white-space: pre-wrap; word-wrap: break-word; cursor: text;">
-                                <div id="shellOutput"></div>
-                                <div class="shell-input-line" id="shellInputLine" style="display: none;">
-                                    <span class="shell-prompt">$ </span>
-                                    <span id="shellInput" contenteditable="true" style="outline: none; display: inline-block; min-width: 10px; background: transparent; border: none; color: #00ff00; font-family: 'Courier New', monospace;"></span>
+                            
+                            <!-- 终端容器 -->
+                            <div class="shell-container">
+                                <div class="shell-header">
+                                    <h4 class="shell-title">反弹Shell终端</h4>
+                                    <div class="shell-status">
+                                        <div class="status-indicator" id="connectionStatus"></div>
+                                        <span class="status-text" id="connectionStatusText">未连接</span>
+                                    </div>
+                                </div>
+                                <div class="shell-terminal" id="shellTerminal" tabindex="0">
+                                    <div class="shell-welcome" id="shellWelcome" style="display: none;">
+                                        欢迎使用反弹Shell终端！连接已建立。
+                                    </div>
+                                    <div class="shell-output" id="shellOutput"></div>
+                                    <div class="shell-input-line" id="shellInputLine" style="display: none;">
+                                        <span class="shell-prompt">$ </span>
+                                        <span class="shell-input" id="shellInput" contenteditable="true"></span>
+                                        <span class="shell-cursor" id="shellCursor"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

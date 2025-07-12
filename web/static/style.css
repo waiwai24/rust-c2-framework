@@ -337,6 +337,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    margin-top: 10px; /* Add vertical spacing above quick commands */
     margin-bottom: 15px; /* Changed from 20px to 15px to match client.html */
 }
 
@@ -721,6 +722,189 @@ body {
     background: rgba(59, 130, 246, 0.15);  /* 鲜艳的蓝色背景 */
     border-left-color: #3b82f6;
     color: #3b82f6;  /* 鲜艳的蓝色 */
+}
+
+/* 反弹Shell终端样式 */
+.shell-container {
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    overflow: hidden;
+}
+
+.shell-header {
+    background: #21262d;
+    padding: 10px 15px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.shell-title {
+    color: #f0f6fc;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.shell-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f85149;
+}
+
+.status-indicator.connected {
+    background: #3fb950;
+}
+
+.status-indicator.connecting {
+    background: #d29922;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.status-text {
+    color: #8b949e;
+    font-size: 12px;
+}
+
+.shell-terminal {
+    background: #0d1117;
+    color: #00ff88;
+    padding: 15px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    cursor: text;
+    scrollbar-width: thin;
+    scrollbar-color: #484f58 #21262d;
+}
+
+.shell-terminal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.shell-terminal::-webkit-scrollbar-track {
+    background: #21262d;
+}
+
+.shell-terminal::-webkit-scrollbar-thumb {
+    background: #484f58;
+    border-radius: 4px;
+}
+
+.shell-terminal::-webkit-scrollbar-thumb:hover {
+    background: #6e7681;
+}
+
+.shell-output {
+    margin-bottom: 10px;
+}
+
+.shell-input-line {
+    display: flex;
+    align-items: center;
+}
+
+.shell-prompt {
+    color: #58a6ff;
+    font-weight: bold;
+    margin-right: 5px;
+    user-select: none;
+}
+
+.shell-input {
+    flex: 1;
+    outline: none;
+    background: transparent;
+    border: none;
+    color: #00ff88;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    min-width: 10px;
+}
+
+.shell-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 18px;
+    background: #00ff88;
+    margin-left: 2px;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.shell-welcome {
+    color: #58a6ff;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(88, 166, 255, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid #58a6ff;
+}
+
+.shell-error {
+    color: #f85149;
+}
+
+.shell-success {
+    color: #3fb950;
+}
+
+.shell-warning {
+    color: #d29922;
+}
+
+/* 会话信息样式 */
+.session-info {
+    background: #161b22;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    margin-bottom: 20px;
+}
+
+.session-info h3 {
+    color: #f0f6fc;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.session-info p {
+    margin: 5px 0;
+    color: #8b949e;
+}
+
+.session-info span {
+    color: #f0f6fc;
+    font-weight: 500;
 }
 
 .log-shell {
