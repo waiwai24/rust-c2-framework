@@ -2,7 +2,7 @@ host = "0.0.0.0"
 port = 8080
 reverse_shell_port = 31229
 encryption_key = "default_key_change_me"
-client_timeout = 300
+client_timeout = 60
 max_clients = 1000
 log_file = "c2_server.log"
 enable_audit = true
@@ -10,7 +10,7 @@ enable_audit = true
 [web]
 enabled = true
 static_dir = "web/static"
-template_dir = "templates"
+template_dir = "server/templates"
 enable_cors = true
 refresh_interval = 5
 

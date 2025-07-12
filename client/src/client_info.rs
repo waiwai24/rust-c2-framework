@@ -57,11 +57,13 @@ pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<Client
             .unwrap_or(0),
         total_disk_space: hardware_info
             .get("total_disk_space_GB")
-            .and_then(|v| v.as_u64())
+            .and_then(|v| v.as_f64())
+            .map(|v| v as u64)
             .unwrap_or(0),
         available_disk_space: hardware_info
             .get("available_disk_space_GB")
-            .and_then(|v| v.as_u64())
+            .and_then(|v| v.as_f64())
+            .map(|v| v as u64)
             .unwrap_or(0),
         connected_at: chrono::Utc::now(),
         last_seen: chrono::Utc::now(),

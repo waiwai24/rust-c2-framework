@@ -12,7 +12,7 @@ use crate::{
     state::AppState,
 };
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put, delete},
     serve, Router,
 };
 use common::config::ConfigManager;
@@ -22,16 +22,17 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
-// Spawn a background task to periodically clean up offline clients and expired sessions
+// Spawn a background task to periodically clean up expired sessions (but keep offline clients)
 async fn cleanup_task(state: AppState) {
     let mut interval = tokio::time::interval(Duration::from_secs(60));
     loop {
         interval.tick().await;
         let timeout_seconds = state.config.client_timeout as i64;
-        state
-            .client_manager
-            .cleanup_offline_clients(timeout_seconds)
-            .await;
+        // Note: We don't cleanup offline clients to keep them in the list
+        // state
+        //     .client_manager
+        //     .cleanup_offline_clients(timeout_seconds)
+        //     .await;
         state
             .shell_manager
             .cleanup_expired_sessions(timeout_seconds)
@@ -47,8 +48,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = ConfigManager::load_server_config(config_path)
         .map_err(|e| format!("Failed to load server config: {e}"))?;
 
-    // Initialize logger
-    env_logger::init();
+    // Initialize tracing
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info".into())
+        )
+        .init();
 
     // Create application state
     let state = AppState::new(config.clone());
@@ -59,8 +65,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Spawn reverse shell listener task
     let reverse_shell_port = config.reverse_shell_port;
     let shell_manager_clone = state.shell_manager.clone();
+    let audit_logger_clone = state.audit_logger.clone();
     tokio::spawn(async move {
-        if let Err(e) = reverse_shell_listener::start_listener(reverse_shell_port, shell_manager_clone).await {
+        if let Err(e) = reverse_shell_listener::start_listener(
+            reverse_shell_port, 
+            shell_manager_clone,
+            audit_logger_clone
+        ).await {
             eprintln!("Reverse shell listener failed: {}", e);
         }
     });
@@ -89,6 +100,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let web_api_routes = Router::new()
         .route("/api/clients", get(api::api_clients))
         .route("/api/clients/display", get(api::api_clients_display))
+        .route("/api/clients/{client_id}", delete(api::delete_client))
+        .route("/api/logs", get(api::get_logs))
+        .route("/api/logs/clear", post(api::clear_logs))
+        .route("/api/notes", get(api::get_notes))
+        .route("/api/notes", post(api::create_note))
+        .route("/api/notes/{note_id}", put(api::update_note))
+        .route("/api/notes/{note_id}", delete(api::delete_note))
         .route("/api/clients/{client_id}/commands", post(api::send_command))
         .route(
             "/api/clients/{client_id}/results",

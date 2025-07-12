@@ -21,7 +21,7 @@ pub struct IndexTemplate {
 #[derive(Template)]
 #[template(path = "client.html")]
 pub struct ClientTemplate {
-    pub client: ClientInfo,
+    pub client: DisplayClientInfo,
     pub commands: Vec<CommandResponse>,
 }
 
@@ -48,6 +48,8 @@ pub struct DisplayClientInfo {
     pub memory: u64,
     pub total_disk_space: u64,
     pub available_disk_space: u64,
+    pub total_disk_space_gb: String,
+    pub available_disk_space_gb: String,
     pub connected_at: chrono::DateTime<chrono::Utc>,
     pub last_seen: chrono::DateTime<chrono::Utc>,
     pub is_online: bool,
@@ -82,6 +84,8 @@ pub async fn index(State(state): State<AppState>) -> Result<Html<String>, Status
                 memory: c.memory,
                 total_disk_space: c.total_disk_space,
                 available_disk_space: c.available_disk_space,
+                total_disk_space_gb: format!("{:.2}", c.total_disk_space as f64),
+                available_disk_space_gb: format!("{:.2}", c.available_disk_space as f64),
                 connected_at: c.connected_at,
                 last_seen: c.last_seen,
                 is_online,
@@ -142,8 +146,32 @@ pub async fn client_detail(
         return render_error_page(400, "无效的客户端ID".to_string(), None).await;
     }
 
-    if let Some(client) = state.client_manager.get_client(&client_id).await {
+    if let Some(client_info) = state.client_manager.get_client(&client_id).await {
         let commands = state.client_manager.get_command_results(&client_id).await;
+        
+        // Convert ClientInfo to DisplayClientInfo
+        let current_timestamp = chrono::Utc::now().timestamp();
+        let is_online = (current_timestamp - client_info.last_seen.timestamp()) < state.config.client_timeout as i64;
+        let client = DisplayClientInfo {
+            id: client_info.id,
+            hostname: client_info.hostname,
+            username: client_info.username,
+            os: client_info.os,
+            arch: client_info.arch,
+            ip: client_info.ip,
+            country_info: client_info.country_info,
+            cpu_brand: client_info.cpu_brand,
+            cpu_frequency: client_info.cpu_frequency,
+            cpu_cores: client_info.cpu_cores,
+            memory: client_info.memory,
+            total_disk_space: client_info.total_disk_space,
+            available_disk_space: client_info.available_disk_space,
+            total_disk_space_gb: format!("{:.2}", client_info.total_disk_space as f64),
+            available_disk_space_gb: format!("{:.2}", client_info.available_disk_space as f64),
+            connected_at: client_info.connected_at,
+            last_seen: client_info.last_seen,
+            is_online,
+        };
 
         let template = ClientTemplate { client, commands };
 

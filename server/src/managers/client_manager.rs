@@ -2,7 +2,7 @@ use common::message::{ClientInfo, CommandRequest, CommandResponse, Message}; // 
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn, debug, instrument};
 
 /// ClientManager handles client registration, command management, and command results.
 pub struct ClientManager {
@@ -36,10 +36,23 @@ impl ClientManager {
     }
 
     /// Update the heartbeat for a specific client
+    #[instrument(skip(self), fields(client_id = %client_id))]
     pub async fn update_heartbeat(&self, client_id: &str) {
         let mut clients = self.clients.write().await;
         if let Some(client) = clients.get_mut(client_id) {
+            let old_last_seen = client.last_seen;
             client.last_seen = chrono::Utc::now();
+            debug!(
+                client_id = %client_id,
+                old_time = %old_last_seen,
+                new_time = %client.last_seen,
+                "Heartbeat updated successfully"
+            );
+        } else {
+            warn!(
+                client_id = %client_id,
+                "Attempted to update heartbeat for non-existent client"
+            );
         }
     }
 
@@ -56,12 +69,28 @@ impl ClientManager {
     }
 
     /// Add a command to a client's command queue
+    #[instrument(skip(self), fields(client_id = %client_id, command = %command.command))]
     pub async fn add_command(&self, client_id: &str, command: CommandRequest) {
+        debug!(
+            client_id = %client_id,
+            command = %command.command,
+            message_id = ?command.message_id,
+            "Adding command to client queue"
+        );
+        
         let mut commands = self.commands.write().await;
+        let queue_length_before = commands.get(client_id).map(|v| v.len()).unwrap_or(0);
+        
         commands
             .entry(client_id.to_string())
             .or_insert_with(Vec::new)
             .push(command);
+        
+        info!(
+            client_id = %client_id,
+            queue_length = %(queue_length_before + 1),
+            "Command queued successfully"
+        );
     }
 
     /// Get all commands for a specific client
@@ -115,12 +144,78 @@ impl ClientManager {
     }
 
     /// Clean up offline clients based on a timeout
+    #[instrument(skip(self), fields(timeout_seconds = %timeout_seconds))]
     pub async fn cleanup_offline_clients(&self, timeout_seconds: i64) {
         let mut clients = self.clients.write().await;
         let now = chrono::Utc::now();
+        let initial_count = clients.len();
+        
+        let mut removed_clients = Vec::new();
+        clients.retain(|client_id, client| {
+            let should_retain = (now.timestamp() - client.last_seen.timestamp()) < timeout_seconds;
+            if !should_retain {
+                removed_clients.push(client_id.clone());
+            }
+            should_retain
+        });
+        
+        if !removed_clients.is_empty() {
+            info!(
+                count = %removed_clients.len(),
+                clients = ?removed_clients,
+                timeout_seconds = %timeout_seconds,
+                "Cleaned up offline clients"
+            );
+        }
+        
+        debug!(
+            initial_count = %initial_count,
+            remaining_count = %clients.len(),
+            removed_count = %removed_clients.len(),
+            "Client cleanup completed"
+        );
+    }
 
-        clients
-            .retain(|_, client| (now.timestamp() - client.last_seen.timestamp()) < timeout_seconds);
+    /// Delete a specific client by ID
+    #[instrument(skip(self), fields(client_id = %client_id))]
+    pub async fn delete_client(&self, client_id: &str) -> bool {
+        info!(
+            client_id = %client_id,
+            "Attempting to delete client"
+        );
+        
+        let mut clients = self.clients.write().await;
+        let mut commands = self.commands.write().await;
+        let mut command_results = self.command_results.write().await;
+        let mut file_responses = self.file_operation_responses.write().await;
+
+        // Record state before deletion
+        let command_count = commands.get(client_id).map(|v| v.len()).unwrap_or(0);
+        let result_count = command_results.get(client_id).map(|v| v.len()).unwrap_or(0);
+        let file_response_count = file_responses.get(client_id).map(|v| v.len()).unwrap_or(0);
+
+        // Remove client from all data structures
+        let client_removed = clients.remove(client_id).is_some();
+        commands.remove(client_id);
+        command_results.remove(client_id);
+        file_responses.remove(client_id);
+
+        if client_removed {
+            info!(
+                client_id = %client_id,
+                commands_cleared = %command_count,
+                results_cleared = %result_count,
+                file_responses_cleared = %file_response_count,
+                "Client deleted successfully"
+            );
+        } else {
+            warn!(
+                client_id = %client_id,
+                "Attempted to delete non-existent client"
+            );
+        }
+
+        client_removed
     }
 
     /// Get the number of online clients

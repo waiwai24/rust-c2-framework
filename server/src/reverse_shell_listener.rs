@@ -1,11 +1,12 @@
 use common::error::C2Result;
-use log::{error, info};
+use tracing::{error, info};
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::sync::{mpsc, broadcast, RwLock};
 use std::collections::HashMap;
 use uuid::Uuid;
+use crate::audit::AuditLogger;
 
 /// Manages active reverse shell connections
 pub struct ReverseShellManager {
@@ -59,16 +60,40 @@ pub fn get_reverse_shell_manager() -> &'static ReverseShellManager {
 
 /// Starts a TCP listener for reverse shell connections.
 /// Each connection gets a unique ID and can be accessed via WebSocket.
-pub async fn start_listener(port: u16, _shell_manager: Arc<crate::managers::shell_manager::ShellManager>) -> C2Result<()> {
+pub async fn start_listener(
+    port: u16, 
+    _shell_manager: Arc<crate::managers::shell_manager::ShellManager>,
+    audit_logger: Arc<AuditLogger>
+) -> C2Result<()> {
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
+    
+    // Log listener startup
+    audit_logger.log_websocket_event(
+        "reverse_shell_listener",
+        "START",
+        &format!("Reverse shell listener started on port {}", port)
+    );
     info!("Reverse shell listener started on port {}", port);
 
     loop {
         let (socket, peer_addr) = listener.accept().await?;
         let connection_id = Uuid::new_v4().to_string();
+        
+        // Log new connection
+        audit_logger.log_websocket_event(
+            &connection_id,
+            "CONNECT",
+            &format!("Reverse shell connection from: {}", peer_addr)
+        );
         info!("Accepted reverse shell connection from: {} (ID: {})", peer_addr, connection_id);
 
-        tokio::spawn(handle_reverse_shell_connection(socket, peer_addr.to_string(), connection_id));
+        let audit_logger_clone = audit_logger.clone();
+        tokio::spawn(handle_reverse_shell_connection(
+            socket, 
+            peer_addr.to_string(), 
+            connection_id,
+            audit_logger_clone
+        ));
     }
 }
 
@@ -76,6 +101,7 @@ async fn handle_reverse_shell_connection(
     socket: tokio::net::TcpStream,
     peer_addr: String,
     connection_id: String,
+    audit_logger: Arc<AuditLogger>,
 ) {
     let (mut reader, mut writer) = socket.into_split();
     
@@ -89,6 +115,9 @@ async fn handle_reverse_shell_connection(
     let connection_id_read = connection_id.clone();
     let connection_id_write = connection_id.clone();
     let tx_from_shell_clone = tx_from_shell.clone();
+    let audit_logger_read = audit_logger.clone();
+    let audit_logger_write = audit_logger.clone();
+    let audit_logger_cleanup = audit_logger.clone();
     
     // Task to read from shell and broadcast to WebSocket listeners
     let read_task = tokio::spawn(async move {
@@ -96,6 +125,12 @@ async fn handle_reverse_shell_connection(
         loop {
             match reader.read(&mut buf).await {
                 Ok(0) => {
+                    // Log disconnection
+                    audit_logger_read.log_websocket_event(
+                        &connection_id_read,
+                        "DISCONNECT",
+                        &format!("Reverse shell client disconnected: {}", peer_addr)
+                    );
                     info!("Reverse shell client disconnected: {} (ID: {})", peer_addr, connection_id_read);
                     break;
                 }
@@ -105,6 +140,12 @@ async fn handle_reverse_shell_connection(
                     let _ = tx_from_shell_clone.send(data);
                 }
                 Err(e) => {
+                    // Log error
+                    audit_logger_read.log_websocket_event(
+                        &connection_id_read,
+                        "ERROR",
+                        &format!("Error reading from reverse shell: {}", e)
+                    );
                     error!("Error reading from reverse shell {}: {}", connection_id_read, e);
                     break;
                 }
@@ -116,6 +157,12 @@ async fn handle_reverse_shell_connection(
     let write_task = tokio::spawn(async move {
         while let Some(data) = rx_to_shell.recv().await {
             if let Err(e) = writer.write_all(&data).await {
+                // Log write error
+                audit_logger_write.log_websocket_event(
+                    &connection_id_write,
+                    "ERROR",
+                    &format!("Error writing to reverse shell: {}", e)
+                );
                 error!("Error writing to reverse shell {}: {}", connection_id_write, e);
                 break;
             }
@@ -130,5 +177,12 @@ async fn handle_reverse_shell_connection(
     
     // Remove connection from manager
     get_reverse_shell_manager().remove_connection(&connection_id).await;
+    
+    // Log cleanup
+    audit_logger_cleanup.log_websocket_event(
+        &connection_id,
+        "CLEANUP",
+        "Reverse shell connection cleaned up"
+    );
     info!("Cleaned up reverse shell connection: {}", connection_id);
 }

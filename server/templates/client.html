@@ -113,11 +113,11 @@
                 </div>
                 <div class="info-item">
                     <label>总磁盘空间</label>
-                    <span>{{ client.total_disk_space}} GB</span>
+                    <span>{{ client.total_disk_space_gb }} GB</span>
                 </div>
                 <div class="info-item">
                     <label>可用磁盘空间</label>
-                    <span>{{ client.available_disk_space}} GB</span>
+                    <span>{{ client.available_disk_space_gb }} GB</span>
                 </div>
                 <div class="info-item">
                     <label>连接时间</label>
@@ -153,7 +153,7 @@
                                 <button class="quick-cmd" onclick="setCommand('pwd')">pwd</button>
                                 <button class="quick-cmd" onclick="setCommand('ls -la')">ls -la</button>
                                 <button class="quick-cmd" onclick="setCommand('ps aux')">ps aux</button>
-                                <button class="quick-cmd" onclick="setCommand('netstat -an')">netstat -an</button>
+                                <button class="quick-cmd" onclick="setCommand('netstat -anop')">netstat -anop</button>
                                 <button class="quick-cmd" onclick="setCommand('uname -a')">uname -a</button>
                                 <button class="quick-cmd" onclick="setCommand('cat /etc/passwd')">cat /etc/passwd</button>
                             </div>
@@ -165,8 +165,10 @@
                         </div>
 
                         <div class="results-section">
-                            <h2>命令执行结果</h2>
-                            <button class="btn refresh-btn" onclick="refreshResults()">刷新</button>
+                            <div class="section-header">
+                                <h2>命令执行结果</h2>
+                                <button class="btn refresh-btn" onclick="refreshResults()">刷新</button>
+                            </div>
                             
                             {% if commands.is_empty() %}
                                 <div class="no-results">

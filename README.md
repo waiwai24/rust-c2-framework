@@ -4,55 +4,55 @@
 <img src="web/static/rust-c2.png" alt="rust-c2" width="400"/>
 <!-- markdownlint-enable MD033 -->
 
-一个使用Rust编写的、经过重构的命令与控制(C2)框架，具有清晰的模块化结构，包含客户端、服务端和Web管理界面。
+一个使用Rust语言从零重构的现代化命令与控制（C2）框架，旨在提供一个高性能、安全且模块化的平台，用于远程系统管理和渗透测试。该框架包含独立的客户端、服务端以及一个直观的Web管理界面。
 
 ## 功能特性
 
-- 🚀 **平台支持**: 支持Linux
-- 🔐 **安全通信**: 使用AES-256-GCM加密通信
-- 🌐 **Web管理界面**: 现代化的Web控制台，使用Axum和Askama构建
-- 🔄 **异步架构**: 基于Tokio的高性能异步架构
-- 💻 **远程命令执行**: 实时命令执行和结果反馈
-- 🖥️ **反弹Shell**: 交互式Shell会话
-- 📊 **实时监控**: 客户端状态实时监控
-- 📝 **配置管理**: 通过`toml`文件轻松配置客户端和服务端
-- 📦 **工作区结构**: 使用Cargo工作区管理多个crate
+- 🚀 **跨平台支持**: 客户端和服务端均支持Linux操作系统。
+- 🔐 **端到端加密通信**: 采用AES-256-GCM加密算法，确保所有通信数据的机密性和完整性。
+- 🌐 **直观的Web管理界面**: 基于Axum Web框架和Askama模板引擎构建，提供现代化的用户体验，便于操作和监控。
+- ⚡ **高性能异步架构**: 利用Tokio运行时构建，实现高效的并发处理和低延迟通信。
+- 💻 **实时命令执行**: 支持远程执行系统命令，并即时获取执行结果。
+- 🖥️ **交互式反弹Shell**: 提供稳定的反向Shell会话，实现对受控主机的深度交互。
+- 📊 **客户端状态监控**: 实时展示连接客户端的详细信息和活动状态。
+- 📝 **灵活的配置管理**: 通过TOML配置文件轻松调整客户端和服务端的各项参数，无需重新编译。
+- 📦 **Cargo工作区**: 采用Rust的Cargo工作区管理模式，清晰划分 `common`、`client` 和 `server` 等模块，便于开发和维护。
 
 ## 项目结构
 
-项目现在是一个Cargo工作区，结构如下：
+本项目采用Cargo工作区管理，结构清晰，各模块职责明确：
 
 ```shell
 rust-c2-framework/
-├── common/               # 通用库 (协议, 加密, 配置, 错误处理)
+├── common/               # 通用库：包含协议定义、加密工具、配置解析、错误处理等共享组件。
 │   ├── src/
 │   └── Cargo.toml
-├── client/               # 客户端Crate
+├── client/               # 客户端Crate：负责与服务端通信、执行命令、提供反弹Shell等功能。
 │   ├── src/
 │   └── Cargo.toml
-├── server/               # 服务端Crate
+├── server/               # 服务端Crate：处理客户端连接、管理会话、提供Web管理界面和API服务。
 │   ├── src/
-│   ├── templates/        # Web模板
+│   ├── templates/        # Web界面HTML模板文件。
 │   └── Cargo.toml
 ├── web/
-│   └── static/           # 静态文件 (CSS, JS等)
-└── Cargo.toml            # 工作区配置
+│   └── static/           # Web管理界面的静态资源（CSS、JavaScript、图片等）。
+└── Cargo.toml            # Cargo工作区配置文件，定义了各个Crate的依赖关系和构建方式。
 ```
 
 ## 快速开始
 
 ### 1. 配置
 
-服务端会在运行时从配置文件中读取配置。这意味着您可以在不重新编译的情况下修改这些文件来更改配置。
+服务端和客户端的配置通过TOML文件进行管理，允许在不重新编译的情况下灵活修改。
 
 **服务端配置 (`server_config.toml`)**:
 
-在运行服务端二进制文件的相同目录下，创建一个名为 `server_config.toml` 的文件。如果文件不存在，服务端将无法启动并报错。
+在运行服务端二进制文件的相同目录下创建此文件。如果文件不存在，服务端将无法启动。
 
 ```toml
 host = "0.0.0.0"
 port = 8080
-encryption_key = "a_very_secret_key_that_is_32_bytes"
+encryption_key = "a_very_secret_key_that_is_32_bytes" # ⚠️ 务必替换为32字节的强密钥！
 client_timeout = 300
 max_clients = 1000
 log_file = "c2_server.log"
@@ -67,18 +67,22 @@ enable_cors = true
 
 ### 2. 编译项目
 
+使用Cargo编译整个工作区或单独的Crate：
+
 ```bash
-# 编译整个工作区
+# 编译整个工作区（推荐）
 cargo build --release
 
-# 或者分别编译
+# 或者分别编译服务端和客户端
 cargo build --release --bin server
 cargo build --release --bin client
 ```
 
+编译后的二进制文件位于 `target/release/` 目录下。
+
 ### 3. 静态编译 (MUSL)
 
-为了生成完全静态链接的二进制文件，可以使用 `musl` 目标。这对于创建独立的可执行文件非常有用，无需依赖系统库。
+为了生成不依赖系统库的独立可执行文件，可以使用 `musl` 目标进行静态链接编译。
 
 **先决条件**:
 安装 `musl` 工具链：
@@ -102,7 +106,7 @@ cargo build --release --bin client --target x86_64-unknown-linux-musl
 
 ### 4. 使用 UPX 压缩 (可选)
 
-UPX (Ultimate Packer for eXecutables) 可以进一步压缩静态链接的二进制文件，减小其大小。
+UPX (Ultimate Packer for eXecutables) 可以进一步减小静态链接二进制文件的大小。
 
 **先决条件**:
 安装 UPX：
@@ -124,14 +128,14 @@ upx --best target/x86_64-unknown-linux-musl/release/client
 ### 5. 启动服务端
 
 ```bash
-# 启动服务端
+# 启动服务端（推荐使用 Cargo）
 cargo run --bin server
 
-# 或者运行编译后的二进制文件
+# 或者直接运行编译后的二进制文件
 ./target/release/server
 ```
 
-服务端启动后，可以通过浏览器访问 `http://localhost:8080` 查看Web管理界面。默认登录凭据为 `admin` / `password`。
+服务端启动后，通过浏览器访问 `http://localhost:8080` 即可进入Web管理界面。默认登录凭据为 `admin` / `password`。
 
 ### 6. 启动客户端
 
@@ -142,7 +146,7 @@ cargo run --bin client
 # 或者指定服务端地址
 cargo run --bin client http://your-server-ip:8080
 
-# 或者运行编译后的二进制文件
+# 或者直接运行编译后的二进制文件
 ./target/release/client http://your-server-ip:8080
 ```
 
@@ -150,15 +154,17 @@ cargo run --bin client http://your-server-ip:8080
 
 ### 模块化设计
 
-- **`common`**: 包含所有共享代码，如 `message` 协议、`config` 结构、`error` 类型、`crypto` 工具和 `network` 辅助函数。
-- **`server`**: 包含所有服务端逻辑。
-  - `main.rs`: 程序入口，设置路由和启动服务器。
-  - `state.rs`: 定义共享的 `AppState`。
-  - `managers/`: 包含 `ClientManager` 和 `ShellManager`，用于处理核心业务逻辑。
-  - `handlers/`: 包含 `api.rs` 和 `web.rs`，分别处理API请求和Web页面渲染。
-  - `audit.rs`: 审计日志记录。
-  - `auth.rs`: Web界面认证。
-- **`client`**: 包含所有客户端逻辑。
+本项目遵循清晰的模块化设计原则，便于理解和扩展：
+
+- **`common`**: 核心共享库，包含所有跨Crate通用的代码，如 `message` 协议定义、`config` 结构、`error` 类型、`crypto` 加密工具和 `network` 辅助函数。
+- **`server`**: 服务端核心逻辑。
+  - `main.rs`: 程序入口，负责初始化服务器、设置路由和启动服务。
+  - `state.rs`: 定义应用程序的共享状态 `AppState`，管理全局数据。
+  - `managers/`: 包含 `ClientManager`（管理客户端连接）和 `ShellManager`（处理反弹Shell会话）等核心业务逻辑管理器。
+  - `handlers/`: 包含 `api.rs`（处理RESTful API请求）和 `web.rs`（处理Web页面渲染请求）。
+  - `audit.rs`: 负责审计日志的记录功能。
+  - `auth.rs`: 实现Web界面的用户认证逻辑。
+- **`client`**: 客户端核心逻辑，负责与服务端建立连接、执行接收到的命令、管理文件、提供反弹Shell功能等。
 
 ## 免责声明
 

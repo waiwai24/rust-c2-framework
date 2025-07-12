@@ -34,65 +34,214 @@
             </div>
         </div>
 
-        <div class="clients-section">
-            <div class="clients-header">
-                <h2>客户端列表</h2>
-                <button class="btn refresh-btn" onclick="location.reload()">刷新</button>
-            </div>
-            
-            {% if clients.is_empty() %}
-                <div class="no-clients">
-                    <h3>暂无客户端连接</h3>
-                    <p>等待客户端连接到服务器...</p>
+        <div class="main-dashboard">
+            <div class="tabs">
+                <div class="tab-header">
+                    <div class="tab-item active" data-tab="clients">客户端列表</div>
+                    <div class="tab-item" data-tab="logs">日志记录</div>
+                    <div class="tab-item" data-tab="notes">备忘录</div>
+                    <div class="tab-item" data-tab="settings">设置</div>
                 </div>
-            {% else %}
-                <table class="clients-table">
-                    <thead>
-                        <tr>
-                            <th>客户端ID</th>
-                            <th>主机名</th>
-                            <th>用户名</th>
-                            <th>操作系统</th>
-                            <th>IP地址</th>
-                            <th>连接时间</th>
-                            <th>最后活动</th>
-                            <th>状态</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for client in clients %}
-                        <tr>
-                            <td><code>{{ client.id[0..8] }}...</code></td>
-                            <td>{{ client.hostname }}</td>
-                            <td>{{ client.username }}</td>
-                            <td>{{ client.os }} ({{ client.arch }})</td>
-                            <td>{{ client.ip }}</td>
-                            <td>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
-                            <td>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
-                            <td>
-                                {% if client.is_online %}
-                                    <span class="status online">在线</span>
-                                {% else %}
-                                    <span class="status offline">离线</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="/client/{{ client.id }}" class="btn">管理</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
+                
+                <div class="tab-content active" id="clients-tab">
+                    <div class="clients-section">
+                        <div class="clients-header">
+                            <h2>客户端列表</h2>
+                            <button class="btn refresh-btn" onclick="refreshClientList()">刷新</button>
+                        </div>
+                        
+                        {% if clients.is_empty() %}
+                            <div class="no-clients">
+                                <h3>暂无客户端连接</h3>
+                                <p>等待客户端连接到服务器...</p>
+                            </div>
+                        {% else %}
+                            <table class="clients-table">
+                                <thead>
+                                    <tr>
+                                        <th>客户端ID</th>
+                                        <th>主机名</th>
+                                        <th>用户名</th>
+                                        <th>操作系统</th>
+                                        <th>IP地址</th>
+                                        <th>连接时间</th>
+                                        <th>最后活动</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for client in clients %}
+                                    <tr>
+                                        <td><code>{{ client.id[0..8] }}...</code></td>
+                                        <td>{{ client.hostname }}</td>
+                                        <td>{{ client.username }}</td>
+                                        <td>{{ client.os }} ({{ client.arch }})</td>
+                                        <td>{{ client.ip }}</td>
+                                        <td>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                                        <td>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</td>
+                                        <td>
+                                            {% if client.is_online %}
+                                                <span class="status online">在线</span>
+                                            {% else %}
+                                                <span class="status offline">离线</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="/client/{{ client.id }}" class="btn btn-sm">管理</a>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteClient('{{ client.id }}', '{{ client.hostname }}')">删除</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="tab-content" id="logs-tab">
+                    <div class="logs-section">
+                        <div class="section-header">
+                            <h2>日志记录</h2>
+                            <div class="logs-controls">
+                                <button class="btn refresh-btn" onclick="refreshLogs()">刷新日志</button>
+                                <button class="btn btn-danger" onclick="clearLogs()">清除日志</button>
+                            </div>
+                        </div>
+                        
+                        <div class="logs-filters">
+                            <select id="logLevel" class="log-filter">
+                                <option value="all">总计</option>
+                                <option value="CLIENT_">客户端</option>
+                                <option value="COMMAND_">命令</option>
+                                <option value="AUTH_">认证</option>
+                                <option value="FILE_">文件</option>
+                                <option value="WEBSOCKET_">网络</option>
+                                <option value="ERROR">错误</option>
+                            </select>
+                            <div class="date-range-filter">
+                                <label for="startTime" class="filter-label">开始时间:</label>
+                                <select id="startTime" class="log-filter time-select">
+                                    <option value="">请选择开始时间</option>
+                                </select>
+                                <label for="endTime" class="filter-label">结束时间:</label>
+                                <select id="endTime" class="log-filter time-select">
+                                    <option value="">请选择结束时间</option>
+                                </select>
+                            </div>
+                            <div class="quick-time-filters">
+                                <button class="btn btn-sm btn-secondary" onclick="setTimeRange('last-hour')">最近1小时</button>
+                                <button class="btn btn-sm btn-secondary" onclick="setTimeRange('last-day')">最近24小时</button>
+                                <button class="btn btn-sm btn-secondary" onclick="setTimeRange('today')">今天</button>
+                                <button class="btn btn-sm btn-secondary" onclick="setTimeRange('yesterday')">昨天</button>
+                            </div>
+                            <button class="btn btn-sm" onclick="filterLogs()">筛选</button>
+                            <button class="btn btn-sm btn-secondary" onclick="clearFilters()">清除筛选</button>
+                        </div>
+                        
+                        <div class="logs-container">
+                            <div id="logsList" class="logs-list">
+                                <div class="no-results">
+                                    <p>加载日志中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="notes-tab">
+                    <div class="notes-section">
+                        <div class="section-header">
+                            <h2>备忘录</h2>
+                            <button class="btn" onclick="addNote()">添加备忘录</button>
+                        </div>
+                        
+                        <div class="notes-form" id="noteForm" style="display: none;">
+                            <div class="form-group">
+                                <label for="noteTitle">标题</label>
+                                <input type="text" id="noteTitle" class="form-input" placeholder="输入备忘录标题..." />
+                            </div>
+                            <div class="form-group">
+                                <label for="noteContent">内容</label>
+                                <textarea id="noteContent" class="form-textarea" rows="5" placeholder="输入备忘录内容..."></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn" onclick="saveNote()">保存</button>
+                                <button class="btn btn-secondary" onclick="cancelNote()">取消</button>
+                            </div>
+                        </div>
+                        
+                        <div class="notes-container">
+                            <div id="notesList" class="notes-list">
+                                <div class="no-results">
+                                    <h3>暂无备忘录</h3>
+                                    <p>点击"添加备忘录"按钮创建第一个备忘录</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="settings-tab">
+                    <div class="settings-section">
+                        <div class="no-results">
+                            <h3>🚧 功能开发中</h3>
+                            <p>设置功能正在重构开发中，敬请期待...</p>
+                            <div style="margin-top: 20px; color: #8b949e; font-size: 0.9em;">
+                                <p>📋 计划功能：</p>
+                                <ul style="text-align: center; margin-top: 10px; list-style: none; padding: 0;">
+                                    <li>服务器配置管理</li>
+                                    <li>客户端连接参数设置</li>
+                                    <li>安全策略配置</li>
+                                    <li>界面个性化设置</li>
+                                    <li>系统监控配置</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         let isUpdating = false;
+        let notes = [];
         
-        // 更新客户端数据的函数
-        async function updateClientData() {
+        // Tab切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabItems = document.querySelectorAll('.tab-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 移除所有active类
+                    tabItems.forEach(tab => tab.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 为当前tab添加active类
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    // 根据不同标签页执行不同的初始化逻辑
+                    if (tabId === 'logs') {
+                        loadLogs();
+                    } else if (tabId === 'notes') {
+                        loadNotes();
+                    } else if (tabId === 'settings') {
+                        loadSettings();
+                    }
+                });
+            });
+            
+            // 初始化第一个标签页
+            loadNotes();
+        });
+        
+        // 刷新客户端列表的函数
+        async function refreshClientList() {
             if (isUpdating) return;
             isUpdating = true;
             
@@ -103,11 +252,9 @@
                 if (response.ok) {
                     const data = await response.json();
                     updateDashboard(data);
-                } else {
-                    console.error('Failed to fetch client data:', response.status);
                 }
             } catch (error) {
-                console.error('Error updating client data:', error);
+                console.error('刷新失败:', error);
             } finally {
                 isUpdating = false;
             }
@@ -129,18 +276,16 @@
         
         // 更新客户端表格
         function updateClientTable(clients) {
-            const tbody = document.querySelector('.clients-table tbody');
-            if (!tbody) return;
+            const clientsSection = document.querySelector('.clients-section');
+            let tbody = document.querySelector('.clients-table tbody');
+            let table = document.querySelector('.clients-table');
+            let noClientsDiv = document.querySelector('.no-clients');
             
             if (clients.length === 0) {
-                // 显示无客户端消息
-                const clientsSection = document.querySelector('.clients-section');
-                const table = clientsSection.querySelector('.clients-table');
-                if (table) {
-                    table.style.display = 'none';
-                }
+                // 隐藏表格
+                if (table) table.style.display = 'none';
                 
-                let noClientsDiv = clientsSection.querySelector('.no-clients');
+                // 创建或显示无客户端消息
                 if (!noClientsDiv) {
                     noClientsDiv = document.createElement('div');
                     noClientsDiv.className = 'no-clients';
@@ -149,45 +294,60 @@
                 }
                 noClientsDiv.style.display = 'block';
             } else {
-                // 隐藏无客户端消息，显示表格
-                const noClientsDiv = document.querySelector('.no-clients');
-                if (noClientsDiv) {
-                    noClientsDiv.style.display = 'none';
+                // 隐藏无客户端消息
+                if (noClientsDiv) noClientsDiv.style.display = 'none';
+                
+                // 创建表格（如果不存在）
+                if (!table) {
+                    table = document.createElement('table');
+                    table.className = 'clients-table';
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>客户端ID</th>
+                                <th>主机名</th>
+                                <th>用户名</th>
+                                <th>操作系统</th>
+                                <th>IP地址</th>
+                                <th>连接时间</th>
+                                <th>最后活动</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    `;
+                    clientsSection.appendChild(table);
+                    tbody = table.querySelector('tbody');
                 }
                 
-                const table = document.querySelector('.clients-table');
-                if (table) {
-                    table.style.display = 'table';
-                }
+                // 显示表格
+                table.style.display = 'table';
                 
                 // 更新表格内容
-                tbody.innerHTML = clients.map(client => `
-                    <tr>
-                        <td><code>${client.id.substring(0, 8)}...</code></td>
-                        <td>${escapeHtml(client.hostname)}</td>
-                        <td>${escapeHtml(client.username)}</td>
-                        <td>${escapeHtml(client.os)} (${escapeHtml(client.arch)})</td>
-                        <td>${escapeHtml(client.ip)}</td>
-                        <td>${formatDateTime(client.connected_at)}</td>
-                        <td>${formatDateTime(client.last_seen)}</td>
-                        <td>
-                            <span class="status ${client.is_online ? 'online' : 'offline'}">
-                                ${client.is_online ? '在线' : '离线'}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="/client/${client.id}" class="btn">管理</a>
-                        </td>
-                    </tr>
-                `).join('');
+                if (tbody) {
+                    tbody.innerHTML = clients.map(client => `
+                        <tr>
+                            <td><code>${client.id.substring(0, 8)}...</code></td>
+                            <td>${client.hostname}</td>
+                            <td>${client.username}</td>
+                            <td>${client.os} (${client.arch})</td>
+                            <td>${client.ip}</td>
+                            <td>${formatDateTime(client.connected_at)}</td>
+                            <td>${formatDateTime(client.last_seen)}</td>
+                            <td>
+                                <span class="status ${client.is_online ? 'online' : 'offline'}">
+                                    ${client.is_online ? '在线' : '离线'}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/client/${client.id}" class="btn btn-sm">管理</a>
+                                <button class="btn btn-danger btn-sm" onclick="deleteClient('${client.id}', '${client.hostname}')">删除</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
             }
-        }
-        
-        // HTML转义函数
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
         
         // 格式化日期时间
@@ -203,21 +363,655 @@
             });
         }
         
-        // 刷新按钮点击事件
-        document.querySelector('.refresh-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            updateClientData();
-        });
+        // 日志相关功能
+        async function loadLogs() {
+            const logsList = document.getElementById('logsList');
+            logsList.innerHTML = '<div class="no-results"><p>加载日志中...</p></div>';
+            
+            try {
+                const response = await fetch('/api/logs', {
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const logs = await response.text();
+                    displayLogs(logs);
+                } else {
+                    logsList.innerHTML = '<div class="no-results"><p>无法加载日志文件</p></div>';
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+                logsList.innerHTML = '<div class="no-results"><p>加载日志时出错</p></div>';
+            }
+        }
         
-        // 设置定时更新 (从服务器配置读取间隔)
-        const refreshInterval = parseInt("{{ refresh_interval }}" || "15"); // Provide a default value if parsing fails
-        console.log("Refresh Interval:", refreshInterval); // Added for debugging
-        setInterval(updateClientData, refreshInterval * 1000);
+        function displayLogs(logsText) {
+            const logsList = document.getElementById('logsList');
+            const lines = logsText.split('\n').filter(line => line.trim());
+            
+            if (lines.length === 0) {
+                logsList.innerHTML = '<div class="no-results"><p>暂无日志记录</p></div>';
+                // 即使没有日志，也要更新统计信息为0
+                updateLogStats([]);
+                // 清空时间选择器
+                populateTimeSelectors([]);
+                return;
+            }
+            
+            // 解析日志条目并按时间排序（最新的在上面）
+            const logEntries = lines.map(line => {
+                const timestampMatch = line.match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/);
+                return {
+                    text: line,
+                    timestamp: timestampMatch ? new Date(timestampMatch[1]) : new Date(0),
+                    timestampStr: timestampMatch ? timestampMatch[1] : null,
+                    class: getLogClass(line)
+                };
+            }).sort((a, b) => b.timestamp - a.timestamp); // 最新的在前
+            
+            const logsHtml = logEntries.map(entry => `
+                <div class="log-entry ${entry.class}" title="点击复制到剪贴板" onclick="copyLogEntry(this)">
+                    ${escapeHtml(entry.text)}
+                </div>
+            `).join('');
+            
+            logsList.innerHTML = logsHtml;
+            
+            // 显示日志统计信息
+            updateLogStats(logEntries);
+            
+            // 填充时间选择器
+            populateTimeSelectors(logEntries);
+        }
         
-        // 页面加载完成后立即更新一次
-        document.addEventListener('DOMContentLoaded', function() {
-            updateClientData();
-        });
+        function populateTimeSelectors(logEntries) {
+            const startTimeSelect = document.getElementById('startTime');
+            const endTimeSelect = document.getElementById('endTime');
+            
+            // 保存当前选择
+            const currentStartTime = startTimeSelect.value;
+            const currentEndTime = endTimeSelect.value;
+            
+            // 清空选择器
+            startTimeSelect.innerHTML = '<option value="">请选择开始时间</option>';
+            endTimeSelect.innerHTML = '<option value="">请选择结束时间</option>';
+            
+            if (logEntries.length === 0) return;
+            
+            // 提取所有有效的时间戳
+            const timestamps = logEntries
+                .filter(entry => entry.timestampStr)
+                .map(entry => ({
+                    value: entry.timestampStr,
+                    display: formatTimestampForDisplay(entry.timestampStr),
+                    date: entry.timestamp
+                }));
+            
+            // 去重并按时间排序（最早的在前面，用于开始时间；最晚的在前面，用于结束时间）
+            const uniqueTimestamps = timestamps.filter((timestamp, index, arr) => 
+                arr.findIndex(t => t.value === timestamp.value) === index
+            );
+            
+            // 为开始时间排序（最早的在前）
+            const startTimestamps = [...uniqueTimestamps].sort((a, b) => a.date - b.date);
+            // 为结束时间排序（最晚的在前）
+            const endTimestamps = [...uniqueTimestamps].sort((a, b) => b.date - a.date);
+            
+            // 填充开始时间选择器
+            startTimestamps.forEach(timestamp => {
+                const option = document.createElement('option');
+                option.value = timestamp.value;
+                option.textContent = timestamp.display;
+                startTimeSelect.appendChild(option);
+            });
+            
+            // 填充结束时间选择器
+            endTimestamps.forEach(timestamp => {
+                const option = document.createElement('option');
+                option.value = timestamp.value;
+                option.textContent = timestamp.display;
+                endTimeSelect.appendChild(option);
+            });
+            
+            // 恢复之前的选择
+            if (currentStartTime) startTimeSelect.value = currentStartTime;
+            if (currentEndTime) endTimeSelect.value = currentEndTime;
+        }
+        
+        function formatTimestampForDisplay(timestampStr) {
+            const date = new Date(timestampStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        function updateLogStats(logEntries) {
+            const stats = {
+                total: logEntries.length,
+                client: logEntries.filter(e => e.text.includes('CLIENT_')).length,
+                command: logEntries.filter(e => e.text.includes('COMMAND_')).length,
+                auth: logEntries.filter(e => e.text.includes('AUTH_') || e.text.includes('SESSION_')).length,
+                file: logEntries.filter(e => e.text.includes('FILE_')).length,
+                websocket: logEntries.filter(e => e.text.includes('WEBSOCKET_')).length,
+                error: logEntries.filter(e => e.text.includes('ERROR')).length
+            };
+            
+            // 在日志容器顶部显示统计信息
+            let statsElement = document.getElementById('logStats');
+            if (!statsElement) {
+                statsElement = document.createElement('div');
+                statsElement.id = 'logStats';
+                statsElement.className = 'log-stats';
+                document.querySelector('.logs-container').insertBefore(statsElement, document.querySelector('.logs-list'));
+            }
+            
+            statsElement.innerHTML = `
+                <div class="stats-summary">
+                    <span class="stat-item">总计: <strong>${stats.total}</strong></span>
+                    <span class="stat-item log-client">客户端: <strong>${stats.client}</strong></span>
+                    <span class="stat-item log-command">命令: <strong>${stats.command}</strong></span>
+                    <span class="stat-item log-auth">认证: <strong>${stats.auth}</strong></span>
+                    <span class="stat-item log-file">文件: <strong>${stats.file}</strong></span>
+                    <span class="stat-item log-websocket">网络: <strong>${stats.websocket}</strong></span>
+                    <span class="stat-item log-error">错误: <strong>${stats.error}</strong></span>
+                </div>
+            `;
+        }
+        
+        function copyLogEntry(element) {
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // 显示复制成功的提示
+                const originalBg = element.style.backgroundColor;
+                element.style.backgroundColor = 'rgba(56, 139, 253, 0.3)';
+                setTimeout(() => {
+                    element.style.backgroundColor = originalBg;
+                }, 300);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+        
+        function getLogClass(logLine) {
+            // 客户端相关
+            if (logLine.includes('CLIENT_CONNECT')) return 'log-connect';
+            if (logLine.includes('CLIENT_DISCONNECT')) return 'log-disconnect';
+            if (logLine.includes('CLIENT_DELETE')) return 'log-disconnect';
+            
+            // 命令相关
+            if (logLine.includes('COMMAND_EXECUTE')) return 'log-command';
+            if (logLine.includes('COMMAND_RESULT')) return 'log-result';
+            
+            // 认证相关
+            if (logLine.includes('AUTH_FAILURE')) return 'log-auth';
+            if (logLine.includes('SESSION_CREATE')) return 'log-auth';
+            if (logLine.includes('SESSION_EXPIRE')) return 'log-auth';
+            
+            // 文件操作相关
+            if (logLine.includes('FILE_UPLOAD')) return 'log-file';
+            if (logLine.includes('FILE_DOWNLOAD')) return 'log-file';
+            if (logLine.includes('FILE_DELETE')) return 'log-file';
+            if (logLine.includes('FILE_LIST')) return 'log-file';
+            
+            // WebSocket相关
+            if (logLine.includes('WEBSOCKET_START')) return 'log-websocket';
+            if (logLine.includes('WEBSOCKET_CONNECT')) return 'log-websocket';
+            if (logLine.includes('WEBSOCKET_DISCONNECT')) return 'log-websocket';
+            if (logLine.includes('WEBSOCKET_ERROR')) return 'log-websocket';
+            if (logLine.includes('WEBSOCKET_CLEANUP')) return 'log-websocket';
+            
+            // Shell会话
+            if (logLine.includes('SHELL_SESSION')) return 'log-shell';
+            
+            // 错误
+            if (logLine.includes('ERROR')) return 'log-error';
+            
+            return 'log-info';
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+        
+        async function refreshLogs() {
+            await loadLogs();
+        }
+        
+        function filterLogs() {
+            const level = document.getElementById('logLevel').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const logEntries = document.querySelectorAll('.log-entry');
+            
+            // 转换时间为Date对象
+            const startDate = startTime ? new Date(startTime) : null;
+            const endDate = endTime ? new Date(endTime) : null;
+            
+            logEntries.forEach(entry => {
+                let show = true;
+                const logText = entry.textContent;
+                
+                // 筛选日志级别/类型
+                if (level !== 'all' && !logText.includes(level)) {
+                    show = false;
+                }
+                
+                // 筛选时间范围 - 处理日志格式 [2025-07-12 01:39:48]
+                if (startDate || endDate) {
+                    const logDateMatch = logText.match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/);
+                    if (logDateMatch) {
+                        const logTime = new Date(logDateMatch[1]);
+                        
+                        // 检查是否在时间范围内
+                        if (startDate && logTime < startDate) {
+                            show = false;
+                        }
+                        if (endDate && logTime > endDate) {
+                            show = false;
+                        }
+                    } else {
+                        // 如果无法解析时间，且设置了时间筛选，则隐藏
+                        if (startDate || endDate) {
+                            show = false;
+                        }
+                    }
+                }
+                
+                entry.style.display = show ? 'block' : 'none';
+            });
+            
+            // 显示筛选结果统计
+            const visibleEntries = Array.from(logEntries).filter(entry => entry.style.display !== 'none');
+            const totalEntries = logEntries.length;
+            
+            // 在筛选区域显示结果统计
+            let statusElement = document.getElementById('filterStatus');
+            if (!statusElement) {
+                statusElement = document.createElement('span');
+                statusElement.id = 'filterStatus';
+                statusElement.style.color = '#8b949e';
+                statusElement.style.fontSize = '0.85em';
+                statusElement.style.marginLeft = 'auto';
+                document.querySelector('.logs-filters').appendChild(statusElement);
+            }
+            
+            if (level !== 'all' || startTime || endTime) {
+                const timeRangeText = getTimeRangeText(startTime, endTime);
+                statusElement.textContent = `显示 ${visibleEntries.length} / ${totalEntries} 条日志${timeRangeText}`;
+            } else {
+                statusElement.textContent = '';
+            }
+        }
+        
+        function getTimeRangeText(startTime, endTime) {
+            if (!startTime && !endTime) return '';
+            
+            const formatDisplayTime = (timeStr) => {
+                const date = new Date(timeStr);
+                return date.toLocaleString('zh-CN', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+            
+            if (startTime && endTime) {
+                return ` (${formatDisplayTime(startTime)} ~ ${formatDisplayTime(endTime)})`;
+            } else if (startTime) {
+                return ` (${formatDisplayTime(startTime)} 之后)`;
+            } else {
+                return ` (${formatDisplayTime(endTime)} 之前)`;
+            }
+        }
+        
+        function setTimeRange(range) {
+            // 快速时间范围功能现在只清除选择器，用户需要手动选择
+            clearFilters();
+            
+            // 显示提示信息
+            const statusElement = document.getElementById('filterStatus');
+            if (statusElement) {
+                switch (range) {
+                    case 'last-hour':
+                        statusElement.textContent = '请从下拉列表中选择最近1小时的时间范围';
+                        break;
+                    case 'last-day':
+                        statusElement.textContent = '请从下拉列表中选择最近24小时的时间范围';
+                        break;
+                    case 'today':
+                        statusElement.textContent = '请从下拉列表中选择今天的时间范围';
+                        break;
+                    case 'yesterday':
+                        statusElement.textContent = '请从下拉列表中选择昨天的时间范围';
+                        break;
+                }
+                
+                // 3秒后清除提示
+                setTimeout(() => {
+                    if (statusElement.textContent.includes('请从下拉列表中选择')) {
+                        statusElement.textContent = '';
+                    }
+                }, 3000);
+            }
+        }
+        
+        function clearFilters() {
+            // 重置筛选控件
+            document.getElementById('logLevel').value = 'all';
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            
+            // 显示所有日志条目
+            const logEntries = document.querySelectorAll('.log-entry');
+            logEntries.forEach(entry => {
+                entry.style.display = 'block';
+            });
+            
+            // 清除筛选状态显示
+            const statusElement = document.getElementById('filterStatus');
+            if (statusElement) {
+                statusElement.textContent = '';
+            }
+        }
+        
+        async function clearLogs() {
+            if (confirm('确定要清除所有日志吗？此操作不可逆。')) {
+                try {
+                    const response = await fetch('/api/logs/clear', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            alert(result.message);
+                            // 清除筛选条件
+                            clearFilters();
+                            // 清除后重新加载日志（应该为空）
+                            await loadLogs();
+                        } else {
+                            alert('清除日志失败: ' + (result.message || '未知错误'));
+                        }
+                    } else {
+                        alert('清除日志失败: HTTP ' + response.status);
+                    }
+                } catch (error) {
+                    console.error('清除日志时出错:', error);
+                    alert('清除日志时出错: ' + error.message);
+                }
+            }
+        }
+        
+        // 备忘录相关功能
+        async function loadNotes() {
+            const notesList = document.getElementById('notesList');
+            
+            try {
+                const response = await fetch('/api/notes', {
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    notes = await response.json();
+                } else {
+                    console.error('Failed to load notes:', response.status);
+                    notes = [];
+                }
+            } catch (error) {
+                console.error('Error loading notes:', error);
+                notes = [];
+            }
+            
+            if (notes.length === 0) {
+                notesList.innerHTML = `
+                    <div class="no-results">
+                        <h3>暂无备忘录</h3>
+                        <p>点击"添加备忘录"按钮创建第一个备忘录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const notesHtml = notes.map((note, index) => `
+                <div class="note-item">
+                    <div class="note-header">
+                        <h4>${escapeHtml(note.title)}</h4>
+                        <div class="note-actions">
+                            <button class="btn btn-sm" onclick="editNote('${note.id}')">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteNote('${note.id}')">删除</button>
+                        </div>
+                    </div>
+                    <div class="note-content">${escapeHtml(note.content)}</div>
+                    <div class="note-meta">创建时间: ${note.created_at}${note.updated_at ? ' | 更新时间: ' + note.updated_at : ''}</div>
+                </div>
+            `).join('');
+            
+            notesList.innerHTML = notesHtml;
+        }
+        
+        function addNote() {
+            document.getElementById('noteForm').style.display = 'block';
+            document.getElementById('noteTitle').value = '';
+            document.getElementById('noteContent').value = '';
+            document.getElementById('noteTitle').focus();
+        }
+        
+        async function saveNote() {
+            const title = document.getElementById('noteTitle').value.trim();
+            const content = document.getElementById('noteContent').value.trim();
+            
+            if (!title || !content) {
+                alert('请填写标题和内容');
+                return;
+            }
+            
+            const note = {
+                id: '',
+                title: title,
+                content: content,
+                created_at: '',
+                updated_at: null
+            };
+            
+            try {
+                const response = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(note)
+                });
+                
+                if (response.ok) {
+                    cancelNote();
+                    await loadNotes();
+                } else {
+                    alert('保存备忘录失败: ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error saving note:', error);
+                alert('保存备忘录时出错: ' + error.message);
+            }
+        }
+        
+        function cancelNote() {
+            document.getElementById('noteForm').style.display = 'none';
+        }
+        
+        function editNote(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) {
+                alert('未找到该备忘录');
+                return;
+            }
+            
+            document.getElementById('noteTitle').value = note.title;
+            document.getElementById('noteContent').value = note.content;
+            document.getElementById('noteForm').style.display = 'block';
+            
+            // 更新保存按钮为更新功能
+            const saveBtn = document.querySelector('#noteForm .btn');
+            saveBtn.textContent = '更新';
+            saveBtn.onclick = () => updateNote(noteId);
+        }
+        
+        async function updateNote(noteId) {
+            const title = document.getElementById('noteTitle').value.trim();
+            const content = document.getElementById('noteContent').value.trim();
+            
+            if (!title || !content) {
+                alert('请填写标题和内容');
+                return;
+            }
+            
+            const note = {
+                id: noteId,
+                title: title,
+                content: content,
+                created_at: '',
+                updated_at: null
+            };
+            
+            try {
+                const response = await fetch(`/api/notes/${noteId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(note)
+                });
+                
+                if (response.ok) {
+                    // 恢复保存按钮
+                    const saveBtn = document.querySelector('#noteForm .btn');
+                    saveBtn.textContent = '保存';
+                    saveBtn.onclick = saveNote;
+                    
+                    cancelNote();
+                    await loadNotes();
+                } else {
+                    alert('更新备忘录失败: ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error updating note:', error);
+                alert('更新备忘录时出错: ' + error.message);
+            }
+        }
+        
+        async function deleteNote(noteId) {
+            if (confirm('确定要删除这个备忘录吗？')) {
+                try {
+                    const response = await fetch(`/api/notes/${noteId}`, {
+                        method: 'DELETE',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (response.ok) {
+                        await loadNotes();
+                    } else {
+                        alert('删除备忘录失败: ' + response.status);
+                    }
+                } catch (error) {
+                    console.error('Error deleting note:', error);
+                    alert('删除备忘录时出错: ' + error.message);
+                }
+            }
+        }
+        
+        // 设置相关功能
+        function loadSettings() {
+            // 从localStorage加载设置或使用默认值
+            const settings = JSON.parse(localStorage.getItem('c2-settings') || '{}');
+            
+            if (settings.refreshInterval) {
+                document.getElementById('refreshInterval').value = settings.refreshInterval;
+            }
+        }
+        
+        function saveSettings() {
+            const settings = {
+                serverHost: document.getElementById('serverHost').value,
+                serverPort: document.getElementById('serverPort').value,
+                clientTimeout: document.getElementById('clientTimeout').value,
+                refreshInterval: document.getElementById('refreshInterval').value,
+                maxClients: document.getElementById('maxClients').value,
+                enableAuth: document.getElementById('enableAuth').checked,
+                enableAudit: document.getElementById('enableAudit').checked
+            };
+            
+            localStorage.setItem('c2-settings', JSON.stringify(settings));
+            alert('设置已保存到本地存储');
+        }
+        
+        function resetSettings() {
+            if (confirm('确定要重置为默认设置吗？')) {
+                localStorage.removeItem('c2-settings');
+                location.reload();
+            }
+        }
+        
+        function restartServer() {
+            if (confirm('确定要重启服务器吗？这将断开所有客户端连接。')) {
+                alert('重启服务器功能需要后端API支持');
+            }
+        }
+        
+        // 设置自动刷新
+        const refreshInterval = parseInt("{{ refresh_interval }}") || 5;
+        
+        // 页面加载完成后启动定时器
+        setTimeout(() => {
+            setInterval(() => {
+                // 只有在客户端列表标签页激活时才自动刷新
+                if (document.querySelector('.tab-item[data-tab="clients"]').classList.contains('active')) {
+                    refreshClientList();
+                }
+            }, refreshInterval * 1000);
+        }, 1000);
+        
+        // 删除客户端功能
+        async function deleteClient(clientId, hostname) {
+            if (confirm(`确定要删除客户端 "${hostname}" 吗？\n\n此操作将:\n- 删除客户端记录\n- 清除相关命令历史\n- 清除文件操作记录\n\n此操作不可撤销！`)) {
+                try {
+                    const response = await fetch(`/api/clients/${clientId}`, {
+                        method: 'DELETE',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        alert('客户端删除成功');
+                        // 刷新客户端列表
+                        await refreshClientList();
+                    } else if (response.status === 404) {
+                        alert('客户端不存在');
+                        // 仍然刷新列表，以防数据不同步
+                        await refreshClientList();
+                    } else {
+                        alert('删除客户端失败: HTTP ' + response.status);
+                    }
+                } catch (error) {
+                    console.error('删除客户端时出错:', error);
+                    alert('删除客户端时出错: ' + error.message);
+                }
+            }
+        }
     </script>
 </body>
 </html>

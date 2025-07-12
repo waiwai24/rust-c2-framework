@@ -8,6 +8,7 @@ use axum::{
 use rand::{rngs::OsRng, Rng};
 use serde::Deserialize;
 use tower_cookies::{Cookie, Cookies};
+use tracing::{info, warn, instrument};
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -40,6 +41,7 @@ pub async fn login_get() -> Html<String> {
 }
 
 /// Handle login POST request, validate credentials, and set session cookie.
+#[instrument(skip(state, cookies, credentials), fields(username = %credentials.username))]
 pub async fn login_post(
     State(state): State<AppState>,
     cookies: Cookies,
@@ -53,6 +55,20 @@ pub async fn login_post(
         let session_token = generate_session_token();
         // Set expiration time for the session token (e.g., 24 hours)
         let expires_at = chrono::Utc::now() + chrono::Duration::hours(24);
+
+        info!(
+            username = %credentials.username,
+            session_token = %session_token[..8],
+            expires_at = %expires_at,
+            "User login successful"
+        );
+
+        // Log successful authentication to audit log
+        state.audit_logger.log_session_event(
+            &credentials.username,
+            "CREATE",
+            &session_token
+        );
 
         // Store session token
         {
@@ -71,11 +87,24 @@ pub async fn login_post(
         cookies.add(cookie);
         axum::response::Redirect::to("/").into_response()
     } else {
+        warn!(
+            username = %credentials.username,
+            "Login failed - invalid credentials"
+        );
+        
+        // Log authentication failure to audit log
+        state.audit_logger.log_authentication_failure(
+            &credentials.username,
+            "invalid_credentials",
+            None // TODO: Extract real IP from request headers
+        );
+        
         axum::response::Redirect::to("/login").into_response()
     }
 }
 
 /// Middleware to check if the user is authenticated by verifying the session token.
+#[instrument(skip(state, cookies, request, next))]
 pub async fn auth_middleware(
     State(state): State<AppState>,
     cookies: Cookies,
@@ -88,13 +117,51 @@ pub async fn auth_middleware(
 
         if let Some(expires_at) = tokens.get(token) {
             if chrono::Utc::now() < *expires_at {
+                info!(
+                    session_token = %token[..8],
+                    "Authentication successful - valid token"
+                );
                 // Token is valid, proceed with the request
                 return next.run(request).await;
             } else {
+                warn!(
+                    session_token = %token[..8],
+                    expires_at = %expires_at,
+                    "Authentication failed - token expired"
+                );
+                
+                // Log session expiration to audit log
+                state.audit_logger.log_session_event(
+                    "unknown_user", // We don't have username from token
+                    "EXPIRE",
+                    token
+                );
+                
                 // Token has expired, remove it
                 tokens.remove(token);
             }
+        } else {
+            warn!(
+                session_token = %token[..8],
+                "Authentication failed - token not found"
+            );
+            
+            // Log invalid token attempt to audit log
+            state.audit_logger.log_authentication_failure(
+                "unknown_user",
+                "invalid_token",
+                None
+            );
         }
+    } else {
+        warn!("Authentication failed - no session token provided");
+        
+        // Log missing token attempt to audit log
+        state.audit_logger.log_authentication_failure(
+            "unknown_user",
+            "no_token_provided",
+            None
+        );
     }
     axum::response::Redirect::to("/login").into_response()
 }

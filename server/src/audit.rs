@@ -1,6 +1,6 @@
 use chrono::Utc;
 use common::message::{ClientInfo, CommandRequest, CommandResponse, ShellSession};
-use log::{error, info, warn};
+use tracing::warn;
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -28,7 +28,6 @@ impl AuditLogger {
             client_info.os
         );
 
-        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -40,7 +39,6 @@ impl AuditLogger {
             client_id
         );
 
-        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -54,7 +52,6 @@ impl AuditLogger {
             cmd.args.join(" ")
         );
 
-        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -70,7 +67,6 @@ impl AuditLogger {
             result.stderr.lines().count()
         );
 
-        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -84,7 +80,6 @@ impl AuditLogger {
             session.is_active
         );
 
-        info!("{log_entry}");
         self.write_to_file(&log_entry);
     }
 
@@ -96,7 +91,74 @@ impl AuditLogger {
             error_msg
         );
 
-        error!("{log_entry}");
+        self.write_to_file(&log_entry);
+    }
+
+    /// Log authentication failure
+    pub fn log_authentication_failure(&self, username: &str, reason: &str, ip: Option<&str>) {
+        let log_entry = format!(
+            "[{}] AUTH_FAILURE - Username: {}, Reason: {}, IP: {}",
+            Utc::now().format("%Y-%m-%d %H:%M:%S"),
+            username,
+            reason,
+            ip.unwrap_or("unknown")
+        );
+
+        self.write_to_file(&log_entry);
+    }
+
+    /// Log session management events
+    pub fn log_session_event(&self, username: &str, event_type: &str, session_token: &str) {
+        let log_entry = format!(
+            "[{}] SESSION_{} - Username: {}, Token: {}...",
+            Utc::now().format("%Y-%m-%d %H:%M:%S"),
+            event_type,
+            username,
+            &session_token[..8.min(session_token.len())]
+        );
+
+        self.write_to_file(&log_entry);
+    }
+
+    /// Log file operation events
+    pub fn log_file_operation(&self, client_id: &str, operation: &str, file_path: &str, file_size: Option<u64>, result: &str) {
+        let size_info = file_size.map(|s| format!(", Size: {}", s)).unwrap_or_default();
+        let log_entry = format!(
+            "[{}] FILE_{} - Client: {}, Path: {}{}, Result: {}",
+            Utc::now().format("%Y-%m-%d %H:%M:%S"),
+            operation.to_uppercase(),
+            client_id,
+            file_path,
+            size_info,
+            result
+        );
+
+        self.write_to_file(&log_entry);
+    }
+
+    /// Log client lifecycle events
+    pub fn log_client_lifecycle(&self, client_id: &str, event_type: &str, details: &str) {
+        let log_entry = format!(
+            "[{}] CLIENT_{} - ID: {}, Details: {}",
+            Utc::now().format("%Y-%m-%d %H:%M:%S"),
+            event_type.to_uppercase(),
+            client_id,
+            details
+        );
+
+        self.write_to_file(&log_entry);
+    }
+
+    /// Log WebSocket connection events
+    pub fn log_websocket_event(&self, connection_id: &str, event_type: &str, details: &str) {
+        let log_entry = format!(
+            "[{}] WEBSOCKET_{} - ConnectionID: {}, Details: {}",
+            Utc::now().format("%Y-%m-%d %H:%M:%S"),
+            event_type.to_uppercase(),
+            connection_id,
+            details
+        );
+
         self.write_to_file(&log_entry);
     }
 
