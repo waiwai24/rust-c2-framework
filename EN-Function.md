@@ -9,6 +9,8 @@
 - **Real-time Status**: Client connection status and last seen time
 - **System Information**: CPU, memory, and disk usage
 
+![client](img/client.png)
+
 ### 2. Client Details Page (`/client/{id}`)
 
 - **Basic Information**: Hostname, username, IP address, operating system
@@ -33,11 +35,15 @@ ps aux
 netstat -tulpn
 ```
 
+![execute-command](img/execute-command.png)
+
 ### 2. Reverse Shell
 
 1. Click the "Start Reverse Shell" button
 2. System automatically starts listener and sends connection command to client
 3. Perform interactive operations in the terminal interface
+
+![reverse-shell](img/reverse-shell.png)
 
 ### 3. File Management
 
@@ -46,11 +52,15 @@ netstat -tulpn
 - **Download Files**: Click file name or download button
 - **Delete Files**: Select files and click delete button
 
+![file](img/file.png)
+
 ### 4. Log Management
 
 - **Real-time Logs**: Automatically updated operation logs
 - **Log Filtering**: Filter logs by type and level
 - **Log Cleanup**: Clear historical log records
+
+![log](img/log.png)
 
 ## 🔒 Detailed Security Features
 
