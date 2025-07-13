@@ -111,13 +111,15 @@
                         
                         <div class="logs-filters">
                             <select id="logLevel" class="log-filter">
-                                <option value="all">总计</option>
-                                <option value="CLIENT_">客户端</option>
-                                <option value="COMMAND_">命令</option>
-                                <option value="AUTH_">认证</option>
-                                <option value="FILE_">文件</option>
-                                <option value="WEBSOCKET_">网络</option>
-                                <option value="ERROR">错误</option>
+                                <option value="all">所有日志</option>
+                                <option value="CLIENT_">客户端日志</option>
+                                <option value="COMMAND_">命令日志</option>
+                                <option value="AUTH_">认证日志</option>
+                                <option value="SESSION_">会话日志</option>
+                                <option value="FILE_">文件操作</option>
+                                <option value="SHELL_SESSION">Shell会话</option>
+                                <option value="WEBSOCKET_">WebSocket</option>
+                                <option value="ERROR">错误日志</option>
                             </select>
                             <div class="date-range-filter">
                                 <label for="startTime" class="filter-label">开始时间:</label>
@@ -495,30 +497,36 @@
                 total: logEntries.length,
                 client: logEntries.filter(e => e.text.includes('CLIENT_')).length,
                 command: logEntries.filter(e => e.text.includes('COMMAND_')).length,
-                auth: logEntries.filter(e => e.text.includes('AUTH_') || e.text.includes('SESSION_')).length,
+                auth: logEntries.filter(e => e.text.includes('AUTH_')).length,
+                session: logEntries.filter(e => e.text.includes('SESSION_')).length,
                 file: logEntries.filter(e => e.text.includes('FILE_')).length,
+                shell: logEntries.filter(e => e.text.includes('SHELL_SESSION')).length,
                 websocket: logEntries.filter(e => e.text.includes('WEBSOCKET_')).length,
                 error: logEntries.filter(e => e.text.includes('ERROR')).length
             };
             
-            // 在日志容器顶部显示统计信息
+            // 在日志容器外部显示统计信息，保持固定位置
             let statsElement = document.getElementById('logStats');
             if (!statsElement) {
                 statsElement = document.createElement('div');
                 statsElement.id = 'logStats';
                 statsElement.className = 'log-stats';
-                document.querySelector('.logs-container').insertBefore(statsElement, document.querySelector('.logs-list'));
+                // 插入到logs-container之前，而不是内部
+                const logsContainer = document.querySelector('.logs-container');
+                logsContainer.parentNode.insertBefore(statsElement, logsContainer);
             }
             
             statsElement.innerHTML = `
                 <div class="stats-summary">
                     <span class="stat-item">总计: <strong>${stats.total}</strong></span>
-                    <span class="stat-item log-client">客户端: <strong>${stats.client}</strong></span>
-                    <span class="stat-item log-command">命令: <strong>${stats.command}</strong></span>
-                    <span class="stat-item log-auth">认证: <strong>${stats.auth}</strong></span>
-                    <span class="stat-item log-file">文件: <strong>${stats.file}</strong></span>
-                    <span class="stat-item log-websocket">网络: <strong>${stats.websocket}</strong></span>
-                    <span class="stat-item log-error">错误: <strong>${stats.error}</strong></span>
+                    <span class="stat-item stat-client">客户端: <strong>${stats.client}</strong></span>
+                    <span class="stat-item stat-command">命令: <strong>${stats.command}</strong></span>
+                    <span class="stat-item stat-auth">认证: <strong>${stats.auth}</strong></span>
+                    <span class="stat-item stat-session">会话: <strong>${stats.session}</strong></span>
+                    <span class="stat-item stat-file">文件: <strong>${stats.file}</strong></span>
+                    <span class="stat-item stat-shell">Shell: <strong>${stats.shell}</strong></span>
+                    <span class="stat-item stat-websocket">WebSocket: <strong>${stats.websocket}</strong></span>
+                    <span class="stat-item stat-error">错误: <strong>${stats.error}</strong></span>
                 </div>
             `;
         }
@@ -539,34 +547,47 @@
         
         function getLogClass(logLine) {
             // 客户端相关
-            if (logLine.includes('CLIENT_CONNECT')) return 'log-connect';
-            if (logLine.includes('CLIENT_DISCONNECT')) return 'log-disconnect';
-            if (logLine.includes('CLIENT_DELETE')) return 'log-disconnect';
+            if (logLine.includes('CLIENT_CONNECT')) return 'log-client_connect';
+            if (logLine.includes('CLIENT_DISCONNECT')) return 'log-client_disconnect';
+            if (logLine.includes('CLIENT_DELETE')) return 'log-client_delete';
+            if (logLine.includes('CLIENT_REGISTER')) return 'log-client_register';
+            if (logLine.includes('CLIENT_TIMEOUT')) return 'log-client_timeout';
             
             // 命令相关
-            if (logLine.includes('COMMAND_EXECUTE')) return 'log-command';
-            if (logLine.includes('COMMAND_RESULT')) return 'log-result';
+            if (logLine.includes('COMMAND_EXECUTE')) return 'log-command_execute';
+            if (logLine.includes('COMMAND_RESULT')) return 'log-command_result';
             
             // 认证相关
-            if (logLine.includes('AUTH_FAILURE')) return 'log-auth';
-            if (logLine.includes('SESSION_CREATE')) return 'log-auth';
-            if (logLine.includes('SESSION_EXPIRE')) return 'log-auth';
+            if (logLine.includes('AUTH_FAILURE')) return 'log-auth_failure';
+            
+            // 会话相关
+            if (logLine.includes('SESSION_CREATE')) return 'log-session_create';
+            if (logLine.includes('SESSION_LOGIN')) return 'log-session_login';
+            if (logLine.includes('SESSION_LOGOUT')) return 'log-session_logout';
+            if (logLine.includes('SESSION_VALIDATE')) return 'log-session_validate';
             
             // 文件操作相关
-            if (logLine.includes('FILE_UPLOAD')) return 'log-file';
-            if (logLine.includes('FILE_DOWNLOAD')) return 'log-file';
-            if (logLine.includes('FILE_DELETE')) return 'log-file';
-            if (logLine.includes('FILE_LIST')) return 'log-file';
-            
-            // WebSocket相关
-            if (logLine.includes('WEBSOCKET_START')) return 'log-websocket';
-            if (logLine.includes('WEBSOCKET_CONNECT')) return 'log-websocket';
-            if (logLine.includes('WEBSOCKET_DISCONNECT')) return 'log-websocket';
-            if (logLine.includes('WEBSOCKET_ERROR')) return 'log-websocket';
-            if (logLine.includes('WEBSOCKET_CLEANUP')) return 'log-websocket';
+            if (logLine.includes('FILE_UPLOAD')) return 'log-file_upload';
+            if (logLine.includes('FILE_DOWNLOAD')) return 'log-file_download';
+            if (logLine.includes('FILE_DELETE')) return 'log-file_delete';
+            if (logLine.includes('FILE_LIST')) return 'log-file_list';
             
             // Shell会话
-            if (logLine.includes('SHELL_SESSION')) return 'log-shell';
+            if (logLine.includes('SHELL_SESSION')) return 'log-shell_session';
+            
+            // WebSocket相关
+            if (logLine.includes('WEBSOCKET_CONNECT')) return 'log-websocket_connect';
+            if (logLine.includes('WEBSOCKET_DISCONNECT')) return 'log-websocket_disconnect';
+            if (logLine.includes('WEBSOCKET_MESSAGE')) return 'log-websocket_message';
+            if (logLine.includes('WEBSOCKET_ERROR')) return 'log-websocket_error';
+            
+            // 通用分类 (向后兼容)
+            if (logLine.includes('CLIENT_')) return 'log-client';
+            if (logLine.includes('COMMAND_')) return 'log-command';
+            if (logLine.includes('AUTH_')) return 'log-auth';
+            if (logLine.includes('SESSION_')) return 'log-session';
+            if (logLine.includes('FILE_')) return 'log-file';
+            if (logLine.includes('WEBSOCKET_')) return 'log-websocket';
             
             // 错误
             if (logLine.includes('ERROR')) return 'log-error';

@@ -633,10 +633,13 @@ body {
 }
 
 .log-stats {
-    padding: 10px 15px;
+    padding: 12px 15px;
     background: #161b22;
-    border-bottom: 1px solid #30363d;
-    border-radius: 6px 6px 0 0;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 10;
 }
 
 .stats-summary {
@@ -656,74 +659,182 @@ body {
     margin-left: 4px;
 }
 
-.stat-item.log-connect strong {
+/* ==========================
+   日志类别样式重构
+   基于后端AuditLogger的完整日志类别
+   ========================== */
+
+/* 统计摘要中的日志类别计数器颜色 */
+.stats-summary .stat-item.stat-client strong {
+    color: #ff6b35 !important;  /* 客户端相关 - 橙色 */
+}
+
+.stats-summary .stat-item.stat-command strong {
+    color: #00ff88 !important;  /* 命令相关 - 绿色 */
+}
+
+.stats-summary .stat-item.stat-auth strong {
+    color: #8b5cf6 !important;  /* 认证相关 - 紫色 */
+}
+
+.stats-summary .stat-item.stat-session strong {
+    color: #f97316 !important;  /* 会话管理 - 深橙色 */
+}
+
+.stats-summary .stat-item.stat-file strong {
+    color: #fbbf24 !important;  /* 文件操作 - 黄色 */
+}
+
+.stats-summary .stat-item.stat-shell strong {
+    color: #79c0ff !important;  /* Shell会话 - 青色 */
+}
+
+.stats-summary .stat-item.stat-websocket strong {
+    color: #3b82f6 !important;  /* WebSocket - 蓝色 */
+}
+
+.stats-summary .stat-item.stat-error strong {
+    color: #ef4444 !important;  /* 错误日志 - 红色 */
+}
+
+/* 客户端相关日志条目样式 */
+.log-client_connect {
+    background: rgba(34, 197, 94, 0.15);  /* 连接 - 绿色背景 */
+    border-left-color: #22c55e;
+    color: #22c55e;
+}
+
+.log-client_disconnect {
+    background: rgba(239, 68, 68, 0.15);  /* 断开 - 红色背景 */
+    border-left-color: #ef4444;
+    color: #ef4444;
+}
+
+.log-client_delete,
+.log-client_timeout,
+.log-client_register {
+    background: rgba(255, 107, 53, 0.15);  /* 客户端生命周期 - 橙色背景 */
+    border-left-color: #ff6b35;
+    color: #ff6b35;
+}
+
+/* 命令相关日志条目样式 */
+.log-command_execute {
+    background: rgba(0, 255, 136, 0.15);  /* 命令执行 - 绿色背景 */
+    border-left-color: #00ff88;
+    color: #00ff88;
+}
+
+.log-command_result {
+    background: rgba(34, 197, 94, 0.12);  /* 命令结果 - 浅绿色背景 */
+    border-left-color: #22c55e;
+    color: #22c55e;
+}
+
+/* 认证相关日志条目样式 */
+.log-auth_failure {
+    background: rgba(220, 38, 127, 0.15);  /* 认证失败 - 粉红色背景 */
+    border-left-color: #dc2663;
+    color: #dc2663;
+}
+
+.log-session_create,
+.log-session_login,
+.log-session_logout,
+.log-session_validate {
+    background: rgba(139, 92, 246, 0.15);  /* 会话管理 - 紫色背景 */
+    border-left-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+/* 文件操作日志条目样式 */
+.log-file_list,
+.log-file_upload,
+.log-file_download,
+.log-file_delete {
+    background: rgba(251, 191, 36, 0.15);  /* 文件操作 - 黄色背景 */
+    border-left-color: #fbbf24;
+    color: #fbbf24;
+}
+
+/* Shell会话日志条目样式 */
+.log-shell_session {
+    background: rgba(121, 192, 255, 0.15);  /* Shell会话 - 青色背景 */
+    border-left-color: #79c0ff;
     color: #79c0ff;
 }
 
-.stats-summary .stat-item.log-client strong {
-    color: #ff6b35 !important;  /* 鲜艳的橙色 */
+/* WebSocket相关日志条目样式 */
+.log-websocket_connect,
+.log-websocket_disconnect,
+.log-websocket_message,
+.log-websocket_error {
+    background: rgba(59, 130, 246, 0.15);  /* WebSocket - 蓝色背景 */
+    border-left-color: #3b82f6;
+    color: #3b82f6;
 }
 
-.stats-summary .stat-item.log-command strong {
-    color: #00ff88 !important;  /* 鲜艳的绿色 */
+/* 错误日志条目样式 */
+.log-error {
+    background: rgba(239, 68, 68, 0.15);  /* 错误 - 红色背景 */
+    border-left-color: #ef4444;
+    color: #ef4444;
 }
 
-.stats-summary .stat-item.log-auth strong {
-    color: #8b5cf6 !important;  /* 鲜艳的紫色 */
+/* 通用信息日志条目样式 */
+.log-info {
+    background: rgba(139, 148, 158, 0.1);  /* 信息 - 灰色背景 */
+    border-left-color: #8b949e;
+    color: #8b949e;
 }
 
-.stats-summary .stat-item.log-file strong {
-    color: #fbbf24 !important;  /* 鲜艳的黄色 */
-}
-
-.stats-summary .stat-item.log-websocket strong {
-    color: #3b82f6 !important;  /* 鲜艳的蓝色 */
-}
-
-.stats-summary .stat-item.log-error strong {
-    color: #ef4444 !important;  /* 鲜艳的红色 */
-}
-
+/* 兼容旧版本的样式（保持向后兼容） */
 .log-connect {
-    background: rgba(255, 107, 53, 0.15);  /* 鲜艳的橙色背景 */
-    border-left-color: #ff6b35;
-    color: #ff6b35;  /* 鲜艳的橙色 */
+    background: rgba(34, 197, 94, 0.15);
+    border-left-color: #22c55e;
+    color: #22c55e;
 }
 
 .log-disconnect {
-    background: rgba(255, 149, 0, 0.1);
-    border-left-color: #ff9500;
-    color: #ff9500;
+    background: rgba(239, 68, 68, 0.15);
+    border-left-color: #ef4444;
+    color: #ef4444;
 }
 
 .log-command {
-    background: rgba(0, 255, 136, 0.15);  /* 鲜艳的绿色背景 */
+    background: rgba(0, 255, 136, 0.15);
     border-left-color: #00ff88;
-    color: #00ff88;  /* 鲜艳的绿色 */
+    color: #00ff88;
 }
 
 .log-result {
-    background: rgba(0, 255, 136, 0.15);  /* 鲜艳的绿色背景 */
-    border-left-color: #00ff88;
-    color: #00ff88;  /* 鲜艳的绿色 */
+    background: rgba(34, 197, 94, 0.12);
+    border-left-color: #22c55e;
+    color: #22c55e;
 }
 
 .log-auth {
-    background: rgba(139, 92, 246, 0.15);  /* 鲜艳的紫色背景 */
+    background: rgba(139, 92, 246, 0.15);
     border-left-color: #8b5cf6;
-    color: #8b5cf6;  /* 鲜艳的紫色 */
+    color: #8b5cf6;
 }
 
 .log-file {
-    background: rgba(251, 191, 36, 0.15);  /* 鲜艳的黄色背景 */
+    background: rgba(251, 191, 36, 0.15);
     border-left-color: #fbbf24;
-    color: #fbbf24;  /* 鲜艳的黄色 */
+    color: #fbbf24;
 }
 
 .log-websocket {
-    background: rgba(59, 130, 246, 0.15);  /* 鲜艳的蓝色背景 */
+    background: rgba(59, 130, 246, 0.15);
     border-left-color: #3b82f6;
-    color: #3b82f6;  /* 鲜艳的蓝色 */
+    color: #3b82f6;
+}
+
+.log-shell {
+    background: rgba(121, 192, 255, 0.15);
+    border-left-color: #79c0ff;
+    color: #79c0ff;
 }
 
 /* 反弹Shell页面样式 */
@@ -1210,11 +1321,6 @@ body {
         padding: 12px;
         font-size: 13px;
     }
-}
-.log-shell {
-    background: rgba(121, 192, 255, 0.1);
-    border-left-color: #79c0ff;
-    color: #79c0ff;
 }
 
 .log-error {
