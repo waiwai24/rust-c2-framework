@@ -8,12 +8,13 @@ use axum::{
 use rand::{rngs::OsRng, Rng};
 use serde::Deserialize;
 use tower_cookies::{Cookie, Cookies};
-use tracing::{info, warn, instrument};
+use tracing::{info, instrument, warn};
 
 #[derive(Template)]
 #[template(path = "login.html")]
 pub struct LoginTemplate {}
 
+/// Represents user credentials for login.
 #[derive(Debug, Deserialize)]
 pub struct Credentials {
     pub username: String,
@@ -64,11 +65,9 @@ pub async fn login_post(
         );
 
         // Log successful authentication to audit log
-        state.audit_logger.log_session_event(
-            &credentials.username,
-            "CREATE",
-            &session_token
-        );
+        state
+            .audit_logger
+            .log_session_event(&credentials.username, "CREATE", &session_token);
 
         // Store session token
         {
@@ -91,14 +90,14 @@ pub async fn login_post(
             username = %credentials.username,
             "Login failed - invalid credentials"
         );
-        
+
         // Log authentication failure to audit log
         state.audit_logger.log_authentication_failure(
             &credentials.username,
             "invalid_credentials",
-            None // TODO: Extract real IP from request headers
+            None, // TODO: Extract real IP from request headers
         );
-        
+
         axum::response::Redirect::to("/login").into_response()
     }
 }
@@ -129,14 +128,14 @@ pub async fn auth_middleware(
                     expires_at = %expires_at,
                     "Authentication failed - token expired"
                 );
-                
+
                 // Log session expiration to audit log
                 state.audit_logger.log_session_event(
                     "unknown_user", // We don't have username from token
                     "EXPIRE",
-                    token
+                    token,
                 );
-                
+
                 // Token has expired, remove it
                 tokens.remove(token);
             }
@@ -145,23 +144,19 @@ pub async fn auth_middleware(
                 session_token = %token[..8],
                 "Authentication failed - token not found"
             );
-            
+
             // Log invalid token attempt to audit log
-            state.audit_logger.log_authentication_failure(
-                "unknown_user",
-                "invalid_token",
-                None
-            );
+            state
+                .audit_logger
+                .log_authentication_failure("unknown_user", "invalid_token", None);
         }
     } else {
         warn!("Authentication failed - no session token provided");
-        
+
         // Log missing token attempt to audit log
-        state.audit_logger.log_authentication_failure(
-            "unknown_user",
-            "no_token_provided",
-            None
-        );
+        state
+            .audit_logger
+            .log_authentication_failure("unknown_user", "no_token_provided", None);
     }
     axum::response::Redirect::to("/login").into_response()
 }

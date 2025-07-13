@@ -1,0 +1,200 @@
+/* Log Management Styles */
+.logs-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.logs-controls .btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    min-width: 80px;
+    height: 32px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logs-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: var(--spacing-lg);
+    padding: 15px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.logs-filters .btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    min-width: 60px;
+}
+
+.date-range-filter {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+}
+
+.filter-label {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 var(--spacing-xs);
+}
+
+.log-filter {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.9em;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.log-filter:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.time-select {
+    padding: 6px var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.8em;
+    min-width: 180px;
+    max-width: 200px;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.time-select:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.time-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 2px var(--spacing-xs);
+}
+
+.quick-time-filters {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.quick-time-filters .btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75em;
+    min-width: auto;
+    white-space: nowrap;
+}
+
+/* Log Container */
+.logs-container {
+    max-height: 700px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+}
+
+.logs-list {
+    padding: 15px;
+}
+
+.log-entry {
+    padding: var(--spacing-sm) 12px;
+    margin-bottom: 5px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.log-entry:hover {
+    background-color: rgba(139, 148, 158, 0.1) !important;
+}
+
+/* Log Statistics */
+.log-stats {
+    padding: 12px 15px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 10;
+}
+
+.stats-summary {
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.stat-item strong {
+    color: var(--text-primary);
+    margin-left: var(--spacing-xs);
+}
+
+/* Log Category Colors in Statistics */
+.stats-summary .stat-item.stat-client strong {
+    color: var(--log-client) !important;
+}
+
+.stats-summary .stat-item.stat-command strong {
+    color: var(--log-command) !important;
+}
+
+.stats-summary .stat-item.stat-auth strong {
+    color: var(--log-auth) !important;
+}
+
+.stats-summary .stat-item.stat-session strong {
+    color: var(--log-session) !important;
+}
+
+.stats-summary .stat-item.stat-file strong {
+    color: var(--log-file) !important;
+}
+
+.stats-summary .stat-item.stat-shell strong {
+    color: var(--log-shell) !important;
+}
+
+.stats-summary .stat-item.stat-websocket strong {
+    color: var(--log-websocket) !important;
+}
+
+.stats-summary .stat-item.stat-error strong {
+    color: var(--log-error) !important;
+}

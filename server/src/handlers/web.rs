@@ -5,10 +5,11 @@ use axum::{
     http::StatusCode,
     response::Html,
 };
-use common::message::{ClientInfo, CommandResponse};
+use common::message::CommandResponse;
 use serde::{Deserialize, Serialize};
 use tracing::{error, info, warn};
 
+/// Display client information for rendering in templates
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
@@ -18,13 +19,15 @@ pub struct IndexTemplate {
     pub refresh_interval: u64,
 }
 
+/// Client template for rendering client details
 #[derive(Template)]
 #[template(path = "client.html")]
 pub struct ClientTemplate {
     pub client: DisplayClientInfo,
-    pub commands: Vec<CommandResponse>,
+    pub command_results: Vec<CommandResponse>,
 }
 
+/// Error template for rendering error pages
 #[derive(Template)]
 #[template(path = "error.html")]
 pub struct ErrorTemplate {
@@ -33,6 +36,7 @@ pub struct ErrorTemplate {
     pub error_detail: Option<String>,
 }
 
+/// Display client information for rendering in templates
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DisplayClientInfo {
     pub id: String,
@@ -148,10 +152,11 @@ pub async fn client_detail(
 
     if let Some(client_info) = state.client_manager.get_client(&client_id).await {
         let commands = state.client_manager.get_command_results(&client_id).await;
-        
+
         // Convert ClientInfo to DisplayClientInfo
         let current_timestamp = chrono::Utc::now().timestamp();
-        let is_online = (current_timestamp - client_info.last_seen.timestamp()) < state.config.client_timeout as i64;
+        let is_online = (current_timestamp - client_info.last_seen.timestamp())
+            < state.config.client_timeout as i64;
         let client = DisplayClientInfo {
             id: client_info.id,
             hostname: client_info.hostname,
@@ -173,7 +178,10 @@ pub async fn client_detail(
             is_online,
         };
 
-        let template = ClientTemplate { client, commands };
+        let template = ClientTemplate {
+            client,
+            command_results: commands,
+        };
 
         match tokio::task::spawn_blocking(move || template.render()).await {
             Ok(Ok(html)) => {

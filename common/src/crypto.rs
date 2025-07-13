@@ -4,10 +4,12 @@ use aes_gcm::{
 };
 use base64::{engine::general_purpose, Engine as _};
 
+/// Represents a cipher for encrypting and decrypting data
 pub struct Cipher {
     cipher: Aes256Gcm,
 }
 
+/// Implements encryption and decryption using AES-256-GCM
 impl Cipher {
     pub fn new(key: &[u8; 32]) -> Self {
         let key = Key::<Aes256Gcm>::from_slice(key);

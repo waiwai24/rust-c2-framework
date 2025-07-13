@@ -1,0 +1,151 @@
+/* Button Components */
+.btn {
+    background: var(--accent-green);
+    color: #fff;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em;
+    font-weight: 500;
+    min-width: 60px;
+    height: 30px;
+    line-height: 1;
+    box-sizing: border-box;
+    transition: var(--transition-normal);
+}
+
+.btn:hover {
+    background: var(--accent-green-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--border-color);
+}
+
+.btn-danger {
+    background: var(--accent-red);
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: var(--accent-red-hover);
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8em;
+    min-width: 50px;
+    height: 24px;
+    line-height: 16px;
+}
+
+/* Form Components */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-accent);
+    font-weight: 500;
+}
+
+.form-input, .form-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 0.9em;
+}
+
+.form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Status Components */
+.status {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.8em;
+    font-weight: 500;
+    display: inline-block;
+    min-width: 40px;
+    text-align: center;
+    height: 24px;
+    line-height: 16px;
+    box-sizing: border-box;
+}
+
+.status.online {
+    background: var(--accent-green);
+    color: #fff;
+}
+
+.status.offline {
+    background: var(--accent-red);
+    color: #fff;
+}
+
+/* Stats Components */
+.stats {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    flex: 1;
+    text-align: center;
+}
+
+.stat-card h3 {
+    color: var(--accent-blue);
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    color: var(--text-secondary);
+}
+
+/* No Results Component */
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.no-results h3 {
+    color: var(--text-accent);
+    margin-bottom: 10px;
+}

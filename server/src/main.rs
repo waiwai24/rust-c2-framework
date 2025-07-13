@@ -12,7 +12,7 @@ use crate::{
     state::AppState,
 };
 use axum::{
-    routing::{get, post, put, delete},
+    routing::{delete, get, post, put},
     serve, Router,
 };
 use common::config::ConfigManager;
@@ -51,8 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into())
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -61,20 +60,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spawn background cleanup task
     tokio::spawn(cleanup_task(state.clone()));
-
-    // Spawn reverse shell listener task
-    let reverse_shell_port = config.reverse_shell_port;
-    let shell_manager_clone = state.shell_manager.clone();
-    let audit_logger_clone = state.audit_logger.clone();
-    tokio::spawn(async move {
-        if let Err(e) = reverse_shell_listener::start_listener(
-            reverse_shell_port, 
-            shell_manager_clone,
-            audit_logger_clone
-        ).await {
-            eprintln!("Reverse shell listener failed: {}", e);
-        }
-    });
 
     // Routes that require authentication
     let protected_routes = Router::new()
@@ -116,10 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/clients/{client_id}/reverse_shell",
             post(api::initiate_reverse_shell),
         )
-        .route(
-            "/api/reverse_shells",
-            get(api::list_reverse_shells),
-        )
+        .route("/api/reverse_shells", get(api::list_reverse_shells))
         .route(
             "/api/reverse_shells/{connection_id}/close",
             post(api::close_reverse_shell),

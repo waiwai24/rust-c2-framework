@@ -6,166 +6,222 @@
 
 一个使用Rust语言从零重构的现代化命令与控制（C2）框架，旨在提供一个高性能、安全且模块化的平台，用于远程系统管理和渗透测试。该框架包含独立的客户端、服务端以及一个直观的Web管理界面。
 
-## 功能特性
+## 🚀 功能特性
 
-- 🚀 **跨平台支持**: 客户端和服务端均支持Linux操作系统。
-- 🔐 **端到端加密通信**: 采用AES-256-GCM加密算法，确保所有通信数据的机密性和完整性。
-- 🌐 **直观的Web管理界面**: 基于Axum Web框架和Askama模板引擎构建，提供现代化的用户体验，便于操作和监控。
-- ⚡ **高性能异步架构**: 利用Tokio运行时构建，实现高效的并发处理和低延迟通信。
-- 💻 **实时命令执行**: 支持远程执行系统命令，并即时获取执行结果。
-- 🖥️ **交互式反弹Shell**: 提供稳定的反向Shell会话，实现对受控主机的深度交互。
-- 📊 **客户端状态监控**: 实时展示连接客户端的详细信息和活动状态。
-- 📝 **灵活的配置管理**: 通过TOML配置文件轻松调整客户端和服务端的各项参数，无需重新编译。
-- 📦 **Cargo工作区**: 采用Rust的Cargo工作区管理模式，清晰划分 `common`、`client` 和 `server` 等模块，便于开发和维护。
+### 核心功能
 
-## 项目结构
+- 🔗 **Linux平台支持**: 客户端和服务端均支持Linux操作系统
+- 🔐 **端到端加密通信**: 采用AES-256-GCM加密算法，确保部分通信数据的机密性和完整性
+- 🌐 **现代化Web管理界面**: 基于Axum Web框架和Askama模板引擎，提供响应式用户体验
+- ⚡ **高性能异步架构**: 利用Tokio运行时构建，实现高效的并发处理和低延迟通信
+- 📝 **灵活的配置管理**: 通过TOML配置文件轻松调整各项参数，无需重新编译
+
+### 高级功能
+
+- 💻 **实时命令执行**: 支持远程执行系统命令，并即时获取执行结果，支持加密传输
+- 🖥️ **交互式反弹Shell**: 提供稳定的反向Shell会话，实现对受控主机的深度交互
+- 📁 **完整文件管理**: 文件浏览、上传、下载、删除，支持大文件分块传输
+- 📊 **实时客户端监控**: 展示连接客户端的详细信息、活动状态和系统信息
+- 🔍 **审计日志系统**: 记录所有操作活动，支持日志分类和实时查看
+- 📝 **笔记管理**: 内置笔记系统，便于记录渗透测试过程和发现
+
+### 安全特性
+- 🛡️ **按需启动监听**: 反弹Shell监听器按需启动，减少攻击面
+- 🔑 **身份验证**: Web界面用户认证和会话管理
+- 📋 **操作审计**: 完整的操作审计链，支持安全合规
+- 🔒 **进程隐藏**: 客户端进程隐藏技术
+- 🔍 **抗逆向**: 代码混淆和反调试技术
+- 📦 **反沙箱**: 沙箱环境检测和规避
+
+## 📋 项目结构
 
 本项目采用Cargo工作区管理，结构清晰，各模块职责明确：
 
-```shell
+```text
 rust-c2-framework/
-├── common/               # 通用库：包含协议定义、加密工具、配置解析、错误处理等共享组件。
-│   ├── src/
-│   └── Cargo.toml
-├── client/               # 客户端Crate：负责与服务端通信、执行命令、提供反弹Shell等功能。
-│   ├── src/
-│   └── Cargo.toml
-├── server/               # 服务端Crate：处理客户端连接、管理会话、提供Web管理界面和API服务。
-│   ├── src/
-│   ├── templates/        # Web界面HTML模板文件。
-│   └── Cargo.toml
-├── web/
-│   └── static/           # Web管理界面的静态资源（CSS、JavaScript、图片等）。
-└── Cargo.toml            # Cargo工作区配置文件，定义了各个Crate的依赖关系和构建方式。
+├── Cargo.toml                    # Workspace配置文件
+├── server_config.toml            # 服务器配置文件
+├── common/          # 共享库（协议、加密、配置）
+├── server/          # 服务端（Web界面、API、客户端管理）
+├── client/          # 客户端（命令执行、文件操作、反弹Shell）
+└── web/static/      # 前端资源（CSS、JS、图片）
 ```
 
-## 快速开始
 
-### 1. 配置
+## ⚙️ 配置文件
 
-服务端和客户端的配置通过TOML文件进行管理，允许在不重新编译的情况下灵活修改。
-
-**服务端配置 (`server_config.toml`)**:
-
-在运行服务端二进制文件的相同目录下创建此文件。如果文件不存在，服务端将无法启动。
+### 服务端配置 (`server_config.toml`)
 
 ```toml
-host = "0.0.0.0"
-port = 8080
-encryption_key = "a_very_secret_key_that_is_32_bytes" # ⚠️ 务必替换为32字节的强密钥！
-client_timeout = 300
-max_clients = 1000
-log_file = "c2_server.log"
-enable_audit = true
+# 服务器网络配置
+host = "0.0.0.0"                              # 服务器监听地址
+port = 8080                                   # Web服务端口
+reverse_shell_port = 31229                    # 反弹Shell专用端口
 
+# 安全配置
+encryption_key = "your-32-byte-secret-key-here!!!!"  # AES-256密钥（必须32字节）
+
+# 客户端管理
+client_timeout = 60                           # 客户端超时时间（秒）
+max_clients = 1000                           # 最大客户端连接数
+
+# 日志配置
+log_file = "c2_server.log"                   # 日志文件路径
+enable_audit = true                          # 启用审计日志
+
+# Web界面配置
 [web]
-enabled = true
-static_dir = "web/static"
-template_dir = "server/templates" # 注意路径
-enable_cors = true
+enabled = true                               # 启用Web界面
+static_dir = "web/static"                    # 静态文件目录
+template_dir = "server/templates"            # 模板文件目录
+enable_cors = true                           # 启用CORS
+refresh_interval = 5                         # 自动刷新间隔（秒）
+
+# 身份验证配置
+[auth]
+username = "Rust-Admin"                      # 登录用户名
+password = "Passwd@RustC2"                   # 登录密码
 ```
 
-### 2. 编译项目
+## 🚀 快速开始
 
-使用Cargo编译整个工作区或单独的Crate：
+### 1. 系统要求
+
+- **操作系统**: Linux (Ubuntu 18.04+, CentOS 7+, Debian 10+)
+- **Rust版本**: 1.70.0 或更高版本
+- **内存**: 最少 512MB RAM
+- **磁盘**: 最少 100MB 可用空间
+
+### 2. 安装Rust环境
 
 ```bash
+# 安装Rust（如果尚未安装）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# 验证安装
+rustc --version
+cargo --version
+```
+
+### 3. 克隆和编译项目
+
+```bash
+# 克隆项目
+git clone <repository-url>
+cd rust-c2-framework
+
 # 编译整个工作区（推荐）
 cargo build --release
 
-# 或者分别编译服务端和客户端
+# 或者分别编译各个组件
 cargo build --release --bin server
 cargo build --release --bin client
 ```
 
 编译后的二进制文件位于 `target/release/` 目录下。
 
-### 3. 静态编译 (MUSL)
 
-为了生成不依赖系统库的独立可执行文件，可以使用 `musl` 目标进行静态链接编译。
+### 4. 静态编译（可选）
 
-**先决条件**:
-安装 `musl` 工具链：
+为了生成不依赖系统库的独立可执行文件：
 
 ```bash
+# 添加musl目标
 rustup target add x86_64-unknown-linux-musl
-```
 
-**编译**:
-
-```bash
-# 编译所有组件为静态链接
+# 静态编译
 cargo build --release --target x86_64-unknown-linux-musl
 
-# 或者分别编译
-cargo build --release --bin server --target x86_64-unknown-linux-musl
-cargo build --release --bin client --target x86_64-unknown-linux-musl
-```
-
-编译后的二进制文件位于 `target/x86_64-unknown-linux-musl/release/` 目录下。
-
-### 4. 使用 UPX 压缩 (可选)
-
-UPX (Ultimate Packer for eXecutables) 可以进一步减小静态链接二进制文件的大小。
-
-**先决条件**:
-安装 UPX：
-
-```bash
+# 使用UPX压缩（可选）
 sudo apt-get install upx
-```
-
-**压缩**:
-
-```bash
-# 压缩服务端二进制文件
 upx --best target/x86_64-unknown-linux-musl/release/server
-
-# 压缩客户端二进制文件
 upx --best target/x86_64-unknown-linux-musl/release/client
 ```
 
-### 5. 启动服务端
+### 5. 配置和启动
+
+#### 配置服务器
+
+#### 启动服务器
 
 ```bash
-# 启动服务端（推荐使用 Cargo）
+# 使用cargo运行（开发环境）
 cargo run --bin server
 
-# 或者直接运行编译后的二进制文件
+# 或直接运行二进制文件（生产环境）
 ./target/release/server
 ```
 
-服务端启动后，通过浏览器访问 `http://localhost:8080` 即可进入Web管理界面。默认登录凭据为 `admin` / `password`。
+服务器启动后，访问 `http://localhost:8080` 进入Web管理界面。
 
-### 6. 启动客户端
+默认登录凭据：
+
+- 用户名: `Rust-Admin`
+- 密码: `Passwd@RustC2`
+
+#### 配置和启动客户端
+
+确保加密密钥与服务器一致，启动客户端：
 
 ```bash
-# 连接到服务端（默认连接 http://127.0.0.1:8080）
+# 使用配置文件
 cargo run --bin client
 
-# 或者指定服务端地址
-cargo run --bin client http://your-server-ip:8080
+# 或指定服务器地址
+cargo run --bin client -- --server http://your-server-ip:8080
 
-# 或者直接运行编译后的二进制文件
-./target/release/client http://your-server-ip:8080
+# 直接运行二进制文件
+./target/release/client
 ```
 
-## 开发指南
+详细功能使用指南请参考 [Function.md](Function.md)。
 
-### 模块化设计
 
-本项目遵循清晰的模块化设计原则，便于理解和扩展：
+## 🔄 更新日志
 
-- **`common`**: 核心共享库，包含所有跨Crate通用的代码，如 `message` 协议定义、`config` 结构、`error` 类型、`crypto` 加密工具和 `network` 辅助函数。
-- **`server`**: 服务端核心逻辑。
-  - `main.rs`: 程序入口，负责初始化服务器、设置路由和启动服务。
-  - `state.rs`: 定义应用程序的共享状态 `AppState`，管理全局数据。
-  - `managers/`: 包含 `ClientManager`（管理客户端连接）和 `ShellManager`（处理反弹Shell会话）等核心业务逻辑管理器。
-  - `handlers/`: 包含 `api.rs`（处理RESTful API请求）和 `web.rs`（处理Web页面渲染请求）。
-  - `audit.rs`: 负责审计日志的记录功能。
-  - `auth.rs`: 实现Web界面的用户认证逻辑。
-- **`client`**: 客户端核心逻辑，负责与服务端建立连接、执行接收到的命令、管理文件、提供反弹Shell功能等。
+### v1.0.0 (最新版本)
+- ✅ 完整的C2框架实现
+- ✅ 反弹Shell功能（按需启动监听器）
+- ✅ 文件管理系统（上传/下载/浏览）
+- ✅ 实时Web界面
+- ✅ AES-256-GCM加密通信
+- ✅ 客户端状态监控
+- ✅ 审计日志系统
+- ✅ 笔记管理功能
+- ✅ WebSocket实时通信
+- ✅ 模块化前端设计
+- ✅ 响应式界面布局
 
-## 免责声明
+### 已知问题
+- Linux平台的完整测试需要进一步验证
+- 大文件传输的进度显示有待优化
+- 传输加密有待完善
 
-⚠️ **重要提醒**: 本项目仅用于教育和研究目的。请勿将其用于任何非法或恶意活动。使用者需要承担使用本软件的全部责任。
+### 计划功能
+- [ ] Windows客户端支持
+- [ ] macOS客户端支持  
+- [ ] Android客户端支持
+- [ ] 插件系统
+- [ ] 隧道功能
+
+## ⚠️ 免责声明
+
+**重要提醒**: 本项目仅用于教育和研究目的。请勿将其用于任何非法或恶意活动。使用者需要承担使用本软件的全部责任。
+
+### 合法使用声明
+
+- ✅ 网络安全教育和培训
+- ✅ 渗透测试（已获得授权）
+- ✅ 安全研究和漏洞发现
+- ✅ 红队演练（合规环境）
+- ❌ 未经授权的系统访问
+- ❌ 恶意软件传播
+- ❌ 违法犯罪活动
+
+使用本工具前，请确保：
+
+1. 获得目标系统所有者的明确授权
+2. 遵守当地法律法规
+3. 仅在合法合规的环境中使用
+4. 承担相应的法律责任

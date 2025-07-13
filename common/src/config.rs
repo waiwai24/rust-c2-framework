@@ -102,8 +102,8 @@ impl Default for ServerConfig {
         Self {
             host: "0.0.0.0".to_string(),
             port: 8080,
-            reverse_shell_port:31229 , // Default for reverse shell
-            encryption_key: "default_key_change_me".to_string(),
+            reverse_shell_port: 31229,
+            encryption_key: "your-32-byte-secret-key-here!!!!".to_string(),
             client_timeout: 300,
             max_clients: 1000,
             log_file: "c2_server.log".to_string(),
@@ -121,7 +121,7 @@ impl Default for WebConfig {
             static_dir: "web/static".to_string(),
             template_dir: "templates".to_string(),
             enable_cors: true,
-            refresh_interval: 30, // 30 seconds default
+            refresh_interval: 30,
         }
     }
 }
@@ -140,9 +140,9 @@ impl Default for ClientConfig {
         Self {
             server_url: "http://127.0.0.1:8080".to_string(),
             client_id: None,
-            encryption_key: "default_key_change_me".to_string(),
+            encryption_key: "your-32-byte-secret-key-here!!!!".to_string(),
             heartbeat_interval: 30,
-            command_check_interval: 2, // Reduced from 5 to 2 seconds for faster response
+            command_check_interval: 2,
             retry_count: 3,
             retry_interval: 10,
             persistence: PersistenceConfig::default(),
@@ -161,11 +161,11 @@ impl Default for PersistenceConfig {
     }
 }
 
-/// 配置管理器
+/// Configuration manager for loading and saving configurations
 pub struct ConfigManager;
 
 impl ConfigManager {
-    /// 加载服务器配置
+    /// Loads the server configuration from a file.
     pub fn load_server_config(path: &str) -> C2Result<ServerConfig> {
         let content = std::fs::read_to_string(path).map_err(C2Error::Io)?;
         let config: ServerConfig =
@@ -173,7 +173,7 @@ impl ConfigManager {
         Ok(config)
     }
 
-    /// 保存服务器配置
+    /// Saves the server configuration to a file.
     pub fn save_server_config(path: &str, config: &ServerConfig) -> C2Result<()> {
         let content =
             toml::to_string_pretty(config).map_err(|e| C2Error::Serialization(e.to_string()))?;
@@ -181,7 +181,7 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// 加载客户端配置
+    /// Loads the client configuration from a file.
     pub fn load_client_config(path: &str) -> C2Result<ClientConfig> {
         let content = std::fs::read_to_string(path).map_err(C2Error::Io)?;
         let config: ClientConfig =
@@ -189,7 +189,7 @@ impl ConfigManager {
         Ok(config)
     }
 
-    /// 保存客户端配置
+    /// Saves the client configuration to a file.
     pub fn save_client_config(path: &str, config: &ClientConfig) -> C2Result<()> {
         let content =
             toml::to_string_pretty(config).map_err(|e| C2Error::Serialization(e.to_string()))?;

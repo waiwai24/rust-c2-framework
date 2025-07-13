@@ -4,15 +4,18 @@ use serde_json::json;
 use serde_json::Value;
 use sysinfo::{Disks, System};
 
+/// Get the local IP address of the machine
 pub async fn get_local_ip() -> Result<String, Box<dyn std::error::Error>> {
     let resp = reqwest::get("https://api.ipify.org").await?;
     Ok(resp.text().await?)
 }
 
+/// Get the hostname of the machine
 pub fn get_hostname() -> Result<String, Box<dyn std::error::Error>> {
     Ok(get()?.into_string().unwrap_or("localhost".to_string()))
 }
 
+/// Get the country information based on the local IP address
 pub fn get_country(ip: String) -> Result<String, Box<dyn std::error::Error>> {
     let mut result = {
         let url = format!("https://ipapi.co/{ip}/json/");
@@ -37,6 +40,7 @@ pub fn get_country(ip: String) -> Result<String, Box<dyn std::error::Error>> {
     result
 }
 
+/// Get hardware information of the machine
 pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
     let mut sys = System::new_all();
     sys.refresh_all();
@@ -58,6 +62,7 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
     let memory = sys.total_memory() / 1024 / 1024 / 1024;
 
     let disks = Disks::new_with_refreshed_list();
+    println!("Disks: {:#?}\n", disks);
     let mut total_disk_space = 0u64;
     let mut total_available_space = 0u64;
     for disk in disks.iter() {
@@ -65,7 +70,11 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
         total_disk_space += disk.total_space();
         total_available_space += disk.available_space();
     }
-    
+    println!(
+        "Total Disk Space: {} bytes, Available Space: {} bytes",
+        total_disk_space, total_available_space
+    );
+
     // Convert to GB as floating point to maintain precision
     let total_disk_space_gb = total_disk_space as f64;
     let total_available_space_gb = total_available_space as f64;
@@ -78,7 +87,6 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
         "total_disk_space_GB": total_disk_space_gb,
         "available_disk_space_GB": total_available_space_gb,
     });
-    println!("Hardware info: {:#?}\n", info);
 
     Ok(serde_json::to_string_pretty(&info)?)
 }

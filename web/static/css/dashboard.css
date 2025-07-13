@@ -1,0 +1,109 @@
+/* Dashboard Specific Styles */
+.clients-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+}
+
+.clients-section h2 {
+    color: var(--text-accent);
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.8em;
+}
+
+.clients-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.clients-header h2 {
+    margin: 0;
+    color: var(--text-accent);
+    font-size: 1.8em;
+}
+
+/* Client Table Styles */
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--spacing-lg);
+}
+
+.clients-table th,
+.clients-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.clients-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.clients-table tr:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Column width adjustments */
+.clients-table th:nth-child(1),
+.clients-table td:nth-child(1) { width: 10%; }
+.clients-table th:nth-child(2),
+.clients-table td:nth-child(2) { width: 12%; }
+.clients-table th:nth-child(3),
+.clients-table td:nth-child(3) { width: 8%; }
+.clients-table th:nth-child(4),
+.clients-table td:nth-child(4) { width: 15%; }
+.clients-table th:nth-child(5),
+.clients-table td:nth-child(5) { width: 12%; }
+.clients-table th:nth-child(6),
+.clients-table td:nth-child(6) { width: 13%; }
+.clients-table th:nth-child(7),
+.clients-table td:nth-child(7) { width: 13%; }
+.clients-table th:nth-child(8),
+.clients-table td:nth-child(8) { width: 7%; }
+.clients-table th:nth-child(9),
+.clients-table td:nth-child(9) { width: 10%; }
+
+.clients-table td .btn + .btn {
+    margin-left: var(--spacing-sm);
+}
+
+.clients-table td:last-child {
+    text-align: left;
+}
+
+/* Refresh Button */
+.refresh-btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    min-width: 80px;
+    height: 32px;
+    box-sizing: border-box;
+    line-height: 20px;
+}
+
+/* No Clients Message */
+.no-clients {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    margin: var(--spacing-lg) 0;
+}
+
+.no-clients h3 {
+    color: var(--text-accent);
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.no-clients p {
+    margin: 0;
+    font-size: 0.9em;
+    opacity: 0.8;
+}

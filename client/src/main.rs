@@ -23,6 +23,7 @@ pub struct C2Client {
     file_manager: ClientFileManager, // New: Add file_manager to C2Client
 }
 
+/// C2 Client implementation
 impl C2Client {
     pub async fn new(config: ClientConfig) -> C2Result<Self> {
         let client_info = client_info::build_client_info(config.client_id.clone()).await?;

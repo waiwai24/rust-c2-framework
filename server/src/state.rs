@@ -18,6 +18,7 @@ pub struct AppState {
     pub response_notifiers: Arc<RwLock<HashMap<String, oneshot::Sender<Message>>>>,
 }
 
+/// Implementation of AppState
 impl AppState {
     pub fn new(config: ServerConfig) -> Self {
         let audit_logger = if config.enable_audit {

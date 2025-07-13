@@ -2,7 +2,7 @@ use common::message::{ClientInfo, CommandRequest, CommandResponse, Message}; // 
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, debug, instrument};
+use tracing::{debug, info, instrument, warn};
 
 /// ClientManager handles client registration, command management, and command results.
 pub struct ClientManager {
@@ -13,12 +13,14 @@ pub struct ClientManager {
     file_operation_responses: Arc<RwLock<HashMap<String, HashMap<String, Message>>>>,
 }
 
+/// Implement Default for ClientManager to allow easy instantiation
 impl Default for ClientManager {
     fn default() -> Self {
         Self::new()
     }
 }
 
+/// Implementation of ClientManager methods
 impl ClientManager {
     pub fn new() -> Self {
         Self {
@@ -77,15 +79,15 @@ impl ClientManager {
             message_id = ?command.message_id,
             "Adding command to client queue"
         );
-        
+
         let mut commands = self.commands.write().await;
         let queue_length_before = commands.get(client_id).map(|v| v.len()).unwrap_or(0);
-        
+
         commands
             .entry(client_id.to_string())
             .or_insert_with(Vec::new)
             .push(command);
-        
+
         info!(
             client_id = %client_id,
             queue_length = %(queue_length_before + 1),
@@ -149,7 +151,7 @@ impl ClientManager {
         let mut clients = self.clients.write().await;
         let now = chrono::Utc::now();
         let initial_count = clients.len();
-        
+
         let mut removed_clients = Vec::new();
         clients.retain(|client_id, client| {
             let should_retain = (now.timestamp() - client.last_seen.timestamp()) < timeout_seconds;
@@ -158,7 +160,7 @@ impl ClientManager {
             }
             should_retain
         });
-        
+
         if !removed_clients.is_empty() {
             info!(
                 count = %removed_clients.len(),
@@ -167,7 +169,7 @@ impl ClientManager {
                 "Cleaned up offline clients"
             );
         }
-        
+
         debug!(
             initial_count = %initial_count,
             remaining_count = %clients.len(),
@@ -183,7 +185,7 @@ impl ClientManager {
             client_id = %client_id,
             "Attempting to delete client"
         );
-        
+
         let mut clients = self.clients.write().await;
         let mut commands = self.commands.write().await;
         let mut command_results = self.command_results.write().await;
@@ -216,16 +218,5 @@ impl ClientManager {
         }
 
         client_removed
-    }
-
-    /// Get the number of online clients
-    pub async fn get_online_count(&self) -> usize {
-        let clients = self.clients.read().await;
-        let now = chrono::Utc::now();
-
-        clients
-            .values()
-            .filter(|client| (now.timestamp() - client.last_seen.timestamp()) < 60)
-            .count()
     }
 }

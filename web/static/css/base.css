@@ -1,0 +1,81 @@
+/* Base Styles and Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.container {
+    width: 100%;
+    padding: var(--spacing-lg);
+}
+
+/* Header Styles */
+.header {
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.header h1 {
+    color: var(--accent-blue);
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+.header p {
+    color: var(--text-secondary);
+    font-size: 1.1em;
+}
+
+/* Layout Components */
+.main-content-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-lg);
+}
+
+.main-dashboard {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin-top: var(--spacing-lg);
+}
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.section-header h2 {
+    margin: 0;
+    color: var(--text-accent);
+    font-size: 1.8em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content-wrapper {
+        flex-direction: column;
+    }
+    
+    .container {
+        padding: var(--spacing-md);
+    }
+    
+    .header h1 {
+        font-size: 2em;
+    }
+}

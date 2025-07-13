@@ -6,6 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::{error::Error as StdError, fmt, io};
 
+/// Represents a file operation error
 #[derive(Debug, Serialize, Deserialize)]
 pub enum FileOperationError {
     NotFound,
@@ -16,6 +17,7 @@ pub enum FileOperationError {
     Other(String),
 }
 
+/// Converts various error types into `FileOperationError`
 impl From<io::Error> for FileOperationError {
     fn from(err: io::Error) -> Self {
         match err.kind() {
@@ -26,12 +28,14 @@ impl From<io::Error> for FileOperationError {
     }
 }
 
+/// Converts serde_json errors into `FileOperationError`
 impl From<serde_json::Error> for FileOperationError {
     fn from(err: serde_json::Error) -> Self {
         FileOperationError::SerializationError(err.to_string())
     }
 }
 
+/// Converts string errors into `FileOperationError`
 impl fmt::Display for FileOperationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -47,8 +51,10 @@ impl fmt::Display for FileOperationError {
     }
 }
 
+/// Implementing the StdError trait for FileOperationError
 impl StdError for FileOperationError {}
 
+/// Response structure for file operations
 #[derive(Debug, Serialize)]
 pub struct ServerFileOperationResponse {
     pub success: bool,
@@ -57,6 +63,7 @@ pub struct ServerFileOperationResponse {
     pub data: Option<serde_json::Value>,
 }
 
+/// Converts `FileOperationError` into an Axum response
 impl IntoResponse for FileOperationError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {

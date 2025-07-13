@@ -3,10 +3,10 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::{fs, io};
 
-const MIN_UPTIME_SECONDS: u64 = 3600; // 1 hour
-const MAX_TEMP_FILES: usize = 10; // Arbitrary threshold
+const MIN_UPTIME_SECONDS: u64 = 3600;
+const MAX_TEMP_FILES: usize = 10;
 const SLEEP_DURATION_SECONDS: u64 = 10;
-const SLEEP_ACCURACY_SECONDS: u64 = 2; // Allow 2 seconds of inaccuracy
+const SLEEP_ACCURACY_SECONDS: u64 = 2;
 
 /// Runs all anti-sandbox and anti-debugging checks.
 /// Returns true if a sandbox or debugger is detected, false otherwise.

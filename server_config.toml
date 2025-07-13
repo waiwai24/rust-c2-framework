@@ -1,7 +1,7 @@
 host = "0.0.0.0"
 port = 8080
 reverse_shell_port = 31229
-encryption_key = "default_key_change_me"
+encryption_key = "your-32-byte-secret-key-here!!!!"
 client_timeout = 60
 max_clients = 1000
 log_file = "c2_server.log"

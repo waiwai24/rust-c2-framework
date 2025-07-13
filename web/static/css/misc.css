@@ -1,0 +1,189 @@
+/* Login Page Styles */
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: var(--spacing-lg);
+    box-sizing: border-box;
+}
+
+.login-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+}
+
+.login-form {
+    text-align: center;
+}
+
+.login-form label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-bottom: var(--spacing-sm);
+}
+
+.login-form input {
+    width: 80%;
+    max-width: 300px;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 1em;
+    margin: 0 auto var(--spacing-lg) auto;
+    display: block;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.login-form .btn {
+    width: 80%;
+    max-width: 300px;
+    padding: 6px 12px;
+    font-size: 1em;
+    margin: var(--spacing-xl) auto 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+/* Notes/Memo Styles */
+.notes-form {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.notes-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.note-item {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.note-header h4 {
+    margin: 0;
+    color: var(--text-accent);
+    font-size: 1.1em;
+}
+
+.note-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.note-content {
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+}
+
+.note-meta {
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-sm);
+}
+
+/* Settings Styles */
+.settings-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.settings-group {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+}
+
+.settings-group h3 {
+    margin: 0 0 15px 0;
+    color: var(--accent-blue);
+    font-size: 1.1em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-accent);
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.setting-item input[type="text"],
+.setting-item input[type="number"] {
+    width: 100%;
+    padding: var(--spacing-sm) 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.9em;
+}
+
+.setting-item input[type="checkbox"] {
+    margin-right: var(--spacing-sm);
+    transform: scale(1.2);
+}
+
+.setting-item input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.settings-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}

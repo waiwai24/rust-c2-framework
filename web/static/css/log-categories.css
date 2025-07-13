@@ -1,0 +1,141 @@
+/* Log Entry Category Styles */
+
+/* Client related log entries */
+.log-client_connect {
+    background: rgba(34, 197, 94, 0.15);
+    border-left-color: #22c55e;
+    color: #22c55e;
+}
+
+.log-client_disconnect {
+    background: rgba(239, 68, 68, 0.15);
+    border-left-color: #ef4444;
+    color: #ef4444;
+}
+
+.log-client_delete,
+.log-client_timeout,
+.log-client_register {
+    background: rgba(255, 107, 53, 0.15);
+    border-left-color: var(--log-client);
+    color: var(--log-client);
+}
+
+/* Command related log entries */
+.log-command_execute {
+    background: rgba(0, 255, 136, 0.15);
+    border-left-color: var(--log-command);
+    color: var(--log-command);
+}
+
+.log-command_result {
+    background: rgba(34, 197, 94, 0.12);
+    border-left-color: #22c55e;
+    color: #22c55e;
+}
+
+/* Authentication related log entries */
+.log-auth_failure {
+    background: rgba(220, 38, 127, 0.15);
+    border-left-color: #dc2663;
+    color: #dc2663;
+}
+
+.log-session_create,
+.log-session_login,
+.log-session_logout,
+.log-session_validate {
+    background: rgba(139, 92, 246, 0.15);
+    border-left-color: var(--log-auth);
+    color: var(--log-auth);
+}
+
+/* File operation log entries */
+.log-file_list,
+.log-file_upload,
+.log-file_download,
+.log-file_delete {
+    background: rgba(251, 191, 36, 0.15);
+    border-left-color: var(--log-file);
+    color: var(--log-file);
+}
+
+/* Shell session log entries */
+.log-shell_session {
+    background: rgba(121, 192, 255, 0.15);
+    border-left-color: var(--log-shell);
+    color: var(--log-shell);
+}
+
+/* WebSocket related log entries */
+.log-websocket_connect,
+.log-websocket_disconnect,
+.log-websocket_message,
+.log-websocket_error {
+    background: rgba(59, 130, 246, 0.15);
+    border-left-color: var(--log-websocket);
+    color: var(--log-websocket);
+}
+
+/* Error log entries */
+.log-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-left-color: var(--log-error);
+    color: var(--log-error);
+}
+
+/* General info log entries */
+.log-info {
+    background: rgba(139, 148, 158, 0.1);
+    border-left-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+/* Backward compatibility styles */
+.log-connect {
+    background: rgba(34, 197, 94, 0.15);
+    border-left-color: #22c55e;
+    color: #22c55e;
+}
+
+.log-disconnect {
+    background: rgba(239, 68, 68, 0.15);
+    border-left-color: #ef4444;
+    color: #ef4444;
+}
+
+.log-command {
+    background: rgba(0, 255, 136, 0.15);
+    border-left-color: var(--log-command);
+    color: var(--log-command);
+}
+
+.log-result {
+    background: rgba(34, 197, 94, 0.12);
+    border-left-color: #22c55e;
+    color: #22c55e;
+}
+
+.log-auth {
+    background: rgba(139, 92, 246, 0.15);
+    border-left-color: var(--log-auth);
+    color: var(--log-auth);
+}
+
+.log-file {
+    background: rgba(251, 191, 36, 0.15);
+    border-left-color: var(--log-file);
+    color: var(--log-file);
+}
+
+.log-websocket {
+    background: rgba(59, 130, 246, 0.15);
+    border-left-color: var(--log-websocket);
+    color: var(--log-websocket);
+}
+
+.log-shell {
+    background: rgba(121, 192, 255, 0.15);
+    border-left-color: var(--log-shell);
+    color: var(--log-shell);
+}

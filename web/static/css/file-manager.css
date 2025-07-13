@@ -1,0 +1,232 @@
+/* File Manager Styles */
+.file-manager {
+    background: var(--bg-secondary);
+    padding: 18px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    position: relative;
+    box-shadow: var(--shadow-md);
+}
+
+.file-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.file-manager-header h2 {
+    color: var(--text-accent);
+    font-size: 1.8em;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.file-path-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.path-input {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    width: 300px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    transition: var(--transition-normal);
+    height: 30px;
+    box-sizing: border-box;
+    line-height: 1;
+}
+
+.path-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+/* File Upload Section */
+.file-upload-section {
+    margin-bottom: 18px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, #1c2128 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.file-upload-section h3 {
+    margin-bottom: 12px;
+    color: var(--text-accent);
+    font-size: 1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.upload-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.upload-controls .btn {
+    margin-bottom: 0;
+    padding: var(--spacing-xs) 12px;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    line-height: 1;
+}
+
+.upload-controls .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+}
+
+#fileNameDisplay {
+    display: flex;
+    align-items: center;
+    height: 30px;
+    margin-left: 10px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+/* File List Section */
+.file-list-section {
+    margin-top: 18px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.file-list-section h3 {
+    margin: 0 0 12px 0;
+    color: var(--text-accent);
+    font-size: 1em;
+    font-weight: 600;
+    padding: 16px 16px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* File Table */
+.file-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    table-layout: fixed;
+}
+
+.file-table th,
+.file-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Column width adjustments */
+.file-table th:nth-child(1) { width: 25%; } /* 名称 */
+.file-table th:nth-child(2) { width: 8%; }  /* 类型 */
+.file-table th:nth-child(3) { width: 10%; } /* 大小 */
+.file-table th:nth-child(4) { width: 12%; } /* 权限 */
+.file-table th:nth-child(5) { width: 12%; } /* 所有者 */
+.file-table th:nth-child(6) { width: 15%; } /* 修改时间 */
+.file-table th:nth-child(7) { width: 18%; } /* 操作 */
+
+.file-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.file-table tr:hover {
+    background: var(--bg-tertiary);
+}
+
+/* File-specific styling */
+.permissions {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--accent-blue);
+    background: rgba(88, 166, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.owner-group {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Loading Indicator */
+.loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(13, 17, 23, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    border-radius: var(--radius-xl);
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, #2d333b 100%);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+}
+
+.loading-spinner {
+    border: 3px solid rgba(88, 166, 255, 0.2);
+    border-top: 3px solid var(--accent-blue);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+}
+
+.loading-content span {
+    font-size: 0.95em;
+    font-weight: 500;
+    color: var(--text-accent);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -1,10 +1,15 @@
+use libc::{mount, MS_BIND};
 use std::ffi::CString;
 use std::io;
-use libc::{mount, MS_BIND};
 
+/// Checks if the current process is running with root privileges.
+/// Returns an error if not running as root.
 pub fn check_root() -> io::Result<()> {
     if unsafe { libc::geteuid() } != 0 {
-        return Err(io::Error::new(io::ErrorKind::PermissionDenied, "This operation requires root privileges"));
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "This operation requires root privileges",
+        ));
     }
     Ok(())
 }

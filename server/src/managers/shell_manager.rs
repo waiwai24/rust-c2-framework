@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 /// ShellManager manages shell sessions and their associated data.
-use tokio::sync::{mpsc, broadcast}; // Import mpsc and broadcast
+use tokio::sync::{broadcast, mpsc}; // Import mpsc and broadcast
 
 /// ShellManager manages shell sessions and their associated data.
 pub struct ShellManager {
@@ -16,12 +16,14 @@ pub struct ShellManager {
     tx_shell_output: Arc<RwLock<HashMap<String, broadcast::Sender<String>>>>,
 }
 
+/// Implement Default for ShellManager to allow easy instantiation
 impl Default for ShellManager {
     fn default() -> Self {
         Self::new()
     }
 }
 
+/// Implementation of ShellManager methods
 impl ShellManager {
     pub fn new() -> Self {
         Self {
@@ -36,11 +38,7 @@ impl ShellManager {
     pub async fn create_session(
         &self,
         client_id: &str,
-    ) -> (
-        String,
-        mpsc::Receiver<Vec<u8>>,
-        broadcast::Receiver<String>,
-    ) {
+    ) -> (String, mpsc::Receiver<Vec<u8>>, broadcast::Receiver<String>) {
         let session_id = Uuid::new_v4().to_string();
         let session = ShellSession {
             client_id: client_id.to_string(),
@@ -78,33 +76,6 @@ impl ShellManager {
     pub async fn get_tx_to_shell(&self, session_id: &str) -> Option<mpsc::Sender<Vec<u8>>> {
         let tx_map = self.tx_to_shell.read().await;
         tx_map.get(session_id).cloned()
-    }
-
-    /// Connect an existing session to a reverse shell connection
-    /// Returns the receiver for this session if it exists
-    pub async fn connect_reverse_shell(&self, session_id: &str) -> Option<mpsc::Receiver<Vec<u8>>> {
-        let tx_map = self.tx_to_shell.read().await;
-        if tx_map.contains_key(session_id) {
-            // Create a new receiver that will get data from WebSocket
-            let (tx, rx) = mpsc::channel::<Vec<u8>>(100);
-            drop(tx_map);
-            
-            // Replace the sender in the map
-            let mut tx_map = self.tx_to_shell.write().await;
-            tx_map.insert(session_id.to_string(), tx);
-            Some(rx)
-        } else {
-            None
-        }
-    }
-
-    /// Subscribe to the broadcast receiver for shell output
-    pub async fn subscribe_to_shell_output(&self, session_id: &str) -> broadcast::Receiver<String> {
-        let tx_map = self.tx_shell_output.read().await;
-        tx_map
-            .get(session_id)
-            .expect("Shell session not found for subscription")
-            .subscribe()
     }
 
     /// Add data to a shell session and broadcast it

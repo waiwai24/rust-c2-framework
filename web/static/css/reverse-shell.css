@@ -1,0 +1,486 @@
+/* Reverse Shell Interface Styles */
+.reverse-shell-container {
+    padding: 0;
+}
+
+/* Shell Control Panel */
+.shell-control-panel {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, #1c2128 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-lg);
+}
+
+.control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    gap: 16px;
+}
+
+.control-title {
+    flex: 1;
+}
+
+.control-title h2 {
+    color: var(--text-accent);
+    font-size: 1.8em;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.shell-icon {
+    font-size: 1.5em;
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.3));
+}
+
+.control-subtitle {
+    color: var(--text-secondary);
+    font-size: 1em;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.control-actions {
+    flex-shrink: 0;
+}
+
+/* Shell Control Buttons */
+.btn-shell-start {
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-hover) 100%);
+    color: #ffffff;
+    border: none;
+    padding: var(--spacing-xs) 16px;
+    border-radius: var(--radius-lg);
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-normal);
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+    height: 30px;
+    line-height: 1;
+}
+
+.btn-shell-start:hover {
+    background: linear-gradient(135deg, var(--accent-green-hover) 0%, var(--accent-green) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(35, 134, 54, 0.4);
+}
+
+.btn-shell-start:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(35, 134, 54, 0.3);
+}
+
+.btn-shell-stop {
+    background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-hover) 100%);
+    color: #ffffff;
+    border: none;
+    padding: var(--spacing-xs) 16px;
+    border-radius: var(--radius-lg);
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-normal);
+    box-shadow: 0 4px 12px rgba(218, 54, 51, 0.3);
+    margin-left: var(--spacing-sm);
+    height: 30px;
+    line-height: 1;
+}
+
+.btn-shell-stop:hover {
+    background: linear-gradient(135deg, var(--accent-red-hover) 0%, var(--accent-red) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(218, 54, 51, 0.4);
+}
+
+.btn-shell-stop:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(218, 54, 51, 0.3);
+}
+
+.btn-icon {
+    font-size: 1em;
+}
+
+/* Connection Status Grid */
+.connection-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.status-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    transition: var(--transition-normal);
+}
+
+.status-card:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.status-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.status-card-icon {
+    font-size: 1em;
+    filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.3));
+}
+
+.status-card-title {
+    color: var(--text-accent);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.status-card-content {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.status-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-text {
+    font-weight: 500;
+}
+
+.session-id, .port-number {
+    background: var(--bg-secondary);
+    color: var(--log-shell);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    word-break: break-all;
+}
+
+/* Terminal Container */
+.shell-container {
+    margin-top: 0;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.shell-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, #2d333b 100%);
+    padding: var(--spacing-sm) 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.shell-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.window-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.window-control.close {
+    background: #ff5f57;
+}
+
+.window-control.minimize {
+    background: #ffbd2e;
+}
+
+.window-control.maximize {
+    background: #28ca42;
+}
+
+.window-control:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.shell-title {
+    color: var(--text-accent);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.shell-header-right {
+    display: flex;
+    align-items: center;
+}
+
+.connection-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f85149;
+    transition: var(--transition-normal);
+}
+
+.status-dot.connected {
+    background: #3fb950;
+    box-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
+}
+
+.status-dot.connecting {
+    background: #d29922;
+    animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.connection-text {
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+/* Terminal Content */
+.shell-terminal {
+    background: var(--bg-primary);
+    color: var(--log-command);
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    line-height: 1.6;
+    min-height: 850px;
+    max-height: 850px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    cursor: text;
+    scrollbar-width: thin;
+    scrollbar-color: #484f58 var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.shell-terminal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.shell-terminal::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.shell-terminal::-webkit-scrollbar-thumb {
+    background: #484f58;
+    border-radius: var(--radius-sm);
+}
+
+.shell-terminal::-webkit-scrollbar-thumb:hover {
+    background: #6e7681;
+}
+
+.shell-output {
+    margin: 0;
+    padding: 16px 16px 0 16px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.shell-input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+/* Welcome Banner */
+.welcome-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%);
+    border: 1px solid rgba(88, 166, 255, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    margin-bottom: 16px;
+    animation: slideIn var(--transition-slow);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.welcome-icon {
+    font-size: 32px;
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.5));
+}
+
+.welcome-text {
+    flex: 1;
+}
+
+.welcome-text strong {
+    color: var(--accent-blue);
+    font-size: 1em;
+    display: block;
+    margin-bottom: var(--spacing-xs);
+}
+
+.welcome-text p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* Shell Input Styling */
+.shell-prompt {
+    color: var(--accent-blue);
+    font-weight: 600;
+    margin-right: var(--spacing-sm);
+    user-select: none;
+    text-shadow: 0 0 4px rgba(88, 166, 255, 0.3);
+}
+
+.shell-input {
+    flex: 1;
+    outline: none;
+    background: transparent;
+    border: none;
+    color: var(--log-command);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    min-width: 10px;
+}
+
+.shell-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 18px;
+    background: var(--log-command);
+    margin-left: 2px;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.shell-error {
+    color: #f85149;
+}
+
+.shell-success {
+    color: #3fb950;
+}
+
+.shell-warning {
+    color: #d29922;
+}
+
+/* Status Indicators */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f85149;
+    transition: var(--transition-normal);
+}
+
+.status-indicator.connected {
+    background: #3fb950;
+    box-shadow: 0 0 12px rgba(63, 185, 80, 0.6);
+}
+
+.status-indicator.connecting {
+    background: #d29922;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(210, 153, 34, 0.6); }
+    50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 16px rgba(210, 153, 34, 0.8); }
+    100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(210, 153, 34, 0.6); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .control-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .control-actions {
+        align-self: stretch;
+    }
+    
+    .btn-shell-start {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .connection-status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .shell-header {
+        padding: 6px 10px;
+    }
+    
+    .shell-terminal {
+        padding: 12px;
+        font-size: 13px;
+    }
+}

@@ -4,6 +4,7 @@ use common::sysinfo::{get_country, get_hardware_info, get_hostname, get_local_ip
 use cryptify::encrypt_string;
 use uuid::Uuid;
 
+/// Builds the client information structure.
 pub async fn build_client_info(client_id_opt: Option<String>) -> C2Result<ClientInfo> {
     let client_id = client_id_opt.unwrap_or_else(|| Uuid::new_v4().to_string());
 

@@ -1,0 +1,53 @@
+/* CSS Variables and Theme Configuration */
+:root {
+    /* Colors */
+    --bg-primary: #0d1117;
+    --bg-secondary: #21262d;
+    --bg-tertiary: #161b22;
+    --border-color: #30363d;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --text-accent: #f0f6fc;
+    --accent-blue: #58a6ff;
+    --accent-green: #238636;
+    --accent-green-hover: #2ea043;
+    --accent-red: #da3633;
+    --accent-red-hover: #b91c1c;
+    
+    /* Log Category Colors */
+    --log-client: #ff6b35;
+    --log-command: #00ff88;
+    --log-auth: #8b5cf6;
+    --log-session: #f97316;
+    --log-file: #fbbf24;
+    --log-shell: #79c0ff;
+    --log-websocket: #3b82f6;
+    --log-error: #ef4444;
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Fonts */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+}

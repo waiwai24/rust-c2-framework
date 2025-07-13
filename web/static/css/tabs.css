@@ -1,0 +1,120 @@
+/* Tab System Styles */
+.tabs {
+    width: 100%;
+    min-height: 650px;
+}
+
+.tab-header {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border: 1px solid var(--border-color);
+}
+
+.tab-item {
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-right: 1px solid var(--border-color);
+    transition: var(--transition-normal);
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+}
+
+.tab-item:first-child {
+    border-radius: var(--radius-lg) 0 0 0;
+}
+
+.tab-item:last-child {
+    border-right: none;
+    border-radius: 0 var(--radius-lg) 0 0;
+}
+
+.tab-item.active {
+    background: var(--accent-green);
+    color: white;
+}
+
+.tab-item:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.tab-content {
+    display: none;
+    min-height: 600px;
+    background: var(--bg-secondary);
+    padding: 5px 20px 20px 20px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Client Information Section */
+.client-info-section {
+    flex: 0 0 400px;
+    min-height: 700px;
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.command-and-results {
+    flex: 1;
+    min-height: 700px;
+    display: flex;
+    flex-direction: column;
+    margin-left: var(--spacing-lg);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+}
+
+.info-item {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: none;
+    border-radius: 0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item label {
+    font-weight: bold;
+    color: var(--accent-blue);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.info-item span {
+    color: var(--text-primary);
+}
+
+/* Back Button */
+.back-btn {
+    display: inline-block;
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: bold;
+    margin-top: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.back-btn:hover {
+    text-decoration: underline;
+    background: none;
+}

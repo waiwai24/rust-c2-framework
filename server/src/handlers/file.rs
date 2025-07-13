@@ -10,18 +10,18 @@ use axum::{
 };
 use bytes::Bytes;
 use common::message::{
-    CommandRequest, DeletePathRequest, DeletePathResponse, DownloadFileRequest, DownloadChunkRequest, FileChunk,
-    FileOperationCommand, ListDirRequest, ListDirResponse, Message, MessageType, UploadFileRequest,
-    FileEntry, // 添加 FileEntry 导入
+    CommandRequest, DeletePathRequest, DeletePathResponse, DownloadChunkRequest,
+    DownloadFileRequest, FileChunk, FileEntry, FileOperationCommand, ListDirRequest,
+    ListDirResponse, Message, MessageType, UploadFileRequest,
 };
 use futures::stream::{self, StreamExt};
-use tracing::{error, info, instrument};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::SystemTime;
 use tokio::time::Duration;
+use tracing::{error, info, instrument};
 use uuid::Uuid;
 
 const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 15; // Reduced timeout for faster failure detection
@@ -30,11 +30,10 @@ const CLIENT_RESPONSE_TIMEOUT_SEC: u64 = 15; // Reduced timeout for faster failu
 static PERMISSION_REGEX: OnceLock<Regex> = OnceLock::new();
 
 fn get_permission_regex() -> &'static Regex {
-    PERMISSION_REGEX.get_or_init(|| {
-        Regex::new(r"mode: 0o(\d+) \(([d\-rwxstST]+)\)").unwrap()
-    })
+    PERMISSION_REGEX.get_or_init(|| Regex::new(r"mode: 0o(\d+) \(([d\-rwxstST]+)\)").unwrap())
 }
 
+/// Represents a file entry with additional metadata
 #[derive(Debug, Deserialize)]
 pub struct ListDirectoryRequest {
     pub client_id: String,
@@ -42,12 +41,14 @@ pub struct ListDirectoryRequest {
     pub recursive: Option<bool>,
 }
 
+/// Represents a file entry with additional metadata
 #[derive(Debug, Deserialize)]
 pub struct DeletePathPayloadWithClient {
     pub client_id: String,
     pub path: String,
 }
 
+/// Represents a request to download a file
 #[derive(Debug, Deserialize)]
 pub struct ClientIdQuery {
     pub client_id: String,
@@ -130,20 +131,20 @@ async fn send_command_and_await_response<T: Serialize>(
 /// Parse permissions from debug string format to clean Unix format
 fn parse_permissions(debug_str: &str) -> Option<String> {
     let regex = get_permission_regex();
-    
+
     if let Some(captures) = regex.captures(debug_str) {
         if let Some(perm_str) = captures.get(2) {
             return Some(perm_str.as_str().to_string());
         }
     }
-    
-    // 如果正则匹配失败，尝试简单的字符串匹配
+
+    // Fallback for older formats
     if debug_str.contains("(") && debug_str.contains(")") {
         if let Some(start) = debug_str.find('(') {
             if let Some(end) = debug_str.find(')') {
                 if start < end {
                     let perm_part = &debug_str[start + 1..end];
-                    // 检查是否看起来像权限字符串
+                    // Check if it matches Unix permission format
                     if perm_part.len() >= 9 && perm_part.chars().all(|c| "drwxstST-".contains(c)) {
                         return Some(perm_part.to_string());
                     }
@@ -151,7 +152,7 @@ fn parse_permissions(debug_str: &str) -> Option<String> {
             }
         }
     }
-    
+
     None
 }
 
@@ -168,10 +169,12 @@ pub struct EnhancedFileEntry {
     pub group: Option<String>,
 }
 
+/// Convert FileEntry to EnhancedFileEntry with parsed permissions
 impl From<FileEntry> for EnhancedFileEntry {
     fn from(entry: FileEntry) -> Self {
-        // 解析权限字符串
-        let parsed_permissions = entry.permissions
+        // Parse the permissions string
+        let parsed_permissions = entry
+            .permissions
             .as_ref()
             .and_then(|p| parse_permissions(p))
             .or(entry.permissions);
@@ -204,22 +207,22 @@ pub async fn list_directory_handler(
     );
 
     // Log the list operation start
-    state.audit_logger.log_file_operation(
-        &client_id,
-        "LIST",
-        &path_str,
-        None,
-        "STARTED"
-    );
+    state
+        .audit_logger
+        .log_file_operation(&client_id, "LIST", &path_str, None, "STARTED");
 
     let list_req = ListDirRequest {
         path: path_str.clone(),
         recursive,
     };
 
-    let response_message =
-        send_command_and_await_response(&state, &client_id, MessageType::ExecuteCommand, &FileOperationCommand::ListDir(list_req))
-            .await?;
+    let response_message = send_command_and_await_response(
+        &state,
+        &client_id,
+        MessageType::ExecuteCommand,
+        &FileOperationCommand::ListDir(list_req),
+    )
+    .await?;
 
     info!(
         "Raw payload received for ListDir: {:?}",
@@ -248,7 +251,7 @@ pub async fn list_directory_handler(
             "LIST",
             &path_str,
             Some(enhanced_entries.len() as u64),
-            "SUCCESS"
+            "SUCCESS",
         );
 
         let entries_json = serde_json::to_value(&enhanced_entries)?;
@@ -266,14 +269,14 @@ pub async fn list_directory_handler(
             "LIST",
             &path_str,
             None,
-            &format!("FAILED: {}", list_res.message)
+            &format!("FAILED: {}", list_res.message),
         );
-        
+
         Err(FileOperationError::Other(list_res.message))
     }
 }
 
-/// 用于Web UI的目录列表API
+/// API handler to list directory contents on a client.
 pub async fn list_directory(
     State(state): State<AppState>,
     Path(client_id): Path<String>,
@@ -288,49 +291,60 @@ pub async fn list_directory(
     let cmd = CommandRequest {
         client_id: client_id.clone(),
         command: "FileOperation".to_string(),
-        args: vec![serde_json::to_string(&FileOperationCommand::ListDir(req.clone()))
-            .map_err(|e| {
+        args: vec![
+            serde_json::to_string(&FileOperationCommand::ListDir(req.clone())).map_err(|e| {
                 error!("Failed to serialize ListDirRequest: {}", e);
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Failed to serialize request".to_string(),
                 )
-            })?],
+            })?,
+        ],
         message_id: Some(Uuid::new_v4().to_string()),
         shellcode: None, // Add shellcode field
     };
 
     // Send command to client
-    state.client_manager.add_command(&client_id, cmd.clone()).await;
+    state
+        .client_manager
+        .add_command(&client_id, cmd.clone())
+        .await;
     info!("Sent list directory command to client {}", client_id);
 
     // Wait for response using register_response_notifier instead
     let message_id = cmd.message_id.as_ref().unwrap();
     let response_receiver = state.register_response_notifier(message_id.clone()).await;
-    
-    let response_message = match tokio::time::timeout(
-        Duration::from_secs(30),
-        response_receiver
-    ).await {
-        Ok(Ok(msg)) => {
-            info!("Received response for list directory request: message_id={}", msg.id);
-            msg
-        }
-        Ok(Err(_)) => {
-            error!("Response channel closed for list directory request from client {}", client_id);
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Response channel closed".to_string(),
-            ));
-        }
-        Err(_) => {
-            error!("Timeout waiting for list directory response from client {}", client_id);
-            return Err((
-                StatusCode::REQUEST_TIMEOUT,
-                "Timeout waiting for response from client".to_string(),
-            ));
-        }
-    };
+
+    let response_message =
+        match tokio::time::timeout(Duration::from_secs(30), response_receiver).await {
+            Ok(Ok(msg)) => {
+                info!(
+                    "Received response for list directory request: message_id={}",
+                    msg.id
+                );
+                msg
+            }
+            Ok(Err(_)) => {
+                error!(
+                    "Response channel closed for list directory request from client {}",
+                    client_id
+                );
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Response channel closed".to_string(),
+                ));
+            }
+            Err(_) => {
+                error!(
+                    "Timeout waiting for list directory response from client {}",
+                    client_id
+                );
+                return Err((
+                    StatusCode::REQUEST_TIMEOUT,
+                    "Timeout waiting for response from client".to_string(),
+                ));
+            }
+        };
 
     // Parse the response
     let payload_str = String::from_utf8(response_message.payload.clone()).map_err(|e| {
@@ -375,6 +389,7 @@ pub async fn list_directory(
     Ok(Json(enhanced_response))
 }
 
+/// API handler to delete a path on a client.
 #[instrument(skip(state, payload), fields(client_id = %payload.client_id))]
 pub async fn delete_path_handler(
     State(state): State<AppState>,
@@ -388,13 +403,9 @@ pub async fn delete_path_handler(
     );
 
     // Log delete operation start
-    state.audit_logger.log_file_operation(
-        &client_id,
-        "DELETE",
-        &payload.path,
-        None,
-        "STARTED"
-    );
+    state
+        .audit_logger
+        .log_file_operation(&client_id, "DELETE", &payload.path, None, "STARTED");
 
     let delete_req = DeletePathRequest {
         path: payload.path.clone(),
@@ -441,16 +452,12 @@ pub async fn delete_path_handler(
             operation_result = "success",
             "Delete path operation completed successfully"
         );
-        
+
         // Log successful delete operation
-        state.audit_logger.log_file_operation(
-            &client_id,
-            "DELETE",
-            &payload.path,
-            None,
-            "SUCCESS"
-        );
-        
+        state
+            .audit_logger
+            .log_file_operation(&client_id, "DELETE", &payload.path, None, "SUCCESS");
+
         Ok(Json(ServerFileOperationResponse {
             success: true,
             message: delete_res.message,
@@ -464,20 +471,21 @@ pub async fn delete_path_handler(
             error_message = %delete_res.message,
             "Delete path operation failed"
         );
-        
+
         // Log failed delete operation
         state.audit_logger.log_file_operation(
             &client_id,
             "DELETE",
             &payload.path,
             None,
-            &format!("FAILED: {}", delete_res.message)
+            &format!("FAILED: {}", delete_res.message),
         );
-        
+
         Err(FileOperationError::Other(delete_res.message))
     }
 }
 
+/// API handler to download a file from a client.
 #[instrument(skip(state, query, file_path), fields(client_id = %query.client_id))]
 pub async fn download_file_handler(
     State(state): State<AppState>,
@@ -492,13 +500,9 @@ pub async fn download_file_handler(
     );
 
     // Log download operation start
-    state.audit_logger.log_file_operation(
-        &client_id,
-        "DOWNLOAD",
-        &file_path,
-        None,
-        "STARTED"
-    );
+    state
+        .audit_logger
+        .log_file_operation(&client_id, "DOWNLOAD", &file_path, None, "STARTED");
 
     let download_init_req = DownloadFileRequest {
         path: file_path.clone(),
@@ -524,21 +528,21 @@ pub async fn download_file_handler(
             error = %e,
             "Failed to initialize download with client"
         );
-        
+
         // Log failed download initialization
         state.audit_logger.log_file_operation(
             &client_id,
             "DOWNLOAD",
             &file_path,
             None,
-            &format!("FAILED: {}", e)
+            &format!("FAILED: {}", e),
         );
-        
+
         e
     })?;
 
-    let init_res: serde_json::Value = serde_json::from_slice(&response_message.payload)
-        .map_err(|e| {
+    let init_res: serde_json::Value =
+        serde_json::from_slice(&response_message.payload).map_err(|e| {
             error!(
                 client_id = %client_id,
                 file_path = %file_path,
@@ -547,7 +551,7 @@ pub async fn download_file_handler(
             );
             FileOperationError::SerializationError(e.to_string())
         })?;
-    
+
     let file_id = init_res["file_id"]
         .as_str()
         .ok_or_else(|| {
@@ -556,9 +560,7 @@ pub async fn download_file_handler(
                 file_path = %file_path,
                 "Missing file_id in download initialization response"
             );
-            FileOperationError::Other(
-                "Missing file_id in download initiation response".to_string(),
-            )
+            FileOperationError::Other("Missing file_id in download initiation response".to_string())
         })?
         .to_string();
 
@@ -580,13 +582,20 @@ pub async fn download_file_handler(
     // Create a stream to pull chunks from the client
     let chunk_count = 0u64;
     let total_bytes = 0u64;
-    
+
     let stream = stream::unfold(
-        (client_id.clone(), file_id.clone(), state.clone(), chunk_count, total_bytes, file_path.clone()),
+        (
+            client_id.clone(),
+            file_id.clone(),
+            state.clone(),
+            chunk_count,
+            total_bytes,
+            file_path.clone(),
+        ),
         move |(client_id, file_id, state, mut chunk_count, mut total_bytes, file_path)| async move {
             chunk_count += 1;
-            let chunk_request = DownloadChunkRequest { 
-                file_id: file_id.clone() 
+            let chunk_request = DownloadChunkRequest {
+                file_id: file_id.clone(),
             };
 
             let response_message = match send_command_and_await_response(
@@ -606,17 +615,27 @@ pub async fn download_file_handler(
                         error = %e,
                         "Failed to download file chunk"
                     );
-                    
+
                     // Log download chunk failure
                     state.audit_logger.log_file_operation(
                         &client_id,
                         "DOWNLOAD",
                         &file_path,
                         Some(total_bytes),
-                        &format!("FAILED: chunk error - {}", e)
+                        &format!("FAILED: chunk error - {}", e),
                     );
-                    
-                    return Some((Err(e), (client_id, file_id, state, chunk_count, total_bytes, file_path)));
+
+                    return Some((
+                        Err(e),
+                        (
+                            client_id,
+                            file_id,
+                            state,
+                            chunk_count,
+                            total_bytes,
+                            file_path,
+                        ),
+                    ));
                 }
             };
 
@@ -631,19 +650,26 @@ pub async fn download_file_handler(
                             error = %e,
                             "Failed to deserialize chunk response"
                         );
-                        
+
                         // Log deserialization error
                         state.audit_logger.log_file_operation(
                             &client_id,
                             "DOWNLOAD",
                             &file_path,
                             Some(total_bytes),
-                            &format!("FAILED: deserialization error - {}", e)
+                            &format!("FAILED: deserialization error - {}", e),
                         );
-                        
+
                         return Some((
                             Err(FileOperationError::SerializationError(e.to_string())),
-                            (client_id, file_id, state, chunk_count, total_bytes, file_path),
+                            (
+                                client_id,
+                                file_id,
+                                state,
+                                chunk_count,
+                                total_bytes,
+                                file_path,
+                            ),
                         ));
                     }
                 };
@@ -662,21 +688,21 @@ pub async fn download_file_handler(
                     operation_result = "success",
                     "Download completed successfully"
                 );
-                
+
                 // Log successful download completion
                 state.audit_logger.log_file_operation(
                     &client_id,
                     "DOWNLOAD",
                     &file_path,
                     Some(total_bytes),
-                    "SUCCESS"
+                    "SUCCESS",
                 );
-                
+
                 None
             } else if let Ok(file_chunk) = serde_json::from_value::<FileChunk>(chunk_res) {
                 let chunk_size = file_chunk.chunk.len() as u64;
                 total_bytes += chunk_size;
-                
+
                 if chunk_count % 100 == 0 {
                     info!(
                         client_id = %client_id,
@@ -687,10 +713,17 @@ pub async fn download_file_handler(
                         "Download progress update"
                     );
                 }
-                
+
                 Some((
                     Ok(Bytes::from(file_chunk.chunk)),
-                    (client_id, file_id, state, chunk_count, total_bytes, file_path),
+                    (
+                        client_id,
+                        file_id,
+                        state,
+                        chunk_count,
+                        total_bytes,
+                        file_path,
+                    ),
                 ))
             } else {
                 error!(
@@ -699,21 +732,28 @@ pub async fn download_file_handler(
                     chunk_number = chunk_count,
                     "Invalid chunk response format"
                 );
-                
+
                 // Log invalid chunk response
                 state.audit_logger.log_file_operation(
                     &client_id,
                     "DOWNLOAD",
                     &file_path,
                     Some(total_bytes),
-                    "FAILED: invalid chunk response format"
+                    "FAILED: invalid chunk response format",
                 );
-                
+
                 Some((
                     Err(FileOperationError::Other(
                         "Invalid chunk response".to_string(),
                     )),
-                    (client_id, file_id, state, chunk_count, total_bytes, file_path),
+                    (
+                        client_id,
+                        file_id,
+                        state,
+                        chunk_count,
+                        total_bytes,
+                        file_path,
+                    ),
                 ))
             }
         },
@@ -745,6 +785,7 @@ pub async fn download_file_handler(
         })?)
 }
 
+/// API handler to upload a file to a client.
 #[instrument(skip(state, query, body, file_path), fields(client_id = %query.client_id))]
 pub async fn upload_file_handler(
     State(state): State<AppState>,
@@ -760,13 +801,9 @@ pub async fn upload_file_handler(
     );
 
     // Log upload operation start
-    state.audit_logger.log_file_operation(
-        &client_id,
-        "UPLOAD",
-        &file_path,
-        None,
-        "STARTED"
-    );
+    state
+        .audit_logger
+        .log_file_operation(&client_id, "UPLOAD", &file_path, None, "STARTED");
 
     let file_id = Uuid::new_v4().to_string();
 
@@ -804,21 +841,21 @@ pub async fn upload_file_handler(
             error = %e,
             "Failed to initialize upload with client"
         );
-        
+
         // Log failed upload initialization
         state.audit_logger.log_file_operation(
             &client_id,
             "UPLOAD",
             &file_path,
             None,
-            &format!("FAILED: {}", e)
+            &format!("FAILED: {}", e),
         );
-        
+
         e
     })?;
 
-    let init_res: serde_json::Value = serde_json::from_slice(&response_message.payload)
-        .map_err(|e| {
+    let init_res: serde_json::Value =
+        serde_json::from_slice(&response_message.payload).map_err(|e| {
             error!(
                 client_id = %client_id,
                 file_path = %file_path,
@@ -828,7 +865,7 @@ pub async fn upload_file_handler(
             );
             FileOperationError::SerializationError(e.to_string())
         })?;
-        
+
     if !init_res["success"].as_bool().unwrap_or(false) {
         let error_msg = init_res["message"].as_str().unwrap_or("unknown error");
         error!(
@@ -838,16 +875,16 @@ pub async fn upload_file_handler(
             error_message = %error_msg,
             "Client failed to initiate upload"
         );
-        
+
         // Log failed upload initialization
         state.audit_logger.log_file_operation(
             &client_id,
             "UPLOAD",
             &file_path,
             None,
-            &format!("FAILED: {}", error_msg)
+            &format!("FAILED: {}", error_msg),
         );
-        
+
         return Err(FileOperationError::Other(format!(
             "Client failed to initiate upload: {}",
             error_msg
@@ -884,16 +921,16 @@ pub async fn upload_file_handler(
                 error = %e,
                 "Failed to read chunk from data stream"
             );
-            
+
             // Log stream read error
             state.audit_logger.log_file_operation(
                 &client_id,
                 "UPLOAD",
                 &file_path,
                 Some(offset),
-                &format!("FAILED: stream read error - {}", e)
+                &format!("FAILED: stream read error - {}", e),
             );
-            
+
             FileOperationError::IoError(e.to_string())
         })?;
 
@@ -902,7 +939,7 @@ pub async fn upload_file_handler(
         if buffer.len() >= BUFFER_SIZE {
             chunk_number += 1;
             let chunk_size = buffer.len();
-            
+
             let file_chunk = FileChunk {
                 file_id: file_id.clone(),
                 chunk: buffer.clone(),
@@ -936,16 +973,16 @@ pub async fn upload_file_handler(
                     error = %e,
                     "Failed to send chunk to client"
                 );
-                
+
                 // Log chunk send error
                 state.audit_logger.log_file_operation(
                     &client_id,
                     "UPLOAD",
                     &file_path,
                     Some(offset),
-                    &format!("FAILED: chunk send error - {}", e)
+                    &format!("FAILED: chunk send error - {}", e),
                 );
-                
+
                 e
             })?;
 
@@ -959,19 +996,19 @@ pub async fn upload_file_handler(
                         error = %e,
                         "Failed to deserialize chunk response"
                     );
-                    
+
                     // Log chunk response deserialization error
                     state.audit_logger.log_file_operation(
                         &client_id,
                         "UPLOAD",
                         &file_path,
                         Some(offset),
-                        &format!("FAILED: chunk response deserialization error - {}", e)
+                        &format!("FAILED: chunk response deserialization error - {}", e),
                     );
-                    
+
                     FileOperationError::SerializationError(e.to_string())
                 })?;
-                
+
             if !chunk_res["success"].as_bool().unwrap_or(false) {
                 let error_msg = chunk_res["message"].as_str().unwrap_or("unknown error");
                 error!(
@@ -982,16 +1019,16 @@ pub async fn upload_file_handler(
                     error_message = %error_msg,
                     "Client failed to upload chunk"
                 );
-                
+
                 // Log chunk upload failure
                 state.audit_logger.log_file_operation(
                     &client_id,
                     "UPLOAD",
                     &file_path,
                     Some(offset),
-                    &format!("FAILED: client chunk upload error - {}", error_msg)
+                    &format!("FAILED: client chunk upload error - {}", error_msg),
                 );
-                
+
                 return Err(FileOperationError::Other(format!(
                     "Client failed to upload chunk: {}",
                     error_msg
@@ -1000,7 +1037,7 @@ pub async fn upload_file_handler(
 
             offset += buffer.len() as u64;
             buffer.clear();
-            
+
             if chunk_number % 10 == 0 {
                 info!(
                     client_id = %client_id,
@@ -1017,7 +1054,7 @@ pub async fn upload_file_handler(
     if !buffer.is_empty() {
         chunk_number += 1;
         let chunk_len = buffer.len();
-        
+
         let file_chunk = FileChunk {
             file_id: file_id.clone(),
             chunk: buffer,
@@ -1051,16 +1088,16 @@ pub async fn upload_file_handler(
                 error = %e,
                 "Failed to send final data chunk to client"
             );
-            
+
             // Log final chunk send error
             state.audit_logger.log_file_operation(
                 &client_id,
                 "UPLOAD",
                 &file_path,
                 Some(offset),
-                &format!("FAILED: final chunk send error - {}", e)
+                &format!("FAILED: final chunk send error - {}", e),
             );
-            
+
             e
         })?;
 
@@ -1074,19 +1111,19 @@ pub async fn upload_file_handler(
                     error = %e,
                     "Failed to deserialize final chunk response"
                 );
-                
+
                 // Log final chunk response deserialization error
                 state.audit_logger.log_file_operation(
                     &client_id,
                     "UPLOAD",
                     &file_path,
                     Some(offset),
-                    &format!("FAILED: final chunk response deserialization error - {}", e)
+                    &format!("FAILED: final chunk response deserialization error - {}", e),
                 );
-                
+
                 FileOperationError::SerializationError(e.to_string())
             })?;
-            
+
         if !chunk_res["success"].as_bool().unwrap_or(false) {
             let error_msg = chunk_res["message"].as_str().unwrap_or("unknown error");
             error!(
@@ -1097,16 +1134,16 @@ pub async fn upload_file_handler(
                 error_message = %error_msg,
                 "Client failed to upload final chunk"
             );
-            
+
             // Log final chunk upload failure
             state.audit_logger.log_file_operation(
                 &client_id,
                 "UPLOAD",
                 &file_path,
                 Some(offset),
-                &format!("FAILED: client final chunk upload error - {}", error_msg)
+                &format!("FAILED: client final chunk upload error - {}", error_msg),
             );
-            
+
             return Err(FileOperationError::Other(format!(
                 "Client failed to upload chunk: {}",
                 error_msg
@@ -1124,14 +1161,14 @@ pub async fn upload_file_handler(
         total_bytes = offset,
         "Sending completion marker to client"
     );
-    
+
     let final_chunk = FileChunk {
         file_id: file_id.clone(),
         chunk: Vec::new(),
         is_last: true,
         offset,
     };
-    
+
     send_command_and_await_response(
         &state,
         &client_id,
@@ -1147,16 +1184,16 @@ pub async fn upload_file_handler(
             error = %e,
             "Failed to send completion marker to client"
         );
-        
+
         // Log completion marker send error
         state.audit_logger.log_file_operation(
             &client_id,
             "UPLOAD",
             &file_path,
             Some(offset),
-            &format!("FAILED: completion marker send error - {}", e)
+            &format!("FAILED: completion marker send error - {}", e),
         );
-        
+
         e
     })?;
 
@@ -1176,7 +1213,7 @@ pub async fn upload_file_handler(
         "UPLOAD",
         &file_path,
         Some(offset),
-        "SUCCESS"
+        "SUCCESS",
     );
 
     Ok(Json(ServerFileOperationResponse {

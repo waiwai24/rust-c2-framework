@@ -1,14 +1,15 @@
 use chrono::Utc;
 use common::message::{ClientInfo, CommandRequest, CommandResponse, ShellSession};
-use tracing::warn;
 use std::fs::OpenOptions;
 use std::io::Write;
+use tracing::warn;
 
 /// Audit logger for recording client actions and system events
 pub struct AuditLogger {
     log_file: String,
 }
 
+/// Implementation of the AuditLogger
 impl AuditLogger {
     pub fn new(log_file: &str) -> Self {
         Self {
@@ -121,8 +122,17 @@ impl AuditLogger {
     }
 
     /// Log file operation events
-    pub fn log_file_operation(&self, client_id: &str, operation: &str, file_path: &str, file_size: Option<u64>, result: &str) {
-        let size_info = file_size.map(|s| format!(", Size: {}", s)).unwrap_or_default();
+    pub fn log_file_operation(
+        &self,
+        client_id: &str,
+        operation: &str,
+        file_path: &str,
+        file_size: Option<u64>,
+        result: &str,
+    ) {
+        let size_info = file_size
+            .map(|s| format!(", Size: {}", s))
+            .unwrap_or_default();
         let log_entry = format!(
             "[{}] FILE_{} - Client: {}, Path: {}{}, Result: {}",
             Utc::now().format("%Y-%m-%d %H:%M:%S"),

@@ -17,12 +17,13 @@ use tokio::{
 use uuid::Uuid; // Required for Pin
 
 #[cfg(unix)]
-use std::os::unix::fs::MetadataExt;
+use nix::unistd::{Group, User};
 #[cfg(unix)]
-use nix::unistd::{User, Group};
+use std::os::unix::fs::MetadataExt;
 
 const CHUNK_SIZE: usize = 65536; // 64KB chunks for faster file transfer
 
+/// ClientFileManager handles file operations on the client side.
 pub struct ClientFileManager {
     // Store ongoing download streams, keyed by a unique file_id
     // Arc<Mutex<...>> is used for thread-safe access to the stream
@@ -43,15 +44,15 @@ pub struct ClientFileManager {
 fn get_owner_group_info(metadata: &std::fs::Metadata) -> (Option<String>, Option<String>) {
     let uid = metadata.uid();
     let gid = metadata.gid();
-    
+
     let owner = User::from_uid(nix::unistd::Uid::from_raw(uid))
         .unwrap_or(None)
         .map(|user| user.name);
-    
+
     let group = Group::from_gid(nix::unistd::Gid::from_raw(gid))
         .unwrap_or(None)
         .map(|group| group.name);
-    
+
     (owner, group)
 }
 
@@ -61,6 +62,7 @@ fn get_owner_group_info(_metadata: &std::fs::Metadata) -> (Option<String>, Optio
     (None, None)
 }
 
+/// Implementation of ClientFileManager
 impl ClientFileManager {
     pub fn new() -> Self {
         Self {
@@ -103,7 +105,7 @@ impl ClientFileManager {
                 let is_dir = file_type.is_dir();
 
                 let permissions = format!("{:?}", metadata.permissions());
-                
+
                 // Get owner and group information using platform-specific helper
                 let std_metadata = std::fs::metadata(&entry_path).map_err(|e| {
                     error!("Failed to get std::fs metadata for {:?}: {}", entry_path, e);
