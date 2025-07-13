@@ -4,7 +4,7 @@
 <img src="web/static/rust-c2.png" alt="rust-c2" width="400"/>
 <!-- markdownlint-enable MD033 -->
 
-一个使用Rust语言从零重构的现代化命令与控制（C2）框架，旨在提供一个高性能、安全且模块化的平台，用于远程系统管理和渗透测试。该框架包含独立的客户端、服务端以及一个直观的Web管理界面。
+现代化、安全、高性能的Command & Control解决方案 🦀,一个使用Rust语言从零重构的现代化命令与控制（C2）框架，旨在提供一个高性能、安全且模块化的平台，用于远程系统管理和渗透测试。该框架包含独立的客户端、服务端以及一个直观的Web管理界面。
 
 ## 🚀 功能特性
 
@@ -26,6 +26,7 @@
 - 📝 **笔记管理**: 内置笔记系统，便于记录渗透测试过程和发现
 
 ### 安全特性
+
 - 🛡️ **按需启动监听**: 反弹Shell监听器按需启动，减少攻击面
 - 🔑 **身份验证**: Web界面用户认证和会话管理
 - 📋 **操作审计**: 完整的操作审计链，支持安全合规
@@ -46,7 +47,6 @@ rust-c2-framework/
 ├── client/          # 客户端（命令执行、文件操作、反弹Shell）
 └── web/static/      # 前端资源（CSS、JS、图片）
 ```
-
 
 ## ⚙️ 配置文件
 
@@ -121,7 +121,6 @@ cargo build --release --bin client
 
 编译后的二进制文件位于 `target/release/` 目录下。
 
-
 ### 4. 静态编译（可选）
 
 为了生成不依赖系统库的独立可执行文件：
@@ -142,8 +141,6 @@ upx --best target/x86_64-unknown-linux-musl/release/client
 ### 5. 配置和启动
 
 #### 配置服务器
-
-#### 启动服务器
 
 ```bash
 # 使用cargo运行（开发环境）
@@ -169,7 +166,7 @@ cargo run --bin server
 cargo run --bin client
 
 # 或指定服务器地址
-cargo run --bin client -- --server http://your-server-ip:8080
+cargo run --bin client http://your-server-ip:8080
 
 # 直接运行二进制文件
 ./target/release/client
@@ -177,10 +174,10 @@ cargo run --bin client -- --server http://your-server-ip:8080
 
 详细功能使用指南请参考 [Function.md](Function.md)。
 
-
 ## 🔄 更新日志
 
-### v1.0.0 (最新版本)
+### v0.1.0 (最新版本)
+
 - ✅ 完整的C2框架实现
 - ✅ 反弹Shell功能（按需启动监听器）
 - ✅ 文件管理系统（上传/下载/浏览）
@@ -194,11 +191,13 @@ cargo run --bin client -- --server http://your-server-ip:8080
 - ✅ 响应式界面布局
 
 ### 已知问题
+
 - Linux平台的完整测试需要进一步验证
 - 大文件传输的进度显示有待优化
 - 传输加密有待完善
 
 ### 计划功能
+
 - [ ] Windows客户端支持
 - [ ] macOS客户端支持  
 - [ ] Android客户端支持
@@ -225,3 +224,7 @@ cargo run --bin client -- --server http://your-server-ip:8080
 2. 遵守当地法律法规
 3. 仅在合法合规的环境中使用
 4. 承担相应的法律责任
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详细信息请参见 [LICENSE](LICENSE) 文件。

