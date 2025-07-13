@@ -121,6 +121,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(api::list_reverse_shells),
         )
         .route(
+            "/api/reverse_shells/{connection_id}/close",
+            post(api::close_reverse_shell),
+        )
+        .route(
             "/ws/shell/{connection_id}",
             get(api::handle_reverse_shell_websocket),
         )

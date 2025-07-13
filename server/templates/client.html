@@ -5,56 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rust C2 Framework - 客户端管理</title>
     <link rel="stylesheet" href="/static/style.css">
-    <style>
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-        
-        .shell-cursor {
-            animation: blink 1s infinite;
-        }
-        
-        .shell-terminal {
-            position: relative;
-        }
-        
-        .shell-input-line {
-            display: flex;
-            align-items: center;
-        }
-        
-        .shell-prompt {
-            color: #00ff00;
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        
-        #shellInput {
-            background: transparent;
-            border: none;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: inherit;
-            line-height: inherit;
-        }
-        
-        #shellInput:focus {
-            outline: none;
-        }
-        
-        /* 布局调整 - 确保左右两侧高度一致 */
-        .main-content-wrapper {
-            display: flex;
-            gap: 30px;
-            align-items: flex-start;
-        }
-        
-        /* 调整shell终端高度 */
-        .shell-terminal {
-            height: 600px !important;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -145,101 +95,218 @@
                     </div>
                     
                     <div class="tab-content active" id="command-tab">
-                        <div class="command-section">
-                            <h2>命令执行</h2>
+                        <!-- 命令执行控制面板 -->
+                        <div class="command-control-panel">
+                            <div class="control-header">
+                                <div class="control-title">
+                                    <h2>
+                                        <span class="shell-icon">⚡</span>
+                                        命令执行控制台
+                                    </h2>
+                                    <p class="control-subtitle">远程执行系统命令，获取实时执行结果</p>
+                                </div>
+                            </div>
                             
-                            <div class="quick-commands">
-                                <button class="quick-cmd" onclick="setCommand('whoami')">whoami</button>
-                                <button class="quick-cmd" onclick="setCommand('pwd')">pwd</button>
-                                <button class="quick-cmd" onclick="setCommand('ls -la')">ls -la</button>
-                                <button class="quick-cmd" onclick="setCommand('ps aux')">ps aux</button>
-                                <button class="quick-cmd" onclick="setCommand('netstat -anop')">netstat -anop</button>
-                                <button class="quick-cmd" onclick="setCommand('uname -a')">uname -a</button>
-                                <button class="quick-cmd" onclick="setCommand('cat /etc/passwd')">cat /etc/passwd</button>
+                            <!-- 快捷命令面板 -->
+                            <div class="quick-commands-panel">
+                                <h3>
+                                    <span class="panel-icon">🚀</span>
+                                    常用命令
+                                </h3>
+                                <div class="quick-commands-grid">
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('whoami')">
+                                        <span class="cmd-icon">👤</span>
+                                        <span class="cmd-text">whoami</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('pwd')">
+                                        <span class="cmd-icon">📍</span>
+                                        <span class="cmd-text">pwd</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('ls -la')">
+                                        <span class="cmd-icon">📁</span>
+                                        <span class="cmd-text">ls -la</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('ps aux')">
+                                        <span class="cmd-icon">⚙️</span>
+                                        <span class="cmd-text">ps aux</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('netstat -anop')">
+                                        <span class="cmd-icon">🌐</span>
+                                        <span class="cmd-text">netstat</span>
+                                    </button>
+                                    <button class="quick-cmd-enhanced" onclick="setCommand('uname -a')">
+                                        <span class="cmd-icon">💻</span>
+                                        <span class="cmd-text">uname -a</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div class="command-form">
-                                <input type="text" id="commandInput" class="command-input" placeholder="输入要执行的命令..." />
-                                <button class="btn btn-primary" onclick="executeCommand()">执行</button>
+                            <!-- 命令输入面板 -->
+                            <div class="command-input-panel">
+                                <h3>
+                                    <span class="panel-icon">📝</span>
+                                    自定义命令
+                                </h3>
+                                <div class="command-form-enhanced">
+                                    <div class="input-group">
+                                        <span class="input-prompt">$</span>
+                                        <input type="text" id="commandInput" class="command-input-enhanced" placeholder="输入要执行的命令..." />
+                                        <button class="btn-execute" onclick="executeCommand()">
+                                            <span class="btn-icon">▶️</span>
+                                            执行
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="results-section">
-                            <div class="section-header">
-                                <h2>命令执行结果</h2>
-                                <button class="btn refresh-btn" onclick="refreshResults()">刷新</button>
+                        <!-- 结果显示面板 -->
+                        <div class="results-panel">
+                            <div class="panel-header">
+                                <h3>
+                                    <span class="panel-icon">📊</span>
+                                    执行结果
+                                </h3>
+                                <button class="btn-refresh" onclick="refreshResults()">
+                                    <span class="btn-icon">🔄</span>
+                                    刷新
+                                </button>
                             </div>
                             
                             {% if commands.is_empty() %}
-                                <div class="no-results">
-                                    <h3>暂无命令执行记录</h3>
-                                    <p>执行命令后，结果将显示在这里</p>
+                                <div class="no-results-enhanced">
+                                    <div class="empty-state">
+                                        <span class="empty-icon">📋</span>
+                                        <h4>暂无命令执行记录</h4>
+                                        <p>执行命令后，结果将显示在这里</p>
+                                    </div>
                                 </div>
                             {% else %}
-                                <table class="results-table">
-                                    <thead>
-                                        <tr>
-                                            <th>命令</th>
-                                            <th>执行时间</th>
-                                            <th>结果</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for cmd in commands %}
-                                        <tr>
-                                            <td>{{ cmd.command }}</td>
-                                            <td>{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</td>
-                                            <td>
-                                                <div class="result-output">
-                                                    {% if !cmd.stdout.is_empty() %}
-                                                        <div class="output-stdout">{{ cmd.stdout }}</div>
-                                                    {% endif %}
-                                                    {% if !cmd.stderr.is_empty() %}
-                                                        <div class="output-stderr">{{ cmd.stderr }}</div>
-                                                    {% endif %}
-                                                    <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
-                                                        退出码: {{ cmd.exit_code }}
-                                                    </div>
+                                <div class="results-container">
+                                    {% for cmd in commands %}
+                                    <div class="result-card">
+                                        <div class="result-header">
+                                            <div class="command-info">
+                                                <span class="command-text">{{ cmd.command }}</span>
+                                                <span class="execution-time">{{ cmd.executed_at.format("%Y-%m-%d %H:%M:%S") }}</span>
+                                            </div>
+                                            <div class="exit-code {% if cmd.exit_code == 0 %}success{% else %}error{% endif %}">
+                                                {% if cmd.exit_code == 0 %}✅{% else %}❌{% endif %} {{ cmd.exit_code }}
+                                            </div>
+                                        </div>
+                                        <div class="result-content">
+                                            {% if !cmd.stdout.is_empty() %}
+                                                <div class="output-section">
+                                                    <div class="output-label">📤 输出</div>
+                                                    <div class="output-stdout">{{ cmd.stdout }}</div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                                            {% endif %}
+                                            {% if !cmd.stderr.is_empty() %}
+                                                <div class="output-section">
+                                                    <div class="output-label">⚠️ 错误</div>
+                                                    <div class="output-stderr">{{ cmd.stderr }}</div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             {% endif %}
                         </div>
                     </div>
 
                     <div class="tab-content" id="reverse-shell-tab">
-                        <div class="command-section">
-                            <h2>反弹Shell</h2>
-                            <p>点击下方按钮启动反弹Shell。请确保您的监听器已准备就绪。</p>
-                            <button class="btn btn-danger" onclick="startReverseShell()">启动反弹Shell</button>
-                            
-                            <!-- 会话信息 -->
-                            <div class="session-info">
-                                <h3>连接信息</h3>
-                                <p>反弹Shell状态: <span id="reverseShellStatus">未启动</span></p>
-                                <p>会话ID: <span id="reverseShellSessionId">无</span></p>
-                                <p>监听端口: <span>31229</span></p>
+                        <div class="reverse-shell-container">
+                            <!-- 顶部控制面板 -->
+                            <div class="shell-control-panel">
+                                <div class="control-header">
+                                    <div class="control-title">
+                                        <h2>
+                                            <span class="shell-icon">💻</span>
+                                            反弹Shell控制台
+                                        </h2>
+                                        <p class="control-subtitle">建立安全的远程Shell连接，实现实时命令执行</p>
+                                    </div>
+                                    <div class="control-actions">
+                                        <button class="btn-shell-start" id="startShellBtn" onclick="startReverseShell()">
+                                            <span class="btn-icon">🚀</span>
+                                            启动反弹Shell
+                                        </button>
+                                        <button class="btn-shell-stop" id="stopShellBtn" onclick="stopReverseShell()" style="display: none;">
+                                            <span class="btn-icon">🛑</span>
+                                            关闭Shell
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 连接状态卡片 -->
+                                <div class="connection-status-grid">
+                                    <div class="status-card">
+                                        <div class="status-card-header">
+                                            <span class="status-card-icon">🔗</span>
+                                            <span class="status-card-title">连接状态</span>
+                                        </div>
+                                        <div class="status-card-content">
+                                            <div class="status-display">
+                                                <div class="status-indicator" id="connectionStatus"></div>
+                                                <span class="status-text" id="reverseShellStatus">未启动</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="status-card">
+                                        <div class="status-card-header">
+                                            <span class="status-card-icon">🆔</span>
+                                            <span class="status-card-title">会话ID</span>
+                                        </div>
+                                        <div class="status-card-content">
+                                            <code class="session-id" id="reverseShellSessionId">无</code>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="status-card">
+                                        <div class="status-card-header">
+                                            <span class="status-card-icon">🔌</span>
+                                            <span class="status-card-title">监听端口</span>
+                                        </div>
+                                        <div class="status-card-content">
+                                            <code class="port-number">31229</code>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
                             <!-- 终端容器 -->
                             <div class="shell-container">
                                 <div class="shell-header">
-                                    <h4 class="shell-title">反弹Shell终端</h4>
-                                    <div class="shell-status">
-                                        <div class="status-indicator" id="connectionStatus"></div>
-                                        <span class="status-text" id="connectionStatusText">未连接</span>
+                                    <div class="shell-header-left">
+                                        <div class="window-controls">
+                                            <span class="window-control close"></span>
+                                            <span class="window-control minimize"></span>
+                                            <span class="window-control maximize"></span>
+                                        </div>
+                                        <span class="shell-title">Terminal</span>
+                                    </div>
+                                    <div class="shell-header-right">
+                                        <div class="connection-indicator">
+                                            <div class="status-dot" id="connectionStatusDot"></div>
+                                            <span class="connection-text" id="connectionStatusText">未连接</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="shell-terminal" id="shellTerminal" tabindex="0">
                                     <div class="shell-welcome" id="shellWelcome" style="display: none;">
-                                        欢迎使用反弹Shell终端！连接已建立。
+                                        <div class="welcome-banner">
+                                            <div class="welcome-icon">🎯</div>
+                                            <div class="welcome-text">
+                                                <strong>反弹Shell连接已建立</strong>
+                                                <p>您现在可以执行远程命令</p>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="shell-output" id="shellOutput"></div>
                                     <div class="shell-input-line" id="shellInputLine" style="display: none;">
-                                        <span class="shell-prompt">$ </span>
+                                        <span class="shell-prompt">$</span>
                                         <span class="shell-input" id="shellInput" contenteditable="true"></span>
                                         <span class="shell-cursor" id="shellCursor"></span>
                                     </div>
@@ -372,6 +439,7 @@
         }
 
         let shellWebSocket = null; // 全局WebSocket实例
+        let currentShellConnectionId = null; // 当前shell连接ID
 
         async function startReverseShell() {
             if (confirm('确定要启动反弹Shell吗？')) {
@@ -391,6 +459,9 @@
                         alert('反弹Shell请求已发送');
                         document.getElementById('reverseShellStatus').textContent = '请求已发送，正在等待连接...';
                         document.getElementById('reverseShellSessionId').textContent = '等待连接';
+                        document.getElementById('connectionStatus').className = 'status-indicator connecting';
+                        document.getElementById('connectionStatusDot').className = 'status-dot connecting';
+                        document.getElementById('connectionStatusText').textContent = '连接中';
                         
                         // 等待一段时间让客户端建立连接，然后获取连接列表
                         setTimeout(async () => {
@@ -401,11 +472,17 @@
                         alert('发送反弹Shell请求失败');
                         document.getElementById('reverseShellStatus').textContent = '启动失败';
                         document.getElementById('reverseShellSessionId').textContent = '无';
+                        document.getElementById('connectionStatus').className = 'status-indicator';
+                        document.getElementById('connectionStatusDot').className = 'status-dot';
+                        document.getElementById('connectionStatusText').textContent = '启动失败';
                     }
                 } catch (error) {
                     alert('发送请求时出错: ' + error.message);
                     document.getElementById('reverseShellStatus').textContent = '启动失败: ' + error.message;
                     document.getElementById('reverseShellSessionId').textContent = '无';
+                    document.getElementById('connectionStatus').className = 'status-indicator';
+                    document.getElementById('connectionStatusDot').className = 'status-dot';
+                    document.getElementById('connectionStatusText').textContent = '启动失败';
                 }
             }
         }
@@ -443,6 +520,9 @@
         }
 
         function connectWebSocket(connectionId) {
+            // 保存当前连接ID
+            currentShellConnectionId = connectionId;
+            
             if (shellWebSocket) {
                 shellWebSocket.close();
             }
@@ -462,9 +542,21 @@
 
             shellWebSocket.onopen = () => {
                 document.getElementById('reverseShellStatus').textContent = '已连接';
-                shellOutput.textContent = '连接成功，等待Shell输出...\n$ ';
+                document.getElementById('connectionStatus').className = 'status-indicator connected';
+                document.getElementById('connectionStatusDot').className = 'status-dot connected';
+                document.getElementById('connectionStatusText').textContent = '已连接';
+                
+                // 切换按钮状态
+                document.getElementById('startShellBtn').style.display = 'none';
+                document.getElementById('stopShellBtn').style.display = 'flex';
+                
+                // 清空输出并立即显示输入行在顶部
+                shellOutput.textContent = '';
                 shellInputLine.style.display = 'flex';
                 shellInput.focus();
+                
+                // 确保终端滚动到顶部
+                shellTerminal.scrollTop = 0;
                 
                 // 终端获得焦点
                 shellTerminal.focus();
@@ -487,15 +579,42 @@
 
             shellWebSocket.onclose = () => {
                 document.getElementById('reverseShellStatus').textContent = '已断开';
+                document.getElementById('connectionStatus').className = 'status-indicator';
+                document.getElementById('connectionStatusDot').className = 'status-dot';
+                document.getElementById('connectionStatusText').textContent = '已断开';
+                
+                // 重置按钮状态
+                document.getElementById('startShellBtn').style.display = 'flex';
+                document.getElementById('stopShellBtn').style.display = 'none';
+                currentShellConnectionId = null;
+                
                 shellInputLine.style.display = 'none';
-                shellOutput.textContent += '\nShell连接已断开。';
+                const shellWelcome = document.getElementById('shellWelcome');
+                shellWelcome.style.display = 'none';
+                
+                const disconnectMsg = document.createElement('div');
+                disconnectMsg.className = 'shell-error';
+                disconnectMsg.textContent = 'Shell连接已断开。';
+                shellOutput.appendChild(disconnectMsg);
                 scrollToBottom();
             };
 
             shellWebSocket.onerror = (error) => {
                 console.error('WebSocket Error:', error);
                 document.getElementById('reverseShellStatus').textContent = '连接错误';
-                shellOutput.textContent += `\n连接错误: ${error.message || '未知错误'}`;
+                document.getElementById('connectionStatus').className = 'status-indicator';
+                document.getElementById('connectionStatusDot').className = 'status-dot';
+                document.getElementById('connectionStatusText').textContent = '连接错误';
+                
+                // 重置按钮状态
+                document.getElementById('startShellBtn').style.display = 'flex';
+                document.getElementById('stopShellBtn').style.display = 'none';
+                currentShellConnectionId = null;
+                
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'shell-error';
+                errorMsg.textContent = `连接错误: ${error.message || '未知错误'}`;
+                shellOutput.appendChild(errorMsg);
                 scrollToBottom();
             };
 
@@ -580,7 +699,10 @@
             }
 
             function scrollToBottom() {
-                shellTerminal.scrollTop = shellTerminal.scrollHeight;
+                // 只有当有实际输出内容时才滚动到底部
+                if (shellOutput.textContent.trim().length > 0) {
+                    shellTerminal.scrollTop = shellTerminal.scrollHeight;
+                }
             }
 
             // 添加事件监听器
@@ -598,6 +720,71 @@
         }
 
         // 移除旧的sendShellCommand函数，现在通过回车键发送
+
+        async function stopReverseShell() {
+            if (!currentShellConnectionId) {
+                alert('没有活动的Shell连接');
+                return;
+            }
+
+            if (confirm('确定要关闭当前的Shell连接吗？')) {
+                try {
+                    const response = await fetch(`/api/reverse_shells/${currentShellConnectionId}/close`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(data.message);
+                        
+                        // 关闭WebSocket连接
+                        if (shellWebSocket) {
+                            shellWebSocket.close();
+                            shellWebSocket = null;
+                        }
+                        
+                        // 重置UI状态
+                        resetShellUI();
+                        currentShellConnectionId = null;
+                        
+                    } else {
+                        const errorText = await response.text();
+                        alert('关闭Shell连接失败: ' + errorText);
+                    }
+                } catch (error) {
+                    alert('关闭Shell连接时出错: ' + error.message);
+                }
+            }
+        }
+
+        function resetShellUI() {
+            // 重置按钮状态
+            document.getElementById('startShellBtn').style.display = 'flex';
+            document.getElementById('stopShellBtn').style.display = 'none';
+            
+            // 重置状态显示
+            document.getElementById('reverseShellStatus').textContent = '未启动';
+            document.getElementById('reverseShellSessionId').textContent = '无';
+            document.getElementById('connectionStatus').className = 'status-indicator';
+            document.getElementById('connectionStatusDot').className = 'status-dot';
+            document.getElementById('connectionStatusText').textContent = '未连接';
+            
+            // 清空终端内容
+            const shellOutput = document.getElementById('shellOutput');
+            if (shellOutput) {
+                shellOutput.textContent = '';
+            }
+            
+            // 隐藏输入行
+            const shellInputLine = document.getElementById('shellInputLine');
+            if (shellInputLine) {
+                shellInputLine.style.display = 'none';
+            }
+        }
 
         function refreshResults() {
             location.reload();

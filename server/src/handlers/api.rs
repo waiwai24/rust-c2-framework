@@ -343,6 +343,27 @@ pub async fn list_reverse_shells(
     }))
 }
 
+/// Close a reverse shell connection
+pub async fn close_reverse_shell(
+    Path(connection_id): Path<String>,
+    State(_state): State<AppState>,
+) -> Json<serde_json::Value> {
+    let manager = crate::reverse_shell_listener::get_reverse_shell_manager();
+    let success = manager.close_connection(&connection_id).await;
+    
+    if success {
+        Json(serde_json::json!({
+            "success": true,
+            "message": format!("Shell连接 {} 已关闭", connection_id)
+        }))
+    } else {
+        Json(serde_json::json!({
+            "success": false,
+            "message": format!("Shell连接 {} 不存在或已关闭", connection_id)
+        }))
+    }
+}
+
 /// Handle file operation response from clients
 pub async fn handle_file_operation_response(
     State(state): State<AppState>,

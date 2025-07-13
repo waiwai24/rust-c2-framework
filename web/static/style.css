@@ -244,7 +244,7 @@ body {
 }
 
 .tab-content {
-    min-height: 600px; /* Ensure tab content has enough height */
+    min-height: 1255px; /* Match client-info-section height */
     background: #21262d;
     padding: 5px 20px 20px 20px; /* Reduced top padding from 20px to 10px */
     border-radius: 0 0 8px 8px;
@@ -724,73 +724,294 @@ body {
     color: #3b82f6;  /* 鲜艳的蓝色 */
 }
 
-/* 反弹Shell终端样式 */
-.shell-container {
-    margin-top: 20px;
+/* 反弹Shell页面样式 */
+.reverse-shell-container {
+    padding: 0;
+}
+
+/* 控制面板样式 */
+.shell-control-panel {
+    background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    gap: 16px;
+}
+
+.control-title {
+    flex: 1;
+}
+
+.control-title h2 {
+    color: #f0f6fc;
+    font-size: 1.8em;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.shell-icon {
+    font-size: 1.5em;
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.3));
+}
+
+.control-subtitle {
+    color: #8b949e;
+    font-size: 1em;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.control-actions {
+    flex-shrink: 0;
+}
+
+.btn-shell-start {
+    background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
     border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+}
+
+.btn-shell-start:hover {
+    background: linear-gradient(135deg, #2ea043 0%, #238636 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(35, 134, 54, 0.4);
+}
+
+.btn-shell-start:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(35, 134, 54, 0.3);
+}
+
+.btn-shell-stop {
+    background: linear-gradient(135deg, #da3633 0%, #b91c1c 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(218, 54, 51, 0.3);
+    margin-left: 8px;
+}
+
+.btn-shell-stop:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #da3633 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(218, 54, 51, 0.4);
+}
+
+.btn-shell-stop:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(218, 54, 51, 0.3);
+}
+
+.btn-icon {
+    font-size: 1em;
+}
+
+/* 连接状态网格 */
+.connection-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.status-card {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.status-card:hover {
+    border-color: #58a6ff;
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.status-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.status-card-icon {
+    font-size: 1em;
+    filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.3));
+}
+
+.status-card-title {
+    color: #f0f6fc;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.status-card-content {
+    color: #8b949e;
+    font-size: 0.9em;
+}
+
+.status-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-text {
+    font-weight: 500;
+}
+
+.session-id, .port-number {
+    background: #21262d;
+    color: #79c0ff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8em;
+    word-break: break-all;
+}
+
+/* 终端样式增强 */
+.shell-container {
+    margin-top: 0;
+    border-radius: 12px;
     border: 1px solid #30363d;
     background: #0d1117;
     overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .shell-header {
-    background: #21262d;
-    padding: 10px 15px;
+    background: linear-gradient(135deg, #21262d 0%, #2d333b 100%);
+    padding: 8px 12px;
     border-bottom: 1px solid #30363d;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-.shell-title {
-    color: #f0f6fc;
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0;
-}
-
-.shell-status {
+.shell-header-left {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.status-indicator {
+.window-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-control.close {
+    background: #ff5f57;
+}
+
+.window-control.minimize {
+    background: #ffbd2e;
+}
+
+.window-control.maximize {
+    background: #28ca42;
+}
+
+.window-control:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.shell-title {
+    color: #f0f6fc;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.shell-header-right {
+    display: flex;
+    align-items: center;
+}
+
+.connection-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: #f85149;
+    transition: all 0.3s ease;
 }
 
-.status-indicator.connected {
+.status-dot.connected {
     background: #3fb950;
+    box-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
 }
 
-.status-indicator.connecting {
+.status-dot.connecting {
     background: #d29922;
-    animation: pulse 1.5s infinite;
+    animation: pulse-dot 1.5s infinite;
 }
 
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+@keyframes pulse-dot {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
-.status-text {
+.connection-text {
     color: #8b949e;
-    font-size: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
 }
 
+/* 终端内容区域 */
 .shell-terminal {
     background: #0d1117;
     color: #00ff88;
-    padding: 15px;
+    padding: 0;
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-    font-size: 14px;
-    line-height: 1.4;
-    min-height: 400px;
-    max-height: 600px;
+    font-size: 0.9em;
+    line-height: 1.6;
+    min-height: 850px;
+    max-height: 850px;
     overflow-y: auto;
     overflow-x: hidden;
     border: none;
@@ -800,6 +1021,9 @@ body {
     cursor: text;
     scrollbar-width: thin;
     scrollbar-color: #484f58 #21262d;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .shell-terminal::-webkit-scrollbar {
@@ -820,19 +1044,72 @@ body {
 }
 
 .shell-output {
-    margin-bottom: 10px;
+    margin: 0;
+    padding: 16px 16px 0 16px;
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 .shell-input-line {
     display: flex;
     align-items: center;
+    margin-top: 0;
+    flex-shrink: 0;
 }
 
+/* 欢迎消息增强 */
+.welcome-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%);
+    border: 1px solid rgba(88, 166, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.welcome-icon {
+    font-size: 32px;
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.5));
+}
+
+.welcome-text {
+    flex: 1;
+}
+
+.welcome-text strong {
+    color: #58a6ff;
+    font-size: 1em;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.welcome-text p {
+    color: #8b949e;
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* 输入行样式增强 */
 .shell-prompt {
     color: #58a6ff;
-    font-weight: bold;
-    margin-right: 5px;
+    font-weight: 600;
+    margin-right: 8px;
     user-select: none;
+    text-shadow: 0 0 4px rgba(88, 166, 255, 0.3);
 }
 
 .shell-input {
@@ -861,15 +1138,6 @@ body {
     51%, 100% { opacity: 0; }
 }
 
-.shell-welcome {
-    color: #58a6ff;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: rgba(88, 166, 255, 0.1);
-    border-radius: 4px;
-    border-left: 3px solid #58a6ff;
-}
-
 .shell-error {
     color: #f85149;
 }
@@ -882,31 +1150,61 @@ body {
     color: #d29922;
 }
 
-/* 会话信息样式 */
-.session-info {
-    background: #161b22;
-    padding: 15px;
-    border-radius: 6px;
-    border: 1px solid #30363d;
-    margin-bottom: 20px;
+/* 状态指示器动画 */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f85149;
+    transition: all 0.3s ease;
 }
 
-.session-info h3 {
-    color: #f0f6fc;
-    margin: 0 0 10px 0;
-    font-size: 16px;
+.status-indicator.connected {
+    background: #3fb950;
+    box-shadow: 0 0 12px rgba(63, 185, 80, 0.6);
 }
 
-.session-info p {
-    margin: 5px 0;
-    color: #8b949e;
+.status-indicator.connecting {
+    background: #d29922;
+    animation: pulse 1.5s infinite;
 }
 
-.session-info span {
-    color: #f0f6fc;
-    font-weight: 500;
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(210, 153, 34, 0.6); }
+    50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 16px rgba(210, 153, 34, 0.8); }
+    100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(210, 153, 34, 0.6); }
 }
 
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .control-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .control-actions {
+        align-self: stretch;
+    }
+    
+    .btn-shell-start {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .connection-status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .shell-header {
+        padding: 6px 10px;
+    }
+    
+    .shell-terminal {
+        padding: 12px;
+        font-size: 13px;
+    }
+}
 .log-shell {
     background: rgba(121, 192, 255, 0.1);
     border-left-color: #79c0ff;
@@ -1365,4 +1663,387 @@ body {
     align-items: center; /* 垂直居中 */
     justify-content: center; /* 水平居中 */
     /* 移除min-height，让它自然适应内容和padding */
+}
+
+/* ===============================
+   命令执行面板现代化样式
+   =============================== */
+
+/* 命令执行控制面板样式 */
+.command-control-panel {
+    background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.quick-commands-panel {
+    margin-bottom: 18px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.quick-commands-panel h3 {
+    color: #f0f6fc;
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.panel-icon {
+    font-size: 1em;
+    filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.3));
+}
+
+.quick-commands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.quick-cmd-enhanced {
+    background: linear-gradient(135deg, #21262d 0%, #2d333b 100%);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #c9d1d9;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.quick-cmd-enhanced:hover {
+    background: linear-gradient(135deg, #2d333b 0%, #21262d 100%);
+    border-color: #58a6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+}
+
+.cmd-icon {
+    font-size: 1em;
+    filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.3));
+}
+
+.cmd-text {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.8em;
+}
+
+.command-input-panel {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.command-input-panel h3 {
+    color: #f0f6fc;
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.command-form-enhanced {
+    margin-top: 12px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 4px;
+    transition: border-color 0.3s ease;
+}
+
+.input-group:focus-within {
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.input-prompt {
+    color: #58a6ff;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 1em;
+    padding: 0 10px;
+    user-select: none;
+    text-shadow: 0 0 4px rgba(88, 166, 255, 0.3);
+}
+
+.command-input-enhanced {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #c9d1d9;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.9em;
+    padding: 10px 6px;
+}
+
+.command-input-enhanced::placeholder {
+    color: #6e7681;
+}
+
+.btn-execute {
+    background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    margin-left: 8px;
+}
+
+.btn-execute:hover {
+    background: linear-gradient(135deg, #2ea043 0%, #238636 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+}
+
+/* 结果面板样式 */
+.results-panel {
+    background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #30363d;
+}
+
+.panel-header h3 {
+    color: #f0f6fc;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-refresh {
+    background: linear-gradient(135deg, #21262d 0%, #2d333b 100%);
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.8em;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-refresh:hover {
+    background: linear-gradient(135deg, #2d333b 0%, #21262d 100%);
+    border-color: #58a6ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+}
+
+.no-results-enhanced {
+    text-align: center;
+    padding: 48px 32px;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.empty-icon {
+    font-size: 48px;
+    opacity: 0.6;
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.3));
+}
+
+.empty-state h4 {
+    color: #f0f6fc;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.empty-state p {
+    color: #8b949e;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+.results-container {
+    max-height: 600px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #484f58 #21262d;
+}
+
+.results-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.results-container::-webkit-scrollbar-track {
+    background: #21262d;
+}
+
+.results-container::-webkit-scrollbar-thumb {
+    background: #484f58;
+    border-radius: 4px;
+}
+
+.result-card {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    border-color: #58a6ff;
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #21262d;
+    border-bottom: 1px solid #30363d;
+}
+
+.command-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.command-text {
+    color: #f0f6fc;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+    background: rgba(88, 166, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    max-width: fit-content;
+}
+
+.execution-time {
+    color: #8b949e;
+    font-size: 0.75em;
+}
+
+.exit-code {
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.exit-code.success {
+    background: rgba(35, 134, 54, 0.15);
+    color: #3fb950;
+    border: 1px solid rgba(35, 134, 54, 0.3);
+}
+
+.exit-code.error {
+    background: rgba(248, 81, 73, 0.15);
+    color: #f85149;
+    border: 1px solid rgba(248, 81, 73, 0.3);
+}
+
+.result-content {
+    padding: 16px;
+}
+
+.output-section {
+    margin-bottom: 12px;
+}
+
+.output-section:last-child {
+    margin-bottom: 0;
+}
+
+.output-label {
+    color: #8b949e;
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.output-stdout {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.8em;
+    line-height: 1.6;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.output-stderr {
+    background: rgba(248, 81, 73, 0.05);
+    color: #f85149;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.8em;
+    line-height: 1.6;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
 }

@@ -43,6 +43,20 @@ impl ReverseShellManager {
         let mut connections = self.connections.write().await;
         connections.remove(connection_id);
     }
+    
+    pub async fn close_connection(&self, connection_id: &str) -> bool {
+        let connections = self.connections.read().await;
+        if let Some((tx, _)) = connections.get(connection_id) {
+            // Close the mpsc channel to signal disconnection
+            drop(tx.clone());
+            drop(connections);
+            // Remove from the map
+            self.remove_connection(connection_id).await;
+            true
+        } else {
+            false
+        }
+    }
 }
 
 /// Global reverse shell manager instance
