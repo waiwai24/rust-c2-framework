@@ -153,23 +153,25 @@ body {
     color: #fff;
 }
 
+/* 统一按钮高度标准 */
 .btn {
     background: #238636;
     color: #fff;
-    padding: 6px 12px;
+    padding: 4px 12px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     text-decoration: none;
-    display: inline-block;
-    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em;
     font-weight: 500;
     min-width: 60px;
-    height: 32px; /* 添加明确的高度以匹配其他按钮 */
-    text-align: center;
-    white-space: nowrap;
-    box-sizing: border-box; /* 添加box-sizing确保一致性 */
-    line-height: 20px; /* 调整行高以垂直居中文本 */
+    height: 30px;
+    line-height: 1;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .btn:hover {
@@ -781,7 +783,7 @@ body {
     background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
     color: #ffffff;
     border: none;
-    padding: 10px 20px;
+    padding: 4px 16px;
     border-radius: 8px;
     font-size: 1em;
     font-weight: 600;
@@ -791,6 +793,8 @@ body {
     gap: 6px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+    height: 30px;
+    line-height: 1;
 }
 
 .btn-shell-start:hover {
@@ -808,7 +812,7 @@ body {
     background: linear-gradient(135deg, #da3633 0%, #b91c1c 100%);
     color: #ffffff;
     border: none;
-    padding: 10px 20px;
+    padding: 4px 16px;
     border-radius: 8px;
     font-size: 1em;
     font-weight: 600;
@@ -819,6 +823,8 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(218, 54, 51, 0.3);
     margin-left: 8px;
+    height: 30px;
+    line-height: 1;
 }
 
 .btn-shell-stop:hover {
@@ -1451,17 +1457,30 @@ body {
 
 .file-manager {
     background: #21262d;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 18px;
+    border-radius: 12px;
     border: 1px solid #30363d;
-    position: relative; /* 添加此行 */
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .file-manager-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #30363d;
+}
+
+.file-manager-header h2 {
+    color: #f0f6fc;
+    font-size: 1.8em;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .file-path-nav {
@@ -1471,51 +1490,108 @@ body {
 }
 
 .path-input {
-    padding: 10px;
+    padding: 6px 10px;
     border: 1px solid #30363d;
-    border-radius: 4px;
+    border-radius: 6px;
     background: #0d1117;
     color: #c9d1d9;
     width: 300px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.9em;
+    transition: border-color 0.3s ease;
+    height: 30px;
+    box-sizing: border-box;
+    line-height: 1;
+}
+
+.path-input:focus {
+    outline: none;
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
 }
 
 .file-upload-section {
-    margin-bottom: 20px;
-    padding: 10px; /* 减小内边距 */
-    background: #161b22;
-    border-radius: 6px;
+    margin-bottom: 18px;
+    padding: 16px;
+    background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+    border-radius: 8px;
     border: 1px solid #30363d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .file-upload-section h3 {
-    margin-bottom: 10px;
-    color: #58a6ff;
+    margin-bottom: 12px;
+    color: #f0f6fc;
+    font-size: 1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .upload-controls {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .upload-controls .btn {
-    margin-bottom: 0; /* 移除按钮的默认下边距 */
+    margin-bottom: 0;
+    padding: 4px 12px;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    line-height: 1;
+}
+
+.upload-controls .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+}
+
+#fileNameDisplay {
+    display: flex;
+    align-items: center;
+    height: 30px;
+    margin-left: 10px;
+    color: #8b949e;
+    font-size: 0.9em;
 }
 
 .file-list-section {
-    margin-top: 20px;
+    margin-top: 18px;
+    background: #0d1117;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.file-list-section h3 {
+    margin: 0 0 12px 0;
+    color: #f0f6fc;
+    font-size: 1em;
+    font-weight: 600;
+    padding: 16px 16px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .file-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin: 0;
     table-layout: fixed;
 }
 
 .file-table th,
 .file-table td {
-    padding: 8px 12px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid #30363d;
     vertical-align: middle;
@@ -1558,43 +1634,47 @@ body {
     white-space: nowrap;
 }
 /* 新增的加载指示器样式 */
-.file-list-section {
-    /* 移除 position: relative; 和 min-height */
-    margin-top: 20px; /* 保持原有的 margin-top */
-}
-
 .loading-indicator {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(13, 17, 23, 0.8); /* 半透明背景 */
+    background: rgba(13, 17, 23, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* 确保在最上层 */
+    z-index: 1000;
+    border-radius: 12px;
 }
 
 .loading-content {
     display: flex;
-    flex-direction: column; /* 让 spinner 和文本垂直排列 */
-    align-items: center; /* 水平居中 */
-    gap: 10px; /* 间距 */
-    padding: 20px;
-    background: #21262d;
-    border-radius: 8px;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    background: linear-gradient(135deg, #21262d 0%, #2d333b 100%);
+    border-radius: 12px;
     border: 1px solid #30363d;
     color: #c9d1d9;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    min-width: 200px;
 }
 
 .loading-spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top: 4px solid #58a6ff;
+    border: 3px solid rgba(88, 166, 255, 0.2);
+    border-top: 3px solid #58a6ff;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     animation: spin 1s linear infinite;
+}
+
+.loading-content span {
+    font-size: 0.95em;
+    font-weight: 500;
+    color: #f0f6fc;
 }
 
 @keyframes spin {
@@ -1656,13 +1736,15 @@ body {
 .login-form .btn {
     width: 80%; /* Reduced width to allow centering */
     max-width: 300px; /* Optional: set a max-width */
-    padding: 12px;
+    padding: 6px 12px;
     font-size: 1em; /* 与输入框保持一致的字体大小 */
     margin: 30px auto 0 auto; /* 增加顶部边距到30px，让按钮往下移动 */
     display: flex; /* 使用flex布局来实现完美居中 */
     align-items: center; /* 垂直居中 */
     justify-content: center; /* 水平居中 */
-    /* 移除min-height，让它自然适应内容和padding */
+    height: 40px;
+    line-height: 1;
+    box-sizing: border-box;
 }
 
 /* ===============================
@@ -1712,7 +1794,7 @@ body {
     background: linear-gradient(135deg, #21262d 0%, #2d333b 100%);
     border: 1px solid #30363d;
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 4px 10px;
     color: #c9d1d9;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1721,6 +1803,9 @@ body {
     gap: 6px;
     font-size: 0.9em;
     font-weight: 500;
+    height: 30px;
+    line-height: 1;
+    box-sizing: border-box;
 }
 
 .quick-cmd-enhanced:hover {
@@ -1767,8 +1852,10 @@ body {
     background: #21262d;
     border: 1px solid #30363d;
     border-radius: 8px;
-    padding: 4px;
+    padding: 2px;
     transition: border-color 0.3s ease;
+    height: 30px;
+    box-sizing: border-box;
 }
 
 .input-group:focus-within {
@@ -1794,7 +1881,10 @@ body {
     color: #c9d1d9;
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     font-size: 0.9em;
-    padding: 10px 6px;
+    padding: 6px 4px;
+    height: 30px;
+    box-sizing: border-box;
+    line-height: 1;
 }
 
 .command-input-enhanced::placeholder {
@@ -1806,7 +1896,7 @@ body {
     color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 12px 20px;
+    padding: 4px 16px;
     font-size: 0.9em;
     font-weight: 600;
     cursor: pointer;
@@ -1815,6 +1905,8 @@ body {
     gap: 6px;
     transition: all 0.3s ease;
     margin-left: 8px;
+    height: 30px;
+    line-height: 1;
 }
 
 .btn-execute:hover {
@@ -1852,11 +1944,11 @@ body {
 }
 
 .btn-refresh {
-    background: linear-gradient(135deg, #21262d 0%, #2d333b 100%);
-    color: #c9d1d9;
+    background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+    color: #ffffff;
     border: 1px solid #30363d;
     border-radius: 6px;
-    padding: 8px 16px;
+    padding: 4px 14px;
     font-size: 0.8em;
     font-weight: 500;
     cursor: pointer;
@@ -1864,13 +1956,15 @@ body {
     align-items: center;
     gap: 6px;
     transition: all 0.3s ease;
+    height: 30px;
+    line-height: 1;
+    box-sizing: border-box;
 }
 
 .btn-refresh:hover {
-    background: linear-gradient(135deg, #2d333b 0%, #21262d 100%);
-    border-color: #58a6ff;
+    background: linear-gradient(135deg, #2ea043 0%, #238636 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
 }
 
 .no-results-enhanced {

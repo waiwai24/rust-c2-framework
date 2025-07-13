@@ -103,7 +103,6 @@
                                         <span class="shell-icon">⚡</span>
                                         命令执行控制台
                                     </h2>
-                                    <p class="control-subtitle">远程执行系统命令，获取实时执行结果</p>
                                 </div>
                             </div>
                             
@@ -225,7 +224,6 @@
                                             <span class="shell-icon">💻</span>
                                             反弹Shell控制台
                                         </h2>
-                                        <p class="control-subtitle">建立安全的远程Shell连接，实现实时命令执行</p>
                                     </div>
                                     <div class="control-actions">
                                         <button class="btn-shell-start" id="startShellBtn" onclick="startReverseShell()">
@@ -318,7 +316,10 @@
                     <div class="tab-content" id="file-tab">
                         <div class="file-manager">
                             <div class="file-manager-header">
-                                <h2>文件管理</h2>
+                                <h2>
+                                    <span class="shell-icon">📁</span>
+                                    文件管理
+                                </h2>
                                 <div class="file-path-nav">
                                     <input type="text" id="currentPath" class="path-input" value="/" />
                                     <button class="btn" onclick="listDirectory()">浏览</button>
@@ -327,17 +328,23 @@
                             </div>
                             
                             <div class="file-upload-section">
-                                <h3>文件上传</h3>
+                                <h3>
+                                    <span class="panel-icon">📤</span>
+                                    文件上传
+                                </h3>
                                 <div class="upload-controls">
                                     <label for="fileUpload" class="btn btn-sm">选择文件</label>
                                     <input type="file" id="fileUpload" style="display: none;" onchange="updateFileName(this)" />
-                                    <span id="fileNameDisplay" style="margin-left: 10px; color: #8b949e;">未选择任何文件</span>
+                                    <span id="fileNameDisplay">未选择任何文件</span>
                                     <button type="button" class="btn btn-sm" onclick="uploadFile()">上传</button>
                                 </div>
                             </div>
                             
                             <div class="file-list-section">
-                                <h3>目录内容</h3>
+                                <h3>
+                                    <span class="panel-icon">📋</span>
+                                    目录内容
+                                </h3>
                                 <table class="file-table">
                                     <thead>
                                         <tr>
