@@ -543,22 +543,22 @@ const NOTES_FILE: &str = "data/notes.json";
 /// Read notes from the file
 fn read_notes() -> Result<Vec<Note>, String> {
     let content =
-        fs::read_to_string(NOTES_FILE).map_err(|e| format!("Failed to read notes file: {}", e))?;
+        fs::read_to_string(NOTES_FILE).map_err(|e| format!("Failed to read notes file: {e}"))?;
 
     if content.trim().is_empty() {
         return Ok(Vec::new());
     }
 
-    serde_json::from_str(&content).map_err(|e| format!("Failed to parse notes JSON: {}", e))
+    serde_json::from_str(&content).map_err(|e| format!("Failed to parse notes JSON: {e}"))
 }
 
 /// Write notes to the file
 fn write_notes(notes: &[Note]) -> Result<(), String> {
     let json_content = serde_json::to_string_pretty(notes)
-        .map_err(|e| format!("Failed to serialize notes: {}", e))?;
+        .map_err(|e| format!("Failed to serialize notes: {e}"))?;
 
     fs::write(NOTES_FILE, json_content)
-        .map_err(|e| format!("Failed to write notes file: {}", e))?;
+        .map_err(|e| format!("Failed to write notes file: {e}"))?;
 
     Ok(())
 }

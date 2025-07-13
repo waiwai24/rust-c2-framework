@@ -221,7 +221,7 @@ pub async fn client_detail(
         render_error_page(
             404,
             "客户端未找到".to_string(),
-            Some(format!("客户端ID {} 不存在", client_id)),
+            Some(format!("客户端ID {client_id} 不存在")),
         )
         .await
     }
@@ -261,13 +261,12 @@ async fn render_error_page(
             let fallback_html = format!(
                 r#"<!DOCTYPE html>
                 <html>
-                <head><title>错误 {}</title></head>
+                <head><title>错误 {status_code}</title></head>
                 <body>
-                    <h1>错误 {}</h1>
-                    <p>{}</p>
+                    <h1>错误 {status_code}</h1>
+                    <p>{error_message}</p>
                 </body>
-                </html>"#,
-                status_code, status_code, error_message
+                </html>"#
             );
             Ok(Html(fallback_html))
         }
@@ -277,13 +276,12 @@ async fn render_error_page(
             let fallback_html = format!(
                 r#"<!DOCTYPE html>
                 <html>
-                <head><title>错误 {}</title></head>
+                <head><title>错误 {status_code}</title></head>
                 <body>
-                    <h1>错误 {}</h1>
-                    <p>{}</p>
+                    <h1>错误 {status_code}</h1>
+                    <p>{error_message}</p>
                 </body>
-                </html>"#,
-                status_code, status_code, error_message
+                </html>"#
             );
             Ok(Html(fallback_html))
         }

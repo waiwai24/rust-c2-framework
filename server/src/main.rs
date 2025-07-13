@@ -44,7 +44,7 @@ async fn cleanup_task(state: AppState) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load configuration
     let config_path = "server_config.toml";
-    println!("Attempting to load server config from: {}", config_path);
+    println!("Attempting to load server config from: {config_path}");
     let config = ConfigManager::load_server_config(config_path)
         .map_err(|e| format!("Failed to load server config: {e}"))?;
 

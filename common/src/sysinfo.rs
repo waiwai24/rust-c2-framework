@@ -62,7 +62,7 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
     let memory = sys.total_memory() / 1024 / 1024 / 1024;
 
     let disks = Disks::new_with_refreshed_list();
-    println!("Disks: {:#?}\n", disks);
+    println!("Disks: {disks:#?}\n");
     let mut total_disk_space = 0u64;
     let mut total_available_space = 0u64;
     for disk in disks.iter() {
@@ -71,8 +71,7 @@ pub fn get_hardware_info() -> Result<String, Box<dyn std::error::Error>> {
         total_available_space += disk.available_space();
     }
     println!(
-        "Total Disk Space: {} bytes, Available Space: {} bytes",
-        total_disk_space, total_available_space
+        "Total Disk Space: {total_disk_space} bytes, Available Space: {total_available_space} bytes"
     );
 
     // Convert to GB as floating point to maintain precision

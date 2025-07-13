@@ -60,7 +60,7 @@ impl From<String> for C2Error {
 // particularly by tokio_util::io::StreamReader.
 impl From<crate::error::C2Error> for std::io::Error {
     fn from(err: crate::error::C2Error) -> Self {
-        std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+        std::io::Error::other(err.to_string())
     }
 }
 

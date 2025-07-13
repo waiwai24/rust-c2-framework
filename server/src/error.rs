@@ -41,12 +41,12 @@ impl fmt::Display for FileOperationError {
         match self {
             FileOperationError::NotFound => write!(f, "File or directory not found."),
             FileOperationError::PermissionDenied => write!(f, "Permission denied."),
-            FileOperationError::IoError(msg) => write!(f, "IO Error: {}", msg),
+            FileOperationError::IoError(msg) => write!(f, "IO Error: {msg}"),
             FileOperationError::SerializationError(msg) => {
-                write!(f, "Serialization Error: {}", msg)
+                write!(f, "Serialization Error: {msg}")
             }
             FileOperationError::InvalidPath => write!(f, "Invalid path provided."),
-            FileOperationError::Other(msg) => write!(f, "An unexpected error occurred: {}", msg),
+            FileOperationError::Other(msg) => write!(f, "An unexpected error occurred: {msg}"),
         }
     }
 }
@@ -76,11 +76,11 @@ impl IntoResponse for FileOperationError {
             }
             FileOperationError::IoError(msg) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("IO Error: {}", msg),
+                format!("IO Error: {msg}"),
             ),
             FileOperationError::SerializationError(msg) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Serialization Error: {}", msg),
+                format!("Serialization Error: {msg}"),
             ),
             FileOperationError::InvalidPath => (
                 StatusCode::BAD_REQUEST,
@@ -88,7 +88,7 @@ impl IntoResponse for FileOperationError {
             ),
             FileOperationError::Other(msg) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("An unexpected error occurred: {}", msg),
+                format!("An unexpected error occurred: {msg}"),
             ),
         };
 

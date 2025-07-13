@@ -131,7 +131,7 @@ impl AuditLogger {
         result: &str,
     ) {
         let size_info = file_size
-            .map(|s| format!(", Size: {}", s))
+            .map(|s| format!(", Size: {s}"))
             .unwrap_or_default();
         let log_entry = format!(
             "[{}] FILE_{} - Client: {}, Path: {}{}, Result: {}",

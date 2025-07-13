@@ -535,7 +535,7 @@ pub async fn download_file_handler(
             "DOWNLOAD",
             &file_path,
             None,
-            &format!("FAILED: {}", e),
+            &format!("FAILED: {e}"),
         );
 
         e
@@ -577,7 +577,7 @@ pub async fn download_file_handler(
         .to_string_lossy()
         .into_owned();
 
-    let content_disposition = format!("attachment; filename=\"{}\"", filename);
+    let content_disposition = format!("attachment; filename=\"{filename}\"");
 
     // Create a stream to pull chunks from the client
     let chunk_count = 0u64;
@@ -622,7 +622,7 @@ pub async fn download_file_handler(
                         "DOWNLOAD",
                         &file_path,
                         Some(total_bytes),
-                        &format!("FAILED: chunk error - {}", e),
+                        &format!("FAILED: chunk error - {e}"),
                     );
 
                     return Some((
@@ -657,7 +657,7 @@ pub async fn download_file_handler(
                             "DOWNLOAD",
                             &file_path,
                             Some(total_bytes),
-                            &format!("FAILED: deserialization error - {}", e),
+                            &format!("FAILED: deserialization error - {e}"),
                         );
 
                         return Some((
@@ -758,7 +758,7 @@ pub async fn download_file_handler(
             }
         },
     )
-    .map(|res| res.map_err(|e| axum::Error::new(e)));
+    .map(|res| res.map_err(axum::Error::new));
 
     let body = axum::body::Body::from_stream(stream);
 
@@ -769,7 +769,7 @@ pub async fn download_file_handler(
         "Sending download response with streaming body"
     );
 
-    Ok(Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/octet-stream")
         .header("Content-Disposition", content_disposition)
@@ -781,8 +781,8 @@ pub async fn download_file_handler(
                 error = %e,
                 "Failed to build download response"
             );
-            FileOperationError::Other(format!("Failed to build response: {}", e))
-        })?)
+            FileOperationError::Other(format!("Failed to build response: {e}"))
+        })
 }
 
 /// API handler to upload a file to a client.
@@ -848,7 +848,7 @@ pub async fn upload_file_handler(
             "UPLOAD",
             &file_path,
             None,
-            &format!("FAILED: {}", e),
+            &format!("FAILED: {e}"),
         );
 
         e
@@ -882,12 +882,11 @@ pub async fn upload_file_handler(
             "UPLOAD",
             &file_path,
             None,
-            &format!("FAILED: {}", error_msg),
+            &format!("FAILED: {error_msg}"),
         );
 
         return Err(FileOperationError::Other(format!(
-            "Client failed to initiate upload: {}",
-            error_msg
+            "Client failed to initiate upload: {error_msg}"
         )));
     }
 
@@ -928,7 +927,7 @@ pub async fn upload_file_handler(
                 "UPLOAD",
                 &file_path,
                 Some(offset),
-                &format!("FAILED: stream read error - {}", e),
+                &format!("FAILED: stream read error - {e}"),
             );
 
             FileOperationError::IoError(e.to_string())
@@ -980,7 +979,7 @@ pub async fn upload_file_handler(
                     "UPLOAD",
                     &file_path,
                     Some(offset),
-                    &format!("FAILED: chunk send error - {}", e),
+                    &format!("FAILED: chunk send error - {e}"),
                 );
 
                 e
@@ -1003,7 +1002,7 @@ pub async fn upload_file_handler(
                         "UPLOAD",
                         &file_path,
                         Some(offset),
-                        &format!("FAILED: chunk response deserialization error - {}", e),
+                        &format!("FAILED: chunk response deserialization error - {e}"),
                     );
 
                     FileOperationError::SerializationError(e.to_string())
@@ -1026,12 +1025,11 @@ pub async fn upload_file_handler(
                     "UPLOAD",
                     &file_path,
                     Some(offset),
-                    &format!("FAILED: client chunk upload error - {}", error_msg),
+                    &format!("FAILED: client chunk upload error - {error_msg}"),
                 );
 
                 return Err(FileOperationError::Other(format!(
-                    "Client failed to upload chunk: {}",
-                    error_msg
+                    "Client failed to upload chunk: {error_msg}"
                 )));
             }
 
@@ -1095,7 +1093,7 @@ pub async fn upload_file_handler(
                 "UPLOAD",
                 &file_path,
                 Some(offset),
-                &format!("FAILED: final chunk send error - {}", e),
+                &format!("FAILED: final chunk send error - {e}"),
             );
 
             e
@@ -1118,7 +1116,7 @@ pub async fn upload_file_handler(
                     "UPLOAD",
                     &file_path,
                     Some(offset),
-                    &format!("FAILED: final chunk response deserialization error - {}", e),
+                    &format!("FAILED: final chunk response deserialization error - {e}"),
                 );
 
                 FileOperationError::SerializationError(e.to_string())
@@ -1141,12 +1139,11 @@ pub async fn upload_file_handler(
                 "UPLOAD",
                 &file_path,
                 Some(offset),
-                &format!("FAILED: client final chunk upload error - {}", error_msg),
+                &format!("FAILED: client final chunk upload error - {error_msg}"),
             );
 
             return Err(FileOperationError::Other(format!(
-                "Client failed to upload chunk: {}",
-                error_msg
+                "Client failed to upload chunk: {error_msg}"
             )));
         }
 
@@ -1191,7 +1188,7 @@ pub async fn upload_file_handler(
             "UPLOAD",
             &file_path,
             Some(offset),
-            &format!("FAILED: completion marker send error - {}", e),
+            &format!("FAILED: completion marker send error - {e}"),
         );
 
         e
