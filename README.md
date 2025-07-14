@@ -1,7 +1,16 @@
 # Rust C2 Framework
 
 <!-- markdownlint-disable MD033 -->
-<img src="web/static/rust-c2.png" alt="rust-c2" width="400"/>
+<div style="display: flex; justify-content: center;">
+    <img src="web/static/rust-c2.png" alt="rust-c2" width="200"/>
+</div>
+<p align="center">
+    <img alt="Language" src="https://img.shields.io/github/languages/top/waiwai24/rust-c2-framework">
+    <img alt="Commit" src="https://img.shields.io/github/commit-activity/m/waiwai24/rust-c2-framework">
+	<img alt="Bitbucket open issues" src="https://img.shields.io/github/issues/waiwai24/rust-c2-framework">
+    <img alt="GitHub" src="https://img.shields.io/github/license/waiwai24/rust-c2-framework">
+    <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/waiwai24/rust-c2-framework">
+</p>
 <!-- markdownlint-enable MD033 -->
 
 现代化、安全、高性能的Command & Control解决方案 🦀,一个使用Rust语言从零重构的现代化命令与控制（C2）框架，旨在提供一个高性能、安全且模块化的平台，用于远程系统管理和渗透测试。该框架包含独立的客户端、服务端以及一个直观的Web管理界面。
@@ -10,7 +19,7 @@
 
 ### 核心功能
 
-- 🔗 **Linux平台支持**: 客户端和服务端均支持Linux操作系统
+- 🔗 **Linux平台支持**: 客户端仅支持Linux操作系统，服务端支持Windows，Linux系统
 - 🔐 **端到端加密通信**: 采用AES-256-GCM加密算法，确保部分通信数据的机密性和完整性
 - 🌐 **现代化Web管理界面**: 基于Axum Web框架和Askama模板引擎，提供响应式用户体验
 - ⚡ **高性能异步架构**: 利用Tokio运行时构建，实现高效的并发处理和低延迟通信
@@ -85,14 +94,7 @@ password = "Passwd@RustC2"                   # 登录密码
 
 ## 🚀 快速开始
 
-### 1. 系统要求
-
-- **操作系统**: Linux (Ubuntu 18.04+, CentOS 7+, Debian 10+)
-- **Rust版本**: 1.70.0 或更高版本
-- **内存**: 最少 512MB RAM
-- **磁盘**: 最少 100MB 可用空间
-
-### 2. 安装Rust环境
+### 1. 安装Rust环境
 
 ```bash
 # 安装Rust（如果尚未安装）
@@ -104,11 +106,11 @@ rustc --version
 cargo --version
 ```
 
-### 3. 克隆和编译项目
+### 2. 克隆和编译项目
 
 ```bash
 # 克隆项目
-git clone <repository-url>
+git clone https://github.com/waiwai24/rust-c2-framework
 cd rust-c2-framework
 
 # 编译整个工作区（推荐）
@@ -121,7 +123,7 @@ cargo build --release --bin client
 
 编译后的二进制文件位于 `target/release/` 目录下。
 
-### 4. 静态编译（可选）
+### 3. 静态编译（可选）
 
 为了生成不依赖系统库的独立可执行文件：
 
@@ -138,7 +140,7 @@ upx --best target/x86_64-unknown-linux-musl/release/server
 upx --best target/x86_64-unknown-linux-musl/release/client
 ```
 
-### 5. 配置和启动
+### 4. 配置和启动
 
 #### 配置服务器
 
@@ -171,6 +173,15 @@ cargo run --bin client http://your-server-ip:8080
 # 直接运行二进制文件
 ./target/release/client
 ```
+
+客户端云沙箱检测（测试时间：2025/7/14）：
+
+<!-- markdownlint-disable MD033 -->
+<div style="display: flex; justify-content: center; gap: 20px;">
+    <img src="img/sandbox1.png" alt="sandbox1" width="640">
+    <img src="img/sandbox2.png" alt="sandbox2" width="640">
+</div>
+<!-- markdownlint-disable MD033 -->
 
 详细功能使用指南请参考 [Function.md](Function.md)。
 
@@ -212,7 +223,6 @@ cargo run --bin client http://your-server-ip:8080
 
 - ✅ 网络安全教育和培训
 - ✅ 渗透测试（已获得授权）
-- ✅ 安全研究和漏洞发现
 - ✅ 红队演练（合规环境）
 - ❌ 未经授权的系统访问
 - ❌ 恶意软件传播
@@ -228,3 +238,7 @@ cargo run --bin client http://your-server-ip:8080
 ## 📄 许可证
 
 本项目采用 MIT 许可证。详细信息请参见 [LICENSE](LICENSE) 文件。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=waiwai24/rust-c2-framework&type=Date)](https://www.star-history.com/#waiwai24/rust-c2-framework&Date)

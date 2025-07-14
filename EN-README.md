@@ -1,7 +1,16 @@
 # Rust C2 Framework
 
 <!-- markdownlint-disable MD033 -->
-<img src="web/static/rust-c2.png" alt="rust-c2" width="400"/>
+<div style="display: flex; justify-content: center;">
+    <img src="web/static/rust-c2.png" alt="rust-c2" width="200"/>
+</div>
+<p align="center">
+    <img alt="Language" src="https://img.shields.io/github/languages/top/waiwai24/rust-c2-framework">
+    <img alt="Commit" src="https://img.shields.io/github/commit-activity/m/waiwai24/rust-c2-framework">
+	<img alt="Bitbucket open issues" src="https://img.shields.io/github/issues/waiwai24/rust-c2-framework">
+    <img alt="GitHub" src="https://img.shields.io/github/license/waiwai24/rust-c2-framework">
+    <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/waiwai24/rust-c2-framework">
+</p>
 <!-- markdownlint-enable MD033 -->
 
 A modern, secure, high-performance Command & Control solution 🦀. A modernized command and control (C2) framework built from scratch using Rust, designed to provide a high-performance, secure, and modular platform for remote system management and penetration testing. The framework includes independent client, server, and an intuitive web management interface.
@@ -10,7 +19,7 @@ A modern, secure, high-performance Command & Control solution 🦀. A modernized
 
 ### Core Features
 
-- 🔗 **Linux Platform Support**: Both client and server support Linux operating systems
+- 🔗 **Linux Platform Support**: Client only support Linux operating systems, Server support Windows and Linux operating systems
 - 🔐 **End-to-End Encrypted Communication**: Uses AES-256-GCM encryption algorithm to ensure confidentiality and integrity of communication data
 - 🌐 **Modern Web Management Interface**: Built on Axum web framework and Askama template engine, providing responsive user experience
 - ⚡ **High-Performance Async Architecture**: Built with Tokio runtime for efficient concurrent processing and low-latency communication
@@ -85,14 +94,7 @@ password = "Passwd@RustC2"                   # Login password
 
 ## 🚀 Quick Start
 
-### 1. System Requirements
-
-- **Operating System**: Linux (Ubuntu 18.04+, CentOS 7+, Debian 10+)
-- **Rust Version**: 1.70.0 or higher
-- **Memory**: Minimum 512MB RAM
-- **Disk**: Minimum 100MB available space
-
-### 2. Install Rust Environment
+### 1. Install Rust Environment
 
 ```bash
 # Install Rust (if not already installed)
@@ -104,11 +106,11 @@ rustc --version
 cargo --version
 ```
 
-### 3. Clone and Compile Project
+### 2. Clone and Compile Project
 
 ```bash
 # Clone project
-git clone <repository-url>
+git clone https://github.com/waiwai24/rust-c2-framework
 cd rust-c2-framework
 
 # Compile entire workspace (recommended)
@@ -121,7 +123,7 @@ cargo build --release --bin client
 
 Compiled binary files are located in the `target/release/` directory.
 
-### 4. Static Compilation (Optional)
+### 3. Static Compilation (Optional)
 
 To generate standalone executable files that don't depend on system libraries:
 
@@ -138,7 +140,7 @@ upx --best target/x86_64-unknown-linux-musl/release/server
 upx --best target/x86_64-unknown-linux-musl/release/client
 ```
 
-### 5. Configuration and Startup
+### 4. Configuration and Startup
 
 #### Start Server
 
@@ -171,6 +173,15 @@ cargo run --bin client http://your-server-ip:8080
 # Run binary file directly
 ./target/release/client
 ```
+
+Client-side cloud sandbox detection（time：2025/7/14）：
+
+<!-- markdownlint-disable MD033 -->
+<div style="display: flex; justify-content: center; gap: 20px;">
+    <img src="img/sandbox1.png" alt="sandbox1" width="640">
+    <img src="img/sandbox2.png" alt="sandbox2" width="640">
+</div>
+<!-- markdownlint-disable MD033 -->
 
 For detailed usage guide, please refer to [EN-Function.md](EN-Function.md).
 
@@ -212,7 +223,6 @@ For detailed usage guide, please refer to [EN-Function.md](EN-Function.md).
 
 - ✅ Network security education and training
 - ✅ Penetration testing (with authorization)
-- ✅ Security research and vulnerability discovery
 - ✅ Red team exercises (compliant environment)
 - ❌ Unauthorized system access
 - ❌ Malware distribution
@@ -228,3 +238,7 @@ Before using this tool, ensure:
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=waiwai24/rust-c2-framework&type=Date)](https://www.star-history.com/#waiwai24/rust-c2-framework&Date)
