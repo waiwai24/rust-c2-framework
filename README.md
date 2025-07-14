@@ -1,9 +1,10 @@
 # Rust C2 Framework
 
 <!-- markdownlint-disable MD033 -->
-<div style="display: flex; justify-content: center;">
-    <img src="web/static/rust-c2.png" alt="rust-c2" width="200"/>
-</div>
+<h1 align="center">
+  <br>
+  <img src="web/static/rust-c2.png" width="200px" alt="Supershell">
+</h1>
 <p align="center">
     <img alt="Language" src="https://img.shields.io/github/languages/top/waiwai24/rust-c2-framework">
     <img alt="Commit" src="https://img.shields.io/github/commit-activity/m/waiwai24/rust-c2-framework">
