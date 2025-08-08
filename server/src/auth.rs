@@ -5,7 +5,7 @@ use axum::{
     middleware::Next,
     response::{Html, IntoResponse, Response},
 };
-use rand::{rngs::OsRng, Rng};
+use rand::{Rng};
 use serde::Deserialize;
 use tower_cookies::{Cookie, Cookies};
 use tracing::{info, instrument, warn};
@@ -24,12 +24,12 @@ pub struct Credentials {
 /// Generate a 32-character alphanumeric token for session management.
 pub fn generate_session_token() -> String {
     const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    // Discard thread_rng and use OsRng for better randomness in production.
-    let mut rng = OsRng;
+    // Use thread_rng instead of OsRng for compatibility
+    let mut rng = rand::rng();
 
     (0..32)
         .map(|_| {
-            let idx = rng.gen_range(0..CHARSET.len());
+            let idx = rng.random_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect()
