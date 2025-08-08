@@ -24,7 +24,6 @@ pub struct Credentials {
 /// Generate a 32-character alphanumeric token for session management.
 pub fn generate_session_token() -> String {
     const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    // Use thread_rng instead of OsRng for compatibility
     let mut rng = rand::rng();
 
     (0..32)
